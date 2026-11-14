@@ -78,11 +78,24 @@ namespace Kestrel.Core.Guide
 
         public GuideFace Welcome(double t)
         {
+            // Opening lines play in script order. The decision CTA must not preempt the greeting.
+            bool started = Queue.CurrentId != null;
             for (int i = 0; i < Script.Lines.Count; i++)
             {
                 var line = Script.Lines[i];
                 if (line.Trigger != "guide.first" || !State.Allows(line)) continue;
-                Push(line, t, null);
+                if (Queue.Contains(line.Id)) continue;
+                string clip = null;
+                if (State.Settings.VoiceOn && State.Settings.VoiceAvailable)
+                    clip = GuideVoice.ClipFor(RepoRoot, line.Id);
+                if (!started)
+                {
+                    Queue.Push(line, t, null, clip);
+                    Note();
+                    started = true;
+                }
+                else
+                    Queue.Append(line, t, null, clip);
             }
             return Queue.Face(t);
         }

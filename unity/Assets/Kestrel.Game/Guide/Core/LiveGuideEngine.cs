@@ -155,7 +155,15 @@ namespace Kestrel.Game.Guide
             queued.Add(beat);
         }
 
-        public void SkipWelcome() => OpeningIntroSequence.MarkSkipped(state);
+        public void SkipWelcome()
+        {
+            OpeningIntroSequence.MarkSkipped(state);
+            for (int i = queued.Count - 1; i >= 0; i--)
+            {
+                if (OpeningIntroSequence.IsBeatId(queued[i]?.Id))
+                    queued.RemoveAt(i);
+            }
+        }
 
         public void Complete(string beatId) => Finish(beatId, true);
 

@@ -143,6 +143,8 @@ namespace Kestrel.Game.Guide
                 if (welcome) EnsureWelcomeStack();
                 return;
             }
+            // Off: the corner portrait never stays up. Opening intro may still use the welcome stack.
+            HideCornerPop();
             if (welcome)
             {
                 EnsureWelcomeStack();
@@ -151,6 +153,34 @@ namespace Kestrel.Game.Guide
             DropSprite();
             // Off: nothing consumes the engine's queue, so keep it empty. Turning the character on later starts clean.
             if (live != null) live.DropQueued();
+        }
+
+        /// <summary>Removes the corner portrait and blip source without tearing down an active welcome stack.</summary>
+        void HideCornerPop()
+        {
+            if (pop == null && blipSource == null) return;
+            Silence();
+            if (stage != null) stage.Blip -= OnBlip;
+            if (pop != null)
+            {
+                pop.Tapped -= OnTap;
+                pop.Pop?.RemoveFromHierarchy();
+                pop = null;
+            }
+            if (blipSource != null)
+            {
+                if (Application.isPlaying) Destroy(blipSource);
+                else DestroyImmediate(blipSource);
+            }
+            blipSource = null;
+            blipClip = null;
+            blipUntil = 0f;
+            shownKey = "";
+            if (welcomeStack == null && overlay != null)
+            {
+                overlay.RemoveFromHierarchy();
+                overlay = null;
+            }
         }
 
         void EnsureWelcomeStack()

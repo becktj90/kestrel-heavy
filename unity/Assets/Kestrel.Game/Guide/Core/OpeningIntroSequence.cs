@@ -43,11 +43,23 @@ namespace Kestrel.Game.Guide
             state.FirstRunDone = true;
         }
 
+        public static bool IsBeatId(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return false;
+            for (int i = 0; i < BeatIds.Length; i++)
+                if (BeatIds[i] == id) return true;
+            return false;
+        }
+
+        /// <summary>True only while opening beats are queued. Incomplete first-run state alone is not enough —
+        /// otherwise an Off corner character never drops its portrait before Home offers the welcome.</summary>
         public static bool Active(LiveGuideEngine engine)
         {
             if (engine == null || engine.State.FirstRunDone) return false;
-            if (engine.Pending.Count > 0) return true;
-            return !IsComplete(engine.State);
+            var pending = engine.Pending;
+            for (int i = 0; i < pending.Count; i++)
+                if (IsBeatId(pending[i]?.Id)) return true;
+            return false;
         }
 
         public static string HostKid(string repoRoot) => HostBeat(Campaign.Load(repoRoot)).Cards[0].Kid;

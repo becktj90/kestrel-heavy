@@ -185,8 +185,9 @@ namespace Kestrel.Game.Tests
             Assert.That(driver.HasSprite, Is.False);
 
             // Lines offered while off must not wait for the next time it is turned on.
-            bool offered = live.Offer("guide.first", "1", null, "home", false);
-            Assume.That(offered, "the first-run line is not allowed on this save");
+            // Use a tip (not an opening beat): SyncSprite keeps the first-run welcome queue while it is active.
+            bool offered = live.Offer("guide.brief", "m1", null, "map", false);
+            Assume.That(offered, "the briefing tip is not allowed on this save");
             Assert.That(live.Pending.Count, Is.GreaterThan(0), "the line is queued before the sync");
             driver.SyncSprite();
             Assert.That(live.Pending.Count, Is.EqualTo(0), "off: the queue is emptied");

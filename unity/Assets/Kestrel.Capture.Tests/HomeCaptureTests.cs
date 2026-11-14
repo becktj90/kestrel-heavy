@@ -13,6 +13,7 @@ using System.IO;
 using System.Linq;
 using Kestrel.Core.Features;
 using Kestrel.Core.Ui;
+using Kestrel.Game.Guide;
 using Kestrel.Game.Shell;
 using Kestrel.Kit;
 using Kestrel.UiChecks;
@@ -168,6 +169,14 @@ namespace Kestrel.Capture.Tests
 
             shell = AppShell.Instance;
             Assert.IsNotNull(shell, name + " shell");
+            // Layout captures need a quiet Home: the first-run opening intro overlaps LAUNCH/MISSIONS.
+            var guide = GuideSession.Engine;
+            if (guide != null)
+            {
+                guide.SkipWelcome();
+                GuideHost.Save(guide);
+            }
+            for (int i = 0; i < 4; i++) yield return null;
             var root = shell.Root;
             var home = root.Q(UiIds.ScreenHome);
             Assert.IsNotNull(home, name + " " + UiIds.ScreenHome);
