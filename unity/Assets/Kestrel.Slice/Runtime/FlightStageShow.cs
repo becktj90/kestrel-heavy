@@ -53,6 +53,7 @@ namespace Kestrel.Slice
         FlightDriver flight;
         VisualElement hud;
         Label chip;
+        double chipKey = double.NaN, chipShownSec;
         float units = 1f;
         Transform root;
         MeshFilter bodyFilter;
@@ -698,6 +699,17 @@ namespace Kestrel.Slice
             EnsureChip();
             if (chip == null) return;
             if (!staging.TryCallout(t, out var call) || string.IsNullOrEmpty(call.Line))
+            {
+                chip.style.display = DisplayStyle.None;
+                chipKey = double.NaN;
+                return;
+            }
+            // Playthrough 2026-11-11: the sim clock holds at its last event while the booster lands, so the last
+            // window never closed and "MECO T+773.7" stayed up. Bound it on the wall clock too.
+            double key = call.T * 16.0 + (int)call.Kind;
+            if (!(key == chipKey)) { chipKey = key; chipShownSec = 0; }
+            else chipShownSec += System.Math.Min(Time.unscaledDeltaTime, 0.1f);   // a slow frame or a capture step never eats the window
+            if (FlightStaging.CalloutStale(chipShownSec, call.WindowSec))
             {
                 chip.style.display = DisplayStyle.None;
                 return;
