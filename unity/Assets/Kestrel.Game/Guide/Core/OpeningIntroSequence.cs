@@ -107,17 +107,33 @@ namespace Kestrel.Game.Guide
 
         static string PebbleName(Campaign campaign)
         {
-            var m1 = campaign?.Missions != null && campaign.Missions.Count > 0 ? campaign.Missions[0] : null;
-            if (m1?.Briefing != null && !string.IsNullOrEmpty(m1.Briefing.PayloadName)) return m1.Briefing.PayloadName;
+            // briefing.payloadName is not stored on CampaignMission. KH-1's control line starts with it.
+            var m1 = FirstMission(campaign);
+            if (m1 != null && !string.IsNullOrEmpty(m1.Control))
+            {
+                int sp = m1.Control.IndexOf(' ');
+                if (sp > 0) return m1.Control.Substring(0, sp);
+            }
             return "Pebble";
         }
 
         static string ApogeeKm(Campaign campaign)
         {
-            var m1 = campaign?.Missions != null && campaign.Missions.Count > 0 ? campaign.Missions[0] : null;
-            if (m1?.Target != null && m1.Target.ApoKm > 0)
-                return m1.Target.ApoKm.ToString("0", CultureInfo.InvariantCulture);
+            var m1 = FirstMission(campaign);
+            if (m1 != null && m1.ApoKm > 0)
+                return m1.ApoKm.ToString("0", CultureInfo.InvariantCulture);
             return "10";
+        }
+
+        static CampaignMission FirstMission(Campaign campaign)
+        {
+            if (campaign?.Missions == null || campaign.Missions.Count == 0) return null;
+            for (int i = 0; i < campaign.Missions.Count; i++)
+            {
+                var row = campaign.Missions[i];
+                if (row != null && row.Index == 1) return row;
+            }
+            return campaign.Missions[0];
         }
     }
 }
