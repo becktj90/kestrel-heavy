@@ -75,6 +75,52 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
+        public void RebindResumeMission_KeepsDraftRocket_AndPointsAtKh1()
+        {
+            string dir = Path.Combine(Path.GetTempPath(), "kh-rebind-" + Guid.NewGuid().ToString("N"));
+            try
+            {
+                var store = new NativeStore(dir, () => 60, () => 0.2);
+                var library = new DesignLibrary(store);
+                var design = new JsonObject();
+                design.Add("version", 2d);
+                design.Add("name", "Scout");
+                library.SaveDraft(design, "Scout", "m3");
+                Assert.AreEqual("m3", library.LoadDraft(out string before, out _) == null ? null : before);
+                Assert.AreEqual("m3", store.GetProgress().Str("lastMissionId"));
+
+                library.RebindResumeMission("m1");
+                var loaded = library.LoadDraft(out string mission, out string name);
+                Assert.IsNotNull(loaded);
+                Assert.AreEqual("Scout", name);
+                Assert.AreEqual("Scout", loaded.Str("name"));
+                Assert.AreEqual("m1", mission);
+                Assert.AreEqual("m1", store.GetProgress().Str("lastMissionId"));
+            }
+            finally { if (Directory.Exists(dir)) Directory.Delete(dir, true); }
+        }
+
+        [Test]
+        public void RebindResumeMission_WithoutDraft_StillRewritesLastMissionId()
+        {
+            string dir = Path.Combine(Path.GetTempPath(), "kh-rebind-progress-" + Guid.NewGuid().ToString("N"));
+            try
+            {
+                var store = new NativeStore(dir, () => 70, () => 0.2);
+                var progress = new JsonObject();
+                progress.Add("lastMissionId", "m4");
+                progress.Add("orbitsCompleted", 1d);
+                store.PutProgress(progress);
+                new DesignLibrary(store).RebindResumeMission("m1");
+                var again = store.GetProgress();
+                Assert.AreEqual("m1", again.Str("lastMissionId"));
+                Assert.AreEqual(1d, again.Num("orbitsCompleted"));
+                Assert.IsFalse(new DesignLibrary(store).HasDraft());
+            }
+            finally { if (Directory.Exists(dir)) Directory.Delete(dir, true); }
+        }
+
+        [Test]
         public void SettingsRestore_FillsOnlyMissingKeys()
         {
             string dir = Path.Combine(Path.GetTempPath(), "kh-settings-" + Guid.NewGuid().ToString("N"));
