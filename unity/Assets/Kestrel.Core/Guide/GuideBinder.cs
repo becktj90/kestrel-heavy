@@ -78,11 +78,22 @@ namespace Kestrel.Core.Guide
 
         public GuideFace Welcome(double t)
         {
+            var deferred = new List<GuideLine>();
             for (int i = 0; i < Script.Lines.Count; i++)
             {
                 var line = Script.Lines[i];
                 if (line.Trigger != "guide.first" || !State.Allows(line)) continue;
+                // Decision CTA waits behind opening chatter so it cannot drop first.1.
+                if (line.Priority == GuidePriority.Decision) { deferred.Add(line); continue; }
                 Push(line, t, null);
+            }
+            for (int i = 0; i < deferred.Count; i++)
+            {
+                var line = deferred[i];
+                string clip = null;
+                if (State.Settings.VoiceOn && State.Settings.VoiceAvailable)
+                    clip = GuideVoice.ClipFor(RepoRoot, line.Id);
+                Queue.EnqueueBehind(line, t, null, clip);
             }
             return Queue.Face(t);
         }

@@ -77,6 +77,24 @@ namespace Kestrel.Core.Guide
             return Face(t);
         }
 
+        /// <summary>Queue a line after the current face without preempting chatter. Used for the
+        /// first-run career CTA so a decision does not drop Thrum's opening line.</summary>
+        public GuideFace EnqueueBehind(GuideLine line, double t, IReadOnlyDictionary<string, string> tokens, string clip)
+        {
+            if (line == null || line.Cards.Count == 0) return Face(t);
+            pending.Add(new Slot
+            {
+                Line = line,
+                Tokens = Copy(tokens),
+                Clip = clip,
+                Seq = ++seq,
+                StartT = t,
+            });
+            pending.Sort(Order);
+            if (current == null) StartHead(t);
+            return Face(t);
+        }
+
         public GuideFace Tick(double t)
         {
             if (current == null) return null;

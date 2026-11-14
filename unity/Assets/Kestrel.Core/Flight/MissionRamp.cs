@@ -130,6 +130,8 @@ namespace Kestrel.Core.Flight
         public bool MarginNonNegative, StrapOnsAllowed, NoRedRisks, RandomFailures, LandBoosters;
         public string LandingMode, LandingGrade, LandingSite;
         public string Customer, Control, Goal, WhatItIs, WhatItDoes, Why, Form, CodexId, Band;
+        /// <summary>Briefing payload name (data/campaign.json briefing.payloadName), e.g. Pebble on KH-1.</summary>
+        public string PayloadName;
         public readonly List<string> Unlocks = new List<string>();
 
         public bool HasInclination => TargetKind == "circular" || TargetKind == "ellipse" || TargetKind == "c3";
@@ -278,6 +280,7 @@ namespace Kestrel.Core.Flight
             var brief = o.Obj("briefing");
             if (brief != null)
             {
+                m.PayloadName = brief.Str("payloadName");
                 m.Customer = brief.Str("customer");
                 m.Control = brief.Str("control");
                 m.Goal = brief.Str("goal");
