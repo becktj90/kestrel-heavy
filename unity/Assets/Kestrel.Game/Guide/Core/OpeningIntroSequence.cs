@@ -108,6 +108,8 @@ namespace Kestrel.Game.Guide
         {
             var m1 = campaign?.Missions != null && campaign.Missions.Count > 0 ? campaign.Missions[0] : null;
             if (m1 != null && !string.IsNullOrEmpty(m1.PayloadName)) return m1.PayloadName;
+            if (m1 != null && m1.PayloadId == "kid-box") return "Pebble";
+            if (!string.IsNullOrEmpty(m1?.WhatItIs)) return m1.WhatItIs;
             return "Pebble";
         }
 

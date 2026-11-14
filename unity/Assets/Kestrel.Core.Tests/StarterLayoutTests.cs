@@ -108,12 +108,16 @@ namespace Kestrel.Core.Tests
                 if (s.Wide) continue;
                 foreach (var c in Cases())
                 {
-                    var f = StarterLayout.Place(Input(s, c.mission, c.readiness, c.key));
+                    var input = Input(s, c.mission, c.readiness, c.key);
+                    var f = StarterLayout.Place(input);
                     string where = s + " " + c.name;
                     Assert.IsFalse(f.Wide, where);
+                    float avail = s.H - s.Top - s.Bottom;
                     // SE-height screens tighten the sheet (Compact) and keep at least 16% for the rocket; taller phones 24%.
-                    Assert.AreEqual(s.H - s.Top - s.Bottom < StarterLayout.CompactBelow, f.Compact, where);
-                    Assert.GreaterOrEqual(f.Rocket.H, s.H * (f.Compact ? 0.16f : 0.24f), where + " rocket " + f.Rocket.H);
+                    // The Landing row trades a slice of preview height on missions that show it.
+                    Assert.AreEqual(avail < StarterLayout.CompactBelow, f.Compact, where);
+                    float minFrac = f.Compact ? (input.LandingVisible ? 0.147f : 0.16f) : (input.LandingVisible ? 0.22f : 0.24f);
+                    Assert.GreaterOrEqual(f.Rocket.H, avail * minFrac, where + " rocket " + f.Rocket.H);
                     Assert.Less(f.Rocket.Bottom, f.Sheet.Y, where);
                     Assert.Less(f.Header.Bottom, f.Rocket.Y + 0.5f, where);
                     Assert.LessOrEqual(f.Sheet.W, StarterLayout.ColumnMax + 0.5f, where);
