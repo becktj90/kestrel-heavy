@@ -92,12 +92,24 @@ namespace Kestrel.Game.Shell
             {
                 var design = Pick(out var missionId, out var name, out var fromDraft);
                 if (design == null) return null;
-                var campaign = ScreenStub.LoadCampaign();
-                var mission = campaign != null && !string.IsNullOrEmpty(missionId) ? campaign.ById(missionId) : null;
+                var mission = ResumeMission(ScreenStub.LoadCampaign(), missionId);
                 string line = mission != null && !string.IsNullOrEmpty(mission.Name) ? MissionContext.LabelFor(mission.Index) + " \u00B7 " + mission.Name : null;
                 return ResumeOffer.Caption(fromDraft, line, name);
             }
             catch (Exception) { return null; }
+        }
+
+        /// <summary>
+        /// The mission CONTINUE carries. A draft may still name a later KH after a career restart;
+        /// soft-linear only opens Cleared+1, and the caption uses the same mission <see cref="Open"/> will.
+        /// </summary>
+        static CampaignMission ResumeMission(Campaign campaign, string missionId)
+        {
+            int cleared = ScreenStub.ClearedCount();
+            var mission = campaign != null && !string.IsNullOrEmpty(missionId) ? campaign.ById(missionId) : null;
+            if (mission != null && mission.Index > cleared + 1)
+                mission = HomeRoutes.NextMission(campaign, cleared);
+            return mission;
         }
 
         /// <summary>Arm the pad with the rocket to resume and open the designer. A fresh career uses Design first.</summary>
@@ -109,11 +121,7 @@ namespace Kestrel.Game.Shell
 
             PadHandoff.Arm(design, false, true);
             var campaign = ScreenStub.LoadCampaign();
-            int cleared = ScreenStub.ClearedCount();
-            var mission = campaign != null && !string.IsNullOrEmpty(missionId) ? campaign.ById(missionId) : null;
-            // After a career restart, a draft may still name a later KH. Soft-linear only opens Cleared+1.
-            if (mission != null && mission.Index > cleared + 1)
-                mission = HomeRoutes.NextMission(campaign, cleared);
+            var mission = ResumeMission(campaign, missionId);
             if (mission != null)
             {
                 var ctx = MissionContext.FromMission(campaign, mission);
