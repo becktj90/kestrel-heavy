@@ -193,7 +193,7 @@ namespace Kestrel.Game.Tests
 
             // Lines offered while off must not wait for the next time it is turned on.
             // Use a non-welcome tip: SkipWelcome already marks first.* seen.
-            bool offered = live.Offer("guide.brief", "kh1", null, "map", false);
+            bool offered = live.Offer("guide.brief", "m1", null, "map", false);
             Assume.That(offered, "the briefing tip is not allowed on this save");
             Assert.That(live.Pending.Count, Is.GreaterThan(0), "the line is queued before the sync");
             driver.SyncSprite();
