@@ -35,6 +35,8 @@ namespace Kestrel.Pad
         public float CrewArmHeight = 2.4f;
         /// <summary>Stair flights up the west side every level and, when Width >= ElevatorMinWidth, an elevator shaft.</summary>
         public bool ServiceCore = true;
+        /// <summary>Enclosed closeout rooms on the vehicle face. Off for compact rail towers (keep-out is tight).</summary>
+        public bool ServiceRooms = true;
         public const float ElevatorMinWidth = 6f;
 
         /// <summary>Tower tall enough to clear the highest attach point by one level (min 6 levels).</summary>
@@ -112,10 +114,53 @@ namespace Kestrel.Pad
             }
             if (P.ServiceCore) BuildCore();
             if (P.CrewLevel >= 0 && P.CrewLevel < P.Levels && P.CrewArmReach > 0.5f) BuildCrewArm();
+            BuildServiceRooms();
             if (P.SpikeHeight > 0)
             {
                 float top = P.Height + P.CapHeight;
                 Add("tower.cap", "tower.cap.spike", MemberKind.Mast, new Vec3(0, top, P.StandOff), new Vec3(0, top + P.SpikeHeight, P.StandOff), MaterialRole.Insulation, "lightning-spike");
+            }
+        }
+
+        /// <summary>Enclosed closeout rooms on the vehicle face (crew level + mid). Real pads read as gantry +
+        /// rooms, not an empty lattice. Tip stays outside the vehicle keep-out; rail towers leave these off.</summary>
+        void BuildServiceRooms()
+        {
+            if (!P.ServiceRooms) return;
+            // Tip of the room must clear a typical vehicle cylinder with margin; NearFaceZ = R + clearance.
+            float tipMin = Math.Max(2.4f, P.NearFaceZ * 0.45f);
+            float reach = Math.Min(3.2f, Math.Max(0f, P.NearFaceZ - tipMin));
+            if (reach < 1.6f) return;
+            float hw = Math.Min(P.Width * 0.32f, 3.6f), h = Math.Min(P.LevelHeight * 0.5f, 2.8f);
+            // One hero closeout room (crew level, else mid) keeps PadPerf under the 40k tris ceiling while
+            // still reading as an enclosed gantry room next to the stack.
+            int l = P.CrewLevel >= 1 && P.CrewLevel < P.Levels ? P.CrewLevel : Math.Max(1, P.Levels / 2);
+            {
+                float y = (l + 1) * P.LevelHeight;
+                float z0 = P.NearFaceZ, z1 = z0 - reach;
+                string id = $"tower.room.{l:00}";
+                if (Graph.Contains(id)) return;
+                var e = Graph.Add(id, ElementCategory.Structure, $"tower.l{l:00}", "steel", "service-room", "enclosed", "walkable");
+                e.Center = new Vec3(0, y + h * 0.5f, (z0 + z1) * 0.5f);
+                e.Size = new Vec3(hw * 2, h, reach);
+                e.DisplayName = $"Service room {l + 1}";
+                // Floor/roof: tile DeckW planks across the declared room width. PadRenderer only scales
+                // beam length, so a single centred plank would read as a 0.9 m strip (Codex P2).
+                // Three planks whose centres span ±hw read as a full-width deck inside the tris budget.
+                const int n = 3;
+                for (int i = 0; i < n; i++)
+                {
+                    float x = -hw + DeckW * 0.5f + (hw * 2f - DeckW) * i / (n - 1);
+                    Add(id, $"{id}.floor.{i}", MemberKind.Deck, new Vec3(x, y + 0.06f, z0), new Vec3(x, y + 0.06f, z1), MaterialRole.Galvanized, "floor", "enclosed");
+                    Add(id, $"{id}.roof.{i}", MemberKind.Deck, new Vec3(x, y + h, z0), new Vec3(x, y + h, z1), MaterialRole.Galvanized, "roof", "enclosed");
+                }
+                // Face + side enclosure frame (vehicle face at z1, sides at ±hw).
+                Add(id, $"{id}.sill", MemberKind.ArmBrace, new Vec3(-hw, y, z1), new Vec3(hw, y, z1), MaterialRole.PaintedSteel, "sill");
+                Add(id, $"{id}.lintel", MemberKind.ArmBrace, new Vec3(-hw, y + h, z1), new Vec3(hw, y + h, z1), MaterialRole.PaintedSteel, "lintel");
+                Add(id, $"{id}.post.l", MemberKind.ArmBrace, new Vec3(-hw, y, z1), new Vec3(-hw, y + h, z1), MaterialRole.PaintedSteel, "post");
+                Add(id, $"{id}.post.r", MemberKind.ArmBrace, new Vec3(hw, y, z1), new Vec3(hw, y + h, z1), MaterialRole.PaintedSteel, "post");
+                Add(id, $"{id}.side.l", MemberKind.ArmBrace, new Vec3(-hw, y + h * 0.5f, z0), new Vec3(-hw, y + h * 0.5f, z1), MaterialRole.PaintedSteel, "side");
+                Add(id, $"{id}.side.r", MemberKind.ArmBrace, new Vec3(hw, y + h * 0.5f, z0), new Vec3(hw, y + h * 0.5f, z1), MaterialRole.PaintedSteel, "side");
             }
         }
 
