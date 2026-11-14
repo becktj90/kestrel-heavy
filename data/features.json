@@ -22,7 +22,7 @@
     "home.designFirst": false,
     "home.codexTile": false,
     "home.thrum": false,
-    "home.creditsChip": false,
+    "home.creditsChip": true,
     "home.statsCard": false
   }
 }

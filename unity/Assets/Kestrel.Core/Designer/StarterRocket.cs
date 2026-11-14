@@ -1,6 +1,6 @@
-// Phase 1 "Starter" designer (docs/plans/PHASED_DESIGNER_PLAN.md, PR 5). Four controls on top of the
-// mission's campaign winner (data/golden/campaign-winners.json): engine fuel, stage count, fuel size
-// (5 notches, -20%..+20%) and boosters 0/2/4.
+// Phase 1 "Starter" designer (docs/plans/PHASED_DESIGNER_PLAN.md, PR 5). Five controls on top of the
+// mission's campaign winner (data/golden/campaign-winners.json): manufacturing grade (shop / standard /
+// flight), engine fuel, stage count, fuel size (5 notches, -20%..+20%) and boosters 0/2/4.
 //
 // A thin adapter over the real designer. BuildDesign replays the controls onto a fresh copy of the base
 // design with the full designer's own edit ops (HangarEditor.RemoveStage / AddStage / SetPropellant /
@@ -22,33 +22,45 @@ namespace Kestrel.Core.Designer
     public enum StarterEngine { Kerosene = 0, Methane = 1 }
 
     /// <summary>Which control the player just moved (for the hint line).</summary>
-    public enum StarterKnob { None, Engine, Stages, FuelNotch, Boosters }
+    public enum StarterKnob { None, Build, Engine, Stages, FuelNotch, Boosters }
 
-    /// <summary>One setting of the four controls. FuelNotch is an index 0..4 into <see cref="StarterRocket.FuelPercents"/>.</summary>
+    /// <summary>One setting of the five controls. FuelNotch is an index 0..4 into <see cref="StarterRocket.FuelPercents"/>.</summary>
     public readonly struct StarterChoice : IEquatable<StarterChoice>
     {
+        public readonly StarterBuild Build;
         public readonly StarterEngine Engine;
         public readonly int Stages;
         public readonly int FuelNotch;
         public readonly int Boosters;
 
         public StarterChoice(StarterEngine engine, int stages, int fuelNotch, int boosters)
+            : this(StarterBuild.Standard, engine, stages, fuelNotch, boosters) { }
+
+        public StarterChoice(StarterBuild build, StarterEngine engine, int stages, int fuelNotch, int boosters)
         {
-            Engine = engine; Stages = stages; FuelNotch = fuelNotch; Boosters = boosters;
+            Build = build; Engine = engine; Stages = stages; FuelNotch = fuelNotch; Boosters = boosters;
         }
 
         public int FuelPercent => StarterRocket.FuelPercentOf(FuelNotch);
-        public StarterChoice WithEngine(StarterEngine v) => new StarterChoice(v, Stages, FuelNotch, Boosters);
-        public StarterChoice WithStages(int v) => new StarterChoice(Engine, v, FuelNotch, Boosters);
-        public StarterChoice WithFuelNotch(int v) => new StarterChoice(Engine, Stages, v, Boosters);
-        public StarterChoice WithBoosters(int v) => new StarterChoice(Engine, Stages, FuelNotch, v);
+        public StarterChoice WithBuild(StarterBuild v) => new StarterChoice(v, Engine, Stages, FuelNotch, Boosters);
+        public StarterChoice WithEngine(StarterEngine v) => new StarterChoice(Build, v, Stages, FuelNotch, Boosters);
+        public StarterChoice WithStages(int v) => new StarterChoice(Build, Engine, v, FuelNotch, Boosters);
+        public StarterChoice WithFuelNotch(int v) => new StarterChoice(Build, Engine, Stages, v, Boosters);
+        public StarterChoice WithBoosters(int v) => new StarterChoice(Build, Engine, Stages, FuelNotch, v);
 
-        /// <summary>Stable id, e.g. "kerosene-2-f2-b0".</summary>
-        public string Key => StarterRocket.EngineId(Engine) + "-" + Stages + "-f" + FuelNotch + "-b" + Boosters;
+        /// <summary>Stable id. Standard omits the grade ("kerosene-2-f2-b0"); Shop / Flight prefix it ("shop-kerosene-2-f2-b0").</summary>
+        public string Key
+        {
+            get
+            {
+                string body = StarterRocket.EngineId(Engine) + "-" + Stages + "-f" + FuelNotch + "-b" + Boosters;
+                return Build == StarterBuild.Standard ? body : StarterManufacturing.Id(Build) + "-" + body;
+            }
+        }
 
-        public bool Equals(StarterChoice o) => Engine == o.Engine && Stages == o.Stages && FuelNotch == o.FuelNotch && Boosters == o.Boosters;
+        public bool Equals(StarterChoice o) => Build == o.Build && Engine == o.Engine && Stages == o.Stages && FuelNotch == o.FuelNotch && Boosters == o.Boosters;
         public override bool Equals(object obj) => obj is StarterChoice o && Equals(o);
-        public override int GetHashCode() => ((((int)Engine * 8 + Stages) * 8 + FuelNotch) * 8) + Boosters;
+        public override int GetHashCode() => (((((int)Build * 8 + (int)Engine) * 8 + Stages) * 8 + FuelNotch) * 8) + Boosters;
         public override string ToString() => Key;
     }
 
@@ -105,9 +117,10 @@ namespace Kestrel.Core.Designer
     {
         public const int FuelNotches = 5;
         public const int DefaultFuelNotch = 2;
-        public const int SaveVersion = 2;
+        public const int SaveVersion = 3;
         /// <summary>Fuel size per notch, in percent of the base rocket's propellant.</summary>
         public static readonly IReadOnlyList<int> FuelPercents = new[] { -20, -10, 0, 10, 20 };
+        public static readonly IReadOnlyList<StarterBuild> BuildOrder = new[] { StarterBuild.Shop, StarterBuild.Standard, StarterBuild.Flight };
         public static readonly IReadOnlyList<StarterEngine> EngineOrder = new[] { StarterEngine.Kerosene, StarterEngine.Methane };
         public static readonly IReadOnlyList<int> StageValues = new[] { 1, 2, 3 };
         public static readonly IReadOnlyList<int> BoosterValues = new[] { 0, 2, 4 };
@@ -143,7 +156,8 @@ namespace Kestrel.Core.Designer
         /// <summary>The base rocket's own setting: its engine fuel, stage count and boosters at the middle fuel notch.</summary>
         public StarterChoice Default { get; }
 
-        // ---- the four controls (setters clamp to the offered values) ----
+        // ---- the five controls (setters clamp to the offered values) ----
+        public StarterBuild BuildGrade { get => choice.Build; set => Set(choice.WithBuild(value)); }
         public StarterEngine Engine { get => choice.Engine; set => Set(choice.WithEngine(value)); }
         public int Stages { get => choice.Stages; set => Set(choice.WithStages(value)); }
         /// <summary>0..4; see <see cref="FuelPercent"/>.</summary>
@@ -153,6 +167,7 @@ namespace Kestrel.Core.Designer
         public int FuelPercent => choice.FuelPercent;
 
         // ---- what each control offers on this mission ----
+        public bool IsBuildAllowed(StarterBuild v) => v == StarterBuild.Shop || v == StarterBuild.Standard || v == StarterBuild.Flight;
         public bool IsEngineAllowed(StarterEngine v) => v == StarterEngine.Kerosene || v == StarterEngine.Methane;
         public bool IsStagesAllowed(int v) => v >= 1 && v <= Math.Min(3, DesignerLimits.Active.stagesMax);
         public bool IsFuelNotchAllowed(int v) => v >= 0 && v < FuelNotches;
@@ -267,6 +282,7 @@ namespace Kestrel.Core.Designer
         public IEnumerable<StarterChoice> Neighbours()
         {
             var c = choice;
+            foreach (var b in BuildOrder) if (b != c.Build) yield return c.WithBuild(b);
             foreach (var e in EngineOrder) if (e != c.Engine) yield return c.WithEngine(e);
             yield return c.WithFuelNotch(c.FuelNotch + 1);
             yield return c.WithFuelNotch(c.FuelNotch - 1);
@@ -310,6 +326,7 @@ namespace Kestrel.Core.Designer
                 case "boosters-": return IsBoostersAllowed(c.Boosters - 2);
                 case "boosters+": return IsBoostersAllowed(c.Boosters + 2);
                 case "engine": return true;
+                case "build": return true;
                 default: return false;
             }
         }
@@ -334,7 +351,7 @@ namespace Kestrel.Core.Designer
         /// Replay <paramref name="want"/> onto a copy of <paramref name="baseDesign"/> with the full designer's ops:
         /// stages first (remove the middle, then the top; add a middle stage like the Hangar's "add stage"), then
         /// engine fuel on every non-hydrogen stage (nearest engine by thrust, count kept to the same total push),
-        /// then each stage's propellant scaled by the fuel notch, then the booster count.
+        /// then each stage's propellant scaled by the fuel notch, then the booster count, then manufacturing grade.
         /// </summary>
         public static JsonObject Build(Catalog c, JsonObject baseDesign, StarterChoice baseChoice, StarterChoice want, CampaignMission mission)
         {
@@ -387,6 +404,9 @@ namespace Kestrel.Core.Designer
             if (!free) b = baseChoice.Boosters;
             int have = (int)(d.Obj("strapOns")?.Num("count") ?? 0);
             if (b != have && HangarEditor.SetBoosterCount(c, d, b).changed && b > 0) EnsureFit(c, d, PartRef.Boosters);
+
+            // 5) manufacturing: shop scrap vs flight hardware (standard leaves the winner alone)
+            StarterManufacturing.Apply(c, d, want.Build);
 
             // The mission stamp Home and the board use (payload type and mass, orbit, budget, missionId).
             if (mission != null) HomeAutoBuild.ApplyMission(c, d, mission);
@@ -512,12 +532,13 @@ namespace Kestrel.Core.Designer
         /// <summary>NativeStore key for this mission's last Starter setting, e.g. "kh.save.v1.starter.m3".</summary>
         public static string SaveKey(string missionId) => NativeStore.Prefix + "starter." + missionId;
 
-        /// <summary>{"v":2,"mission":"m3","engine":"methane","stages":2,"fuelNotch":2,"boosters":0}</summary>
+        /// <summary>{"v":3,"mission":"m3","build":"standard","engine":"methane","stages":2,"fuelNotch":2,"boosters":0}</summary>
         public JsonObject ToSave()
         {
             var o = new JsonObject();
             o.Add("v", (double)SaveVersion);
             o.Add("mission", MissionId ?? "");
+            o.Add("build", StarterManufacturing.Id(choice.Build));
             o.Add("engine", EngineId(choice.Engine));
             o.Add("stages", (double)choice.Stages);
             o.Add("fuelNotch", (double)choice.FuelNotch);
@@ -526,18 +547,19 @@ namespace Kestrel.Core.Designer
         }
 
         /// <summary>Restore a saved setting (clamped). False and no change when the record is for another mission or unreadable.
-        /// Version 1 records (the dropped placeholder table) are read the same way.</summary>
+        /// Version 1–2 records default manufacturing to Standard.</summary>
         public bool ApplySave(JsonObject saved)
         {
             if (saved == null || saved.Str("mission") != (MissionId ?? "")) return false;
             int v = (int)saved.Num("v");
-            if (v != SaveVersion && v != 1) return false;
+            if (v != SaveVersion && v != 1 && v != 2) return false;
             if (!TryEngine(saved.Str("engine"), out var e)) return false;
-            Apply(Clamp(new StarterChoice(e, (int)saved.Num("stages"), (int)saved.Num("fuelNotch"), (int)saved.Num("boosters"))));
+            if (!StarterManufacturing.TryParse(saved.Str("build"), out var build)) build = StarterBuild.Standard;
+            Apply(Clamp(new StarterChoice(build, e, (int)saved.Num("stages"), (int)saved.Num("fuelNotch"), (int)saved.Num("boosters"))));
             return true;
         }
 
-        /// <summary>The setting a stored design sits on: first-stage fuel, stage count (1..3), boosters.</summary>
+        /// <summary>The setting a stored design sits on: manufacturing grade, first-stage fuel, stage count (1..3), boosters.</summary>
         public static StarterChoice ChoiceOf(JsonObject design, CampaignMission m)
         {
             var stages = design?.Arr("stages");
@@ -546,17 +568,19 @@ namespace Kestrel.Core.Designer
             var engine = first?.Str("propellant") == "methalox" ? StarterEngine.Methane : StarterEngine.Kerosene;
             int boosters = (int)(design?.Obj("strapOns")?.Num("count") ?? 0);
             if (boosters != 0 && boosters != 2 && boosters != 4) boosters = 0;
-            return new StarterChoice(engine, count, DefaultFuelNotch, boosters);
+            StarterManufacturing.TryParse(design?.Str("manufacturing"), out var build);
+            return new StarterChoice(build, engine, count, DefaultFuelNotch, boosters);
         }
 
         // ---- internals ----
         StarterChoice Clamp(StarterChoice want)
         {
+            var build = IsBuildAllowed(want.Build) ? want.Build : choice.Build;
             var e = IsEngineAllowed(want.Engine) ? want.Engine : choice.Engine;
             int s = IsStagesAllowed(want.Stages) ? want.Stages : choice.Stages;
             int f = IsFuelNotchAllowed(want.FuelNotch) ? want.FuelNotch : choice.FuelNotch;
             int b = IsBoostersAllowed(want.Boosters) ? want.Boosters : (IsBoostersAllowed(choice.Boosters) ? choice.Boosters : Default.Boosters);
-            return new StarterChoice(e, s, f, b);
+            return new StarterChoice(build, e, s, f, b);
         }
 
         void Set(StarterChoice want) => Apply(Clamp(want));

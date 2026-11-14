@@ -12,6 +12,12 @@
     "spoken": "Why does {row} matter?",
     "rows": [
       {
+        "row": "build",
+        "codex": "max-q",
+        "icon": "wrench",
+        "text": "Shop cuts corners to save money, so the rocket may blow up. Safe costs more and is built to hold together."
+      },
+      {
         "row": "engine",
         "codex": "isp",
         "icon": "flame",
