@@ -187,6 +187,42 @@ namespace Kestrel.Pad.Tests
                 }
         }
 
+        [Test]
+        public void TowerPadsHaveEnclosedServiceRoomsAndLightningWires()
+        {
+            foreach (var (where, L, _, r) in Pads())
+            {
+                if (L.Tower == null) continue;
+                if (L.Archetype != PadArchetype.Rail && L.Tower.ServiceRooms)
+                {
+                    var rooms = L.Graph.Query(ElementCategory.Structure, "service-room").ToList();
+                    Assert.That(rooms, Is.Not.Empty, where + " enclosed service rooms");
+                    foreach (var room in rooms)
+                    {
+                        var mem = L.Members.Where(m => m.ParentId == room.Id).ToList();
+                        Assert.That(mem.Count, Is.GreaterThanOrEqualTo(10), where + " " + room.Id);
+                        int floors = mem.Count(m => m.Id.Contains(".floor."));
+                        int roofs = mem.Count(m => m.Id.Contains(".roof."));
+                        Assert.That(floors, Is.GreaterThanOrEqualTo(2), where + " " + room.Id + " tiled floor");
+                        Assert.That(roofs, Is.EqualTo(floors), where + " " + room.Id + " matching roof");
+                        // Plank centres span the declared room width (DeckW mesh), not a single mid strip.
+                        float roomHw = room.Size.X * 0.5f;
+                        var floorXs = mem.Where(m => m.Id.Contains(".floor.")).Select(m => m.A.X).OrderBy(x => x).ToList();
+                        Assert.That(floorXs.Last() - floorXs.First(), Is.GreaterThanOrEqualTo(roomHw * 2f - TowerLayout.DeckW - 0.05f), where + " " + room.Id + " floor covers width");
+                        float tipZ = mem.Min(m => Math.Min(m.A.Z, m.B.Z));
+                        Assert.That(tipZ, Is.GreaterThan(r + 0.5f), where + " " + room.Id + " stays outside the vehicle");
+                    }
+                }
+                else Assert.That(L.Graph.Query(ElementCategory.Structure, "service-room"), Is.Empty, where + " rail has no rooms");
+                int masts = L.Graph.Query(ElementCategory.Structure, "lightning-mast").Count;
+                if (masts >= 2)
+                {
+                    Assert.That(L.Graph.Contains("pad.wires"), Is.True, where + " lightning catenary");
+                    Assert.That(L.Members.Count(m => m.ParentId == "pad.wires"), Is.GreaterThanOrEqualTo(4), where + " wire segments");
+                }
+            }
+        }
+
         /// <summary>Tower + rail steel only (PadPerf.StructureTriangles), worst case with the camera at the pad.</summary>
         /// <summary>Measured at seed 1: First Hop 1.9k, Tiny Orbit 4.9k, rail 60 m 13.3k; tower 48 m 7.6k, heavy 120 m 17.5k.</summary>
         public const int RailStructureTrisMax = 16_000, TowerStructureTrisMax = 22_000;
