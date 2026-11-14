@@ -23,6 +23,8 @@ namespace Kestrel.Core.Designer
         /// <summary>The web page EXIT control drawn over the canvas top-right.</summary>
         public bool ReserveExit;
         public bool BoostersVisible;
+        public bool LandingVisible;
+        public string[] Landing = { StarterScreen.LandingExpend, StarterScreen.LandingHaven, StarterScreen.LandingPad };
         public string Title = "", Subtitle = "", Hint = "", Badge = "", Readiness = "";
         public string[] Engines = { StarterScreen.Kerosene, StarterScreen.Methane };
         public string[] Stages = { "1", "2", "3" };
@@ -82,7 +84,7 @@ namespace Kestrel.Core.Designer
         public float ChipPt = StarterLayout.ChipPt, WhyPt = StarterLayout.WhyPt, SpeedPt = StarterLayout.SpeedPt;
         /// <summary>X-ray button, top-right inside the rocket window.</summary>
         public HudBox Xray;
-        public StarterRowFrame Engine, Stages, Fuel, Boosters;
+        public StarterRowFrame Engine, Stages, Fuel, Landing, Boosters;
         public float TitlePt, SubtitlePt, LabelPt, OptionPt, EndPt, HintPt, ReadinessPt, CtaPt, CornerPt;
         public int TitleLines, SubtitleLines, HintLines, ReadinessLines;
         /// <summary>The header sits inside the side panel (landscape web), else above the rocket.</summary>
@@ -97,6 +99,7 @@ namespace Kestrel.Core.Designer
             yield return Engine;
             yield return Stages;
             yield return Fuel;
+            if (Landing != null) yield return Landing;
             if (Boosters != null) yield return Boosters;
         }
 
@@ -412,12 +415,12 @@ namespace Kestrel.Core.Designer
 
         static float RowsHeight(StarterFrame f, StarterLayoutInput i, float w)
         {
-            float h = Touch + f.GapPt + Touch + f.GapPt + FuelRowH(f) + (i.BoostersVisible ? f.GapPt + Touch : 0f);
+            float h = Touch + f.GapPt + Touch + f.GapPt + FuelRowH(f) + (i.LandingVisible ? f.GapPt + Touch : 0f) + (i.BoostersVisible ? f.GapPt + Touch : 0f);
             if (f.WhyOpen != StarterKnob.None) h += f.GapPt + WhyHeight(f, i, w);
             return h;
         }
 
-        static readonly string[] SideLabels = { StarterScreen.EngineLabel, StarterScreen.StagesLabel, StarterScreen.BoostersLabel };
+        static readonly string[] SideLabels = { StarterScreen.EngineLabel, StarterScreen.StagesLabel, StarterScreen.LandingLabel, StarterScreen.BoostersLabel };
 
         static float LabelWidth(StarterFrame f, float w, bool words)
         {
@@ -438,7 +441,7 @@ namespace Kestrel.Core.Designer
             if (i.Help)
             {
                 float optW1 = x + w - helpW - (x + labelW + f.GapPt);
-                if (!WordsFit(i.Engines, optW1, OptionMinPt) || !WordsFit(i.Stages, optW1, OptionMinPt) || (i.BoostersVisible && !WordsFit(i.Boosters, optW1, OptionMinPt)))
+                if (!WordsFit(i.Engines, optW1, OptionMinPt) || !WordsFit(i.Stages, optW1, OptionMinPt) || (i.LandingVisible && !WordsFit(i.Landing, optW1, OptionMinPt)) || (i.BoostersVisible && !WordsFit(i.Boosters, optW1, OptionMinPt)))
                 {
                     wraps = true;
                     labelW = LabelWidth(f, w, true);
@@ -467,6 +470,14 @@ namespace Kestrel.Core.Designer
             if (i.Help) fuel.Help = Box(x + w - Touch, y + lineH + 2f, Touch, Touch);
             f.Fuel = fuel;
             y = AfterRow(f, i, StarterKnob.FuelNotch, fuel, x, w);
+
+            if (i.LandingVisible)
+            {
+                f.Landing = SideRow("landing", x, y, labelW, optX, optW, i.Landing.Length);
+                Finish(f.Landing, i, x, w, wraps);
+                y = AfterRow(f, i, StarterKnob.Landing, f.Landing, x, w);
+            }
+            else f.Landing = null;
 
             if (i.BoostersVisible)
             {
@@ -516,7 +527,7 @@ namespace Kestrel.Core.Designer
                     if (FlightHudLayout.TextWidth(words[k], pt) > boxes[k].W - 2f * OptionPadX) return false;
                 return true;
             }
-            return Fits(i.Engines, f.Engine.Options) && Fits(i.Stages, f.Stages.Options) && (f.Boosters == null || Fits(i.Boosters, f.Boosters.Options));
+            return Fits(i.Engines, f.Engine.Options) && Fits(i.Stages, f.Stages.Options) && (f.Landing == null || Fits(i.Landing, f.Landing.Options)) && (f.Boosters == null || Fits(i.Boosters, f.Boosters.Options));
         }
 
         static StarterRowFrame SideRow(string key, float x, float y, float labelW, float optX, float optW, int n)

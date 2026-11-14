@@ -61,7 +61,7 @@ namespace Kestrel.Core.Tests
             return new StarterLayoutInput
             {
                 Width = s.W, Height = s.H, SafeTop = s.Top, SafeBottom = s.Bottom,
-                Wide = s.Wide, ReserveExit = s.Exit, BoostersVisible = r.BoostersVisible,
+                Wide = s.Wide, ReserveExit = s.Exit, BoostersVisible = r.BoostersVisible, LandingVisible = r.LandingVisible,
                 Title = StarterScreen.Title(r.Mission), Subtitle = StarterScreen.Subtitle(r.Mission),
                 Hint = StarterScreen.Hint(r, StarterKnob.None), Badge = badge, Readiness = rest,
             };

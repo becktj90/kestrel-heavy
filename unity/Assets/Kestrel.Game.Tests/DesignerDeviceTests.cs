@@ -127,7 +127,7 @@ namespace Kestrel.Game.Tests
                 }
                 JsonMut.Set(mission, "requiresLanding", true);
                 HangarEditor.SetLegs(d, true);
-                return DesignerV3Edits.SetRecoveryMode(d, "rtls");
+                return HangarEditor.SetRecoveryMode(d, "rtls");
             });
             var panel = new DesignerV3Panel(session, new VisualElement(), 1f);
             try

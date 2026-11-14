@@ -195,20 +195,22 @@ namespace Kestrel.Core.Flight
             return flownGrade;
         }
 
-        /// <summary>Why an expendable stage cannot land, in the words the flight shows.</summary>
+        /// <summary>Why an expendable stage cannot land, in the words the flight shows.
+        /// Starter Design has no Recovery tab (Phase 1): these lines stay factual. Full designer /
+        /// Hangar players pick Haven under Landing, which arms legs and landing fuel together.</summary>
         public static void Why(in RecoveryCraft craft, out string kid, out string engineer)
         {
             var inv = CultureInfo.InvariantCulture;
             bool fuel = craft.ReserveKg > 1;
             bool legs = craft.Legs;
             if (!fuel && !legs)
-                kid = "This booster keeps no landing fuel and has no legs, so it falls into the sea. Add landing fuel and legs in Recovery to land it on Haven.";
+                kid = "This booster keeps no landing fuel and has no legs, so it falls into the sea.";
             else if (!fuel)
-                kid = "This booster keeps no landing fuel, so it cannot slow down for Haven. Add landing fuel in Recovery.";
+                kid = "This booster keeps no landing fuel, so it cannot slow down for Haven.";
             else if (!legs)
-                kid = "No landing was picked. The booster tries for Haven with its fuel, but it has no legs. Pick a landing in Recovery.";
+                kid = "This booster has no landing legs, so it cannot stand on Haven.";
             else
-                kid = "No landing was picked. The booster tries for Haven anyway. Pick a landing in Recovery to have it graded.";
+                kid = "No landing was picked. The booster tries for Haven anyway.";
             engineer = "Expendable first stage. Reserve " + craft.ReserveKg.ToString("0", inv) + " kg, legs "
                 + (legs ? "on" : "off") + ", grid fins " + (craft.GridFins ? "on" : "off") + ". Haven attempt, not graded.";
         }

@@ -90,6 +90,7 @@ namespace Kestrel.Core.Designer
                 case "stages": return StarterKnob.Stages;
                 case "fuel": return StarterKnob.FuelNotch;
                 case "boosters": return StarterKnob.Boosters;
+                case "landing": return StarterKnob.Landing;
                 default: return StarterKnob.None;
             }
         }
@@ -102,6 +103,7 @@ namespace Kestrel.Core.Designer
                 case StarterKnob.Stages: return "stages";
                 case StarterKnob.FuelNotch: return "fuel";
                 case StarterKnob.Boosters: return "boosters";
+                case StarterKnob.Landing: return "landing";
                 default: return null;
             }
         }
