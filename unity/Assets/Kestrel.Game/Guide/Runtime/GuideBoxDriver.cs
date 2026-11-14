@@ -143,6 +143,8 @@ namespace Kestrel.Game.Guide
                 if (welcome) EnsureWelcomeStack();
                 return;
             }
+            // The portrait follows the setting even while the first-run sheet is up.
+            DropPortrait();
             if (welcome)
             {
                 // Welcome keeps its own stack without the corner pop; drop any pop left from an earlier On.
@@ -167,12 +169,41 @@ namespace Kestrel.Game.Guide
                 return;
             }
             DropSprite();
+            // Off, and no opening: nothing consumes the queue, so keep it empty.
             if (live != null) live.DropQueued();
+        }
+
+        void DropPortrait()
+        {
+            if (pop == null && blipSource == null && welcomeStack != null) return;
+            Silence();
+            if (stage != null) stage.Blip -= OnBlip;
+            if (pop != null)
+            {
+                pop.Tapped -= OnTap;
+                pop.Pop.RemoveFromHierarchy();
+                pop = null;
+            }
+            if (blipSource != null)
+            {
+                if (Application.isPlaying) Destroy(blipSource);
+                else DestroyImmediate(blipSource);
+                blipSource = null;
+            }
+            blipClip = null;
+            blipUntil = 0f;
+            shownKey = "";
+            if (welcomeStack != null) return;
+            if (overlay != null) overlay.RemoveFromHierarchy();
+            overlay = null;
         }
 
         void EnsureWelcomeStack()
         {
             if (welcomeStack != null || stage == null) return;
+            // Home's missions row sits higher than the 52 pt menu footer. Keep the sheet above it.
+            if (Place == GuidePlace.Menu && screen.Footer < 120f)
+                screen = screen.WithFooter(120f);
             var doc = Document != null ? Document : GetComponent<UIDocument>();
             var parent = doc != null ? doc.rootVisualElement : null;
             if (parent == null) return;

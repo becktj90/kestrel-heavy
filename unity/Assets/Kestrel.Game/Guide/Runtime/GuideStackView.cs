@@ -248,10 +248,9 @@ namespace Kestrel.Game.Guide
                 name.style.fontSize = font;
                 name.style.color = Amber;
                 name.style.unityFontStyleAndWeight = FontStyle.Bold;
-                // The name sits above SKIP. It may use that width. The body and the hint stay in the column.
-                bool nameBesidePortrait = model.Portrait && frame.Portrait > 0f && frame.H > frame.Skip + frame.Font * 2f;
-                name.style.marginRight = nameBesidePortrait ? -(frame.Skip + GuidePacing.ColumnGapPt) * scale : 0f;
-                name.style.overflow = nameBesidePortrait ? Overflow.Visible : Overflow.Hidden;
+                name.style.whiteSpace = WhiteSpace.Normal;
+                name.style.overflow = Overflow.Hidden;
+                name.style.marginRight = 0f;
             }
 
             var body = box.Q<BitmapTextElement>("guide-body");

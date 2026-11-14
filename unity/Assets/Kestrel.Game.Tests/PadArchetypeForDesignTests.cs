@@ -18,8 +18,12 @@ namespace Kestrel.Game.Tests
         static string Repo => Catalog.FindRepoRoot(Directory.GetCurrentDirectory());
         static Catalog Cat() => Catalog.LoadFromRepo(Repo);
 
-        static Design Template(string file) =>
-            Design.FromJson(MiniJson.ParseObject(File.ReadAllText(Path.Combine(Repo, "web", "js", "data", "templates", file))));
+        static Design Template(string file)
+        {
+            string shipped = Path.Combine(Repo, "web", "js", "data", "templates", file);
+            string path = File.Exists(shipped) ? shipped : Path.Combine(Repo, "tests", "fixtures", "designs", file);
+            return Design.FromJson(MiniJson.ParseObject(File.ReadAllText(path)));
+        }
 
         [Test]
         public void ArchetypeForMatchesPadForOnTemplates()
