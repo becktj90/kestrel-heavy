@@ -198,6 +198,13 @@ namespace Kestrel.Core.Designer
             }
         }
 
+        /// <summary>Look the checkout up again on the next briefing (it is cached after the first). Tests use it to run the
+        /// predictor as a player build does: KESTREL_REPO_ROOT pointed at a folder with no data/, the shipped books installed.</summary>
+        public static void ForgetBriefingRoot()
+        {
+            lock (Gate) { briefingRoot = null; briefingRootRead = false; }
+        }
+
         /// <summary>True when a checkout or installed books can build a seed-1 briefing card (DECISIONS #86).</summary>
         static bool BriefingReady => BriefingRoot != null || BriefingBooks.HasBooks;
 
