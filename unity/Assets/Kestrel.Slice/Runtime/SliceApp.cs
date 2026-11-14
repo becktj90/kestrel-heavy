@@ -2408,6 +2408,8 @@ namespace Kestrel.Slice
             if (submitted) return; submitted = true;
             hMsg.text = $"MECO  ·  {f.Altitude / 1000:F1} km  ·  {f.Speed:N0} m/s";
             again.RemoveFromClassList("hidden");
+            // A test flight is not a scored flight (DECISIONS #100): nothing leaves the device.
+            if (GameSession.IsTestFlight) return;
             bool ok = await GameCenterBridge.TrySubmitScore(GameCenterBridge.MecoAltitudeBoard, (long)System.Math.Round(f.Altitude));
             hMsg.text += ok ? "\nScore sent to Game Center" : "";
         }

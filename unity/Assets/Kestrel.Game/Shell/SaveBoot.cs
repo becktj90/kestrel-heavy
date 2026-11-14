@@ -74,14 +74,19 @@ namespace Kestrel.Game.Shell
         {
             if (session == null) return;
             if (library != null)
-                library.WatchDraft(session, () => GameSession.Current != null ? GameSession.Current.MissionId : null);
+                library.WatchDraft(session, () => GameSession.Current != null ? GameSession.Current.MissionId : null, () => GameSession.IsTestFlight);
             var wallet = CreditsPlay.Current;
             if (wallet == null || wallet.Table == null || session.Design == null) return;
-            long quote = wallet.Table.Quote(session.Design);
-            if (!wallet.HasRecord) wallet.GiftBaseline(quote);
-            else wallet.CatchUp(quote);
-            wallet.Save();
-            session.Afford = (_, after) => wallet.TryApply(wallet.Table.Quote(after));
+            // Test Flight: no Kc spent (DECISIONS #100). The wallet is not settled for a test rocket, and an edit made
+            // while a test is open is free (checked per edit: the same designer can switch between a test and a mission).
+            if (!GameSession.IsTestFlight)
+            {
+                long quote = wallet.Table.Quote(session.Design);
+                if (!wallet.HasRecord) wallet.GiftBaseline(quote);
+                else wallet.CatchUp(quote);
+                wallet.Save();
+            }
+            session.Afford = (_, after) => GameSession.IsTestFlight || wallet.TryApply(wallet.Table.Quote(after));
         }
     }
 
