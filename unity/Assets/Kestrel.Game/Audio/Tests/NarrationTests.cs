@@ -13,8 +13,7 @@ namespace Kestrel.Game.Audio.Tests
         public void NarrationMp3sStayCompressedWithAnIosOverride()
         {
             var files = Directory.GetFiles(Root, "*.mp3", SearchOption.AllDirectories);
-            Assert.AreEqual(449, files.Length);
-
+            Assert.AreEqual(456, files.Length);
             foreach (var path in files)
             {
                 var asset = path.Replace('\\', '/');
