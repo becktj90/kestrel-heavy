@@ -139,7 +139,10 @@ namespace Kestrel.Slice
             if (roomW <= 1f && card.parent != null) roomW = card.parent.layout.width;
             if (roomW <= 1f) roomW = card.resolvedStyle.width;
             // L4: cap the scale on short landscape panels, then lay the sheet out in points of that scale.
-            upp = ReportFit.Units(upp, roomW, roomH);
+            // The Test Flight card (DECISIONS #102) skips the height cap: its short body fits a 320 pt landscape
+            // sheet at full size, so its three exits keep real 44 pt+ targets instead of zooming out to ~37 pt.
+            bool testCard = card.ClassListContains(UiIds.TestCard);
+            upp = ReportFit.Units(upp, roomW, testCard ? 0f : roomH);
             float wPt = roomW > 1f && !float.IsNaN(roomW) ? roomW / upp : 375f;
             float hPt = roomH > 1f && !float.IsNaN(roomH) ? roomH / upp : 667f;
             float contentW = ReportFit.ContentWidth(wPt);
