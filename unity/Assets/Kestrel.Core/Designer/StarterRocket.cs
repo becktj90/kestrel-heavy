@@ -6,7 +6,7 @@
 // design with the full designer's own edit ops (HangarEditor.RemoveStage / AddStage / SetPropellant /
 // SetEngine / SetEngineCount / SetPropMass / SetBoosterCount), so Launch flies exactly the JSON the hangar
 // would. There is no table of approved combinations: a bad but buildable rocket launches, and may explode.
-// Only a hard schema block from Validate.Engineering (no engines, cargo that does not fit) stops Launch.
+// Hard blocks from Validate.Engineering stop Launch: schema (no engines, cargo that does not fit) and over budget (Poly Bridge).
 using System;
 using System.Collections.Generic;
 using Kestrel.Core.Data;
@@ -503,6 +503,7 @@ namespace Kestrel.Core.Designer
                 case "twr-low": return "Too heavy to leave the pad. Try less fuel.";
                 case "payload-doesnt-fit": return "The cargo doesn't fit under the nose cone.";
                 case "engines-dont-fit": return "The engines don't fit under the rocket.";
+                case "over-budget": return string.IsNullOrEmpty(b.msg) ? "Over budget. Cheapen the rocket to launch." : b.msg;
             }
             return string.IsNullOrEmpty(b?.msg) ? "This rocket can't be built." : b.msg;
         }
