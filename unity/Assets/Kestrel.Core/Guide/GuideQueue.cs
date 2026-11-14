@@ -41,6 +41,25 @@ namespace Kestrel.Core.Guide
             return t < AscentMinSeconds ? AscentMinSeconds : t;
         }
 
+        /// <summary>
+        /// Queue behind the line already showing, in call order. A decision does not drop or preempt what is in front.
+        /// The opening uses this so the greeting stays up when the career CTA is a decision.
+        /// </summary>
+        public GuideFace AppendInOrder(GuideLine line, double t, IReadOnlyDictionary<string, string> tokens, string clip)
+        {
+            if (line == null || line.Cards.Count == 0) return Face(t);
+            pending.Add(new Slot
+            {
+                Line = line,
+                Tokens = Copy(tokens),
+                Clip = clip,
+                Seq = ++seq,
+                StartT = t,
+            });
+            if (current == null) StartHead(t);
+            return Face(t);
+        }
+
         public GuideFace Push(GuideLine line, double t, IReadOnlyDictionary<string, string> tokens, string clip)
         {
             if (line == null || line.Cards.Count == 0) return Face(t);
