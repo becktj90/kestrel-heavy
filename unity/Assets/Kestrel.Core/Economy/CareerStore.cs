@@ -38,6 +38,12 @@ namespace Kestrel.Core.Economy
         public bool LoanUsed;
         /// <summary>True when this load copied a profile out of progress into the new keys.</summary>
         public bool MigratedFromProgress { get; private set; }
+        /// <summary>True when this load rescaled a bank saved under an older economy (DECISIONS #87, campaign bankMigration).</summary>
+        public bool RescaledBank { get; private set; }
+        /// <summary>The bank as saved, before the rescale. 0 unless <see cref="RescaledBank"/>.</summary>
+        public long RescaledBankFromMinor { get; private set; }
+        bool loadedBank;
+        int savedEconomy = 1;
         /// <summary>Fictional credits, when the host attached one. A fresh load never writes it.</summary>
         public CreditsWallet Wallet { get; private set; }
         /// <summary>
@@ -189,12 +195,23 @@ namespace Kestrel.Core.Economy
                 writeMissions = true;
             }
 
-            // Keep the pre-schema file once, then rewrite the current envelope.
-            if (writeCareer && careerSlot == Slot.Ok && careerSchema < NativeStore.Schema) store.KeepBackup(CareerKey);
-            if (writeMissions && missionSlot == Slot.Ok && missionSchema < NativeStore.Schema) store.KeepBackup(MissionsKey);
-            if (writeCareer) store.PutRecord(CareerKey, "career", WriteCareer());
-            if (writeMissions) store.PutRecord(MissionsKey, "missions", WriteMissions());
             MigratedFromProgress = writeCareer || writeMissions;
+
+            // DECISIONS #87: a bank saved under an older economy is rescaled once, then the save records the new economy.
+            bool rescale = loadedBank && campaign.Migration != null && savedEconomy < campaign.Economy
+                && savedEconomy == campaign.Migration.FromEconomy;
+            if (rescale)
+            {
+                RescaledBankFromMinor = Career.BankMinor;
+                Career.BankMinor = Career.MigrateBankMinor(campaign, Career.BankMinor, Career.Cleared, minorPerKc);
+                RescaledBank = true;
+            }
+
+            // Keep the pre-schema (or pre-economy) file once, then rewrite the current envelope.
+            if (careerSlot == Slot.Ok && ((writeCareer && careerSchema < NativeStore.Schema) || rescale)) store.KeepBackup(CareerKey);
+            if (writeMissions && missionSlot == Slot.Ok && missionSchema < NativeStore.Schema) store.KeepBackup(MissionsKey);
+            if (writeCareer || rescale) store.PutRecord(CareerKey, "career", WriteCareer());
+            if (writeMissions) store.PutRecord(MissionsKey, "missions", WriteMissions());
         }
 
         Slot ReadSlot(string key, string kind, out JsonObject data, out int schema)
@@ -245,7 +262,12 @@ namespace Kestrel.Core.Economy
         {
             if (data == null) return;
             if (TryLong(data.ContainsKey("bankMinor") ? data["bankMinor"] : null, out long bank))
+            {
                 Career.BankMinor = bank;
+                loadedBank = true;
+            }
+            // A save without the field was written before economy 2 (DECISIONS #87).
+            savedEconomy = TryInt(data.ContainsKey("economy") ? data["economy"] : null, out int economy) && economy >= 1 ? economy : 1;
             bool clearedSet = TryInt(data.ContainsKey("cleared") ? data["cleared"] : null, out int cleared) && cleared >= 0;
             if (clearedSet) Career.Cleared = cleared;
             if (data.ContainsKey("unlocks") && data["unlocks"] is List<object> list)
@@ -319,6 +341,8 @@ namespace Kestrel.Core.Economy
         {
             var data = new JsonObject();
             data.Add("bankMinor", Career.BankMinor);
+            // An economy 1 campaign writes no field, so its saves stay byte-for-byte as they were.
+            if (campaign.Economy > 1) data.Add("economy", campaign.Economy);
             data.Add("cleared", Career.Cleared);
             var unlocks = new List<string>(Career.Unlocks);
             unlocks.Sort(StringComparer.Ordinal);
