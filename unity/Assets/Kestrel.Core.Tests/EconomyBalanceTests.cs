@@ -1,6 +1,7 @@
-// DECISIONS #87: hardware cost matters, gently. Each mission's Starter default (its campaign winner) costs 5-20% of
-// that mission's reward, the Hopper stays free, the range credit keeps every Starter default affordable however many
-// flights miss, and an economy 1 bank is rescaled once on load. docs/ECONOMY.md carries the table.
+// DECISIONS #87 / #100: hardware cost matters, gently (Poly Bridge). Each mission's Starter default costs 5-20% of
+// that mission's reward, over budget blocks launch, under budget pays an unspent bonus, the Hopper stays free, the
+// range credit keeps every Starter default affordable however many flights miss, and an economy 1 bank is rescaled
+// once on load. docs/ECONOMY.md carries the table.
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -58,9 +59,9 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
-        public void NoStarterSetting_FailsOnBudget()
+        public void NoStarterSetting_ExceedsBudget()
         {
-            // The budget is a pass gate (MissReason "budget"). Every Starter setting, not just the default, fits under it.
+            // Poly Bridge: over budget blocks launch. Every Starter setting, not just the default, fits under it.
             foreach (var m in campaign.Missions)
             {
                 var rocket = StarterFixture.Rocket(m.Id);
@@ -72,10 +73,62 @@ namespace Kestrel.Core.Tests
                 {
                     if (!rocket.IsStagesAllowed(stages) || !rocket.IsBoostersAllowed(boosters)) continue;
                     var choice = new StarterChoice(e, stages, notch, boosters);
-                    long cost = CostModel.PriceDesign(catalog, Design.FromJson(rocket.BuildDesign(choice))).recurring;
+                    var design = rocket.BuildDesign(choice);
+                    long cost = CostModel.PriceDesign(catalog, Design.FromJson(design)).recurring;
                     Assert.LessOrEqual(cost, budget, m.Id + " " + choice.Key);
+                    var check = StarterRocket.CheckDesign(catalog, design, m);
+                    Assert.AreNotEqual("over-budget", check.BlockCode, m.Id + " " + choice.Key);
                 }
             }
+        }
+
+        [Test]
+        public void OverBudget_LaunchIsRefused()
+        {
+            var m = campaign.Mission(1);
+            var rocket = StarterFixture.Rocket(m.Id);
+            var design = rocket.BuildDesign(rocket.Default);
+            long cost = CostModel.PriceDesign(catalog, Design.FromJson(design)).recurring;
+            double costKc = cost / (double)perKc;
+            Assert.Greater(costKc, 0);
+            // Stamp a budget below the quote: Validate must block and name how far over.
+            JsonMut.Set(design, "budgetKc", Math.Max(1, costKc * 0.5));
+            var report = Validate.Engineering(catalog, design);
+            Assert.IsFalse(report.ok);
+            var block = report.blocks.Find(b => b.code == "over-budget");
+            Assert.IsNotNull(block);
+            StringAssert.Contains("Over budget by", block.msg);
+            StringAssert.Contains("Kc", block.msg);
+            var check = StarterRocket.CheckDesign(catalog, design, m);
+            Assert.IsTrue(check.Blocked);
+            Assert.AreEqual("over-budget", check.BlockCode);
+            StringAssert.Contains("Over budget by", check.BlockReason);
+        }
+
+        [Test]
+        public void UnderBudget_BonusIsPaid()
+        {
+            var m = campaign.Mission(1);
+            long budget = Career.KcToMinor(m.BudgetKc, perKc);
+            long reward = Career.KcToMinor(m.RewardKc, perKc);
+            long cost = DefaultMinor(m);
+            Assert.Less(cost, budget, "Starter default must sit under the budget");
+            long wantBonus = budget - cost;
+            var career = Career.Start(campaign, perKc);
+            long before = career.BankMinor;
+            var pass = career.Settle(m.Index, true, cost, 0, "core");
+            Assert.IsTrue(pass.passed);
+            Assert.AreEqual(wantBonus, pass.unspentBonusMinor, "unspent bonus equals budget − cost");
+            Assert.AreEqual(reward, pass.rewardMinor);
+            Assert.AreEqual(reward + wantBonus - cost, pass.deltaMinor, "reward + unspent bonus − hardware");
+            Assert.AreEqual(before + pass.deltaMinor, career.BankMinor);
+            Assert.Greater(pass.unspentBonusMinor, 0);
+
+            // At the cap the bonus is 0 and the mission purse breaks even before recovery.
+            var atCap = Career.Start(campaign, perKc);
+            var cap = atCap.Settle(m.Index, true, budget, 0, "core");
+            Assert.AreEqual(0, cap.unspentBonusMinor);
+            Assert.AreEqual(reward - budget, cap.deltaMinor);
         }
 
         [Test]

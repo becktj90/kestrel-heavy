@@ -46,7 +46,6 @@ namespace Kestrel.Game.Guide
         public static bool Active(LiveGuideEngine engine)
         {
             if (engine == null || engine.State.FirstRunDone) return false;
-            if (engine.Pending.Count > 0) return true;
             return !IsComplete(engine.State);
         }
 
@@ -108,15 +107,15 @@ namespace Kestrel.Game.Guide
         static string PebbleName(Campaign campaign)
         {
             var m1 = campaign?.Missions != null && campaign.Missions.Count > 0 ? campaign.Missions[0] : null;
-            if (m1?.Briefing != null && !string.IsNullOrEmpty(m1.Briefing.PayloadName)) return m1.Briefing.PayloadName;
+            if (m1 != null && !string.IsNullOrEmpty(m1.PayloadName)) return m1.PayloadName;
             return "Pebble";
         }
 
         static string ApogeeKm(Campaign campaign)
         {
             var m1 = campaign?.Missions != null && campaign.Missions.Count > 0 ? campaign.Missions[0] : null;
-            if (m1?.Target != null && m1.Target.ApoKm > 0)
-                return m1.Target.ApoKm.ToString("0", CultureInfo.InvariantCulture);
+            if (m1 != null && m1.ApoKm > 0)
+                return m1.ApoKm.ToString("0", CultureInfo.InvariantCulture);
             return "10";
         }
     }

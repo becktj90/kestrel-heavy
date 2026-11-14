@@ -207,9 +207,11 @@ namespace Kestrel.Core.Tests
             var pass = career.Settle(1, true, cost, hardware, "core");
             Assert.IsTrue(pass.accepted && pass.passed);
             long reward = Career.KcToMinor(campaign.Mission(1).RewardKc, perKc);
+            long budget = Career.KcToMinor(campaign.Mission(1).BudgetKc, perKc);
             Assert.AreEqual(reward, pass.rewardMinor);
+            Assert.AreEqual(budget - cost, pass.unspentBonusMinor);
             Assert.AreEqual(CostModel.ReuseRefundMinor(hardware, 0), pass.refundMinor);
-            Assert.AreEqual(before + reward - cost + pass.refundMinor, career.BankMinor);
+            Assert.AreEqual(before + reward + pass.unspentBonusMinor - cost + pass.refundMinor, career.BankMinor);
             Assert.AreEqual(1, pass.cleared);
             Assert.IsTrue(career.HasUnlock("fins"));
             Assert.IsTrue(career.HasUnlock("nose"));
