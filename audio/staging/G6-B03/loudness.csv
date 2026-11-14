@@ -1,0 +1,211 @@
+id,take,file,voice,event,layer,duration_sec,LUFS,dBTP,in_spec,issues,variant,sources
+host/brief.haven.g6-1#a,1,host__brief.haven.g6-1__a.t1.mp3,Sarah,brief.haven,longform,6.087,-16.45,-3.21,yes,,main,G6-27 (src/gsources.py)
+host/brief.haven.g6-1#a,2,host__brief.haven.g6-1__a.t2.mp3,Sarah,brief.haven,longform,6.269,-16.43,-3.01,yes,,main,G6-27 (src/gsources.py)
+host/brief.haven.g6-1#b,1,host__brief.haven.g6-1__b.t1.mp3,Chris,brief.haven,longform,5.695,-16.65,-1.61,yes,,main,
+host/brief.haven.g6-1#b,2,host__brief.haven.g6-1__b.t2.mp3,Chris,brief.haven,longform,5.381,-16.45,-2.05,yes,,main,
+host/brief.haven.g6-1#c,1,host__brief.haven.g6-1__c.t1.mp3,Sarah,brief.haven,longform,4.415,-16.45,-3.17,yes,,main,
+host/brief.haven.g6-1#c,2,host__brief.haven.g6-1__c.t2.mp3,Sarah,brief.haven,longform,4.493,-16.45,-3.23,yes,,main,
+host/color.recovery.g6-1#a,1,host__color.recovery.g6-1__a.t1.mp3,Sarah,color.recovery,color,1.855,-16.44,-3.23,yes,,main,G6-27 (src/gsources.py)
+host/color.recovery.g6-1#a,2,host__color.recovery.g6-1__a.t2.mp3,Sarah,color.recovery,color,1.802,-16.44,-3.25,yes,,main,G6-27 (src/gsources.py)
+host/color.recovery.g6-1#b,1,host__color.recovery.g6-1__b.t1.mp3,Chris,color.recovery,color,3.056,-16.45,-1.83,yes,,main,
+host/color.recovery.g6-1#b,2,host__color.recovery.g6-1__b.t2.mp3,Chris,color.recovery,color,3.161,-16.45,-2.12,yes,,main,
+host/color.recovery.g6-2#a,1,host__color.recovery.g6-2__a.t1.mp3,Sarah,color.recovery,color,2.116,-16.43,-3.07,yes,,main,
+host/color.recovery.g6-2#a,2,host__color.recovery.g6-2__a.t2.mp3,Sarah,color.recovery,color,2.168,-16.44,-3.22,yes,,main,
+host/color.recovery.g6-2#b,1,host__color.recovery.g6-2__b.t1.mp3,Chris,color.recovery,color,3.239,-16.45,-1.99,yes,,main,
+host/color.recovery.g6-2#b,2,host__color.recovery.g6-2__b.t2.mp3,Chris,color.recovery,color,3.056,-16.5,-2.23,yes,,main,
+host/color.recovery.g6-3#a,1,host__color.recovery.g6-3__a.t1.mp3,Sarah,color.recovery,color,3.291,-16.44,-3.0,yes,,main,G6-45 (src/gsources.py)
+host/color.recovery.g6-3#a,2,host__color.recovery.g6-3__a.t2.mp3,Sarah,color.recovery,color,3.161,-16.44,-3.36,yes,,main,G6-45 (src/gsources.py)
+host/color.recovery.g6-3#b,1,host__color.recovery.g6-3__b.t1.mp3,Chris,color.recovery,color,2.952,-16.43,-1.97,yes,,main,
+host/color.recovery.g6-3#b,2,host__color.recovery.g6-3__b.t2.mp3,Chris,color.recovery,color,3.056,-16.43,-1.76,yes,,main,
+host/color.recovery.g6-4#a,1,host__color.recovery.g6-4__a.t1.mp3,Sarah,color.recovery,color,2.116,-16.44,-3.36,yes,,main,G6-44 (src/gsources.py)
+host/color.recovery.g6-4#a,2,host__color.recovery.g6-4__a.t2.mp3,Sarah,color.recovery,color,2.325,-16.44,-3.25,yes,,main,G6-44 (src/gsources.py)
+host/color.recovery.g6-4#b,1,host__color.recovery.g6-4__b.t1.mp3,Chris,color.recovery,color,2.638,-16.5,-1.68,yes,,main,
+host/color.recovery.g6-4#b,2,host__color.recovery.g6-4__b.t2.mp3,Chris,color.recovery,color,2.638,-16.98,-1.66,yes,,main,
+host/color.recovery.g6-5#a,1,host__color.recovery.g6-5__a.t1.mp3,Sarah,color.recovery,color,2.534,-16.43,-1.66,yes,,main,G6-77 (src/gsources.py)
+host/color.recovery.g6-5#a,2,host__color.recovery.g6-5__a.t2.mp3,Sarah,color.recovery,color,2.586,-16.43,-3.14,yes,,main,G6-77 (src/gsources.py)
+host/color.recovery.g6-5#b,1,host__color.recovery.g6-5__b.t1.mp3,Chris,color.recovery,color,3.422,-16.68,-1.6,yes,,main,
+host/color.recovery.g6-5#b,2,host__color.recovery.g6-5__b.t2.mp3,Chris,color.recovery,color,3.422,-16.69,-1.96,yes,,main,
+host/explain.abort.g6-1#a,1,host__explain.abort.g6-1__a.t1.mp3,Sarah,explain.abort,longform,5.747,-16.45,-2.99,yes,,main,
+host/explain.abort.g6-1#a,2,host__explain.abort.g6-1__a.t2.mp3,Sarah,explain.abort,longform,6.034,-16.44,-3.21,yes,,main,
+host/explain.abort.g6-1#b,1,host__explain.abort.g6-1__b.t1.mp3,Chris,explain.abort,longform,4.258,-16.46,-2.27,yes,,main,
+host/explain.abort.g6-1#b,2,host__explain.abort.g6-1__b.t2.mp3,Chris,explain.abort,longform,4.624,-16.43,-1.98,yes,,main,
+host/explain.abort.g6-1#c,1,host__explain.abort.g6-1__c.t1.mp3,Sarah,explain.abort,longform,5.042,-16.45,-3.24,yes,,main,
+host/explain.abort.g6-1#c,2,host__explain.abort.g6-1__c.t2.mp3,Sarah,explain.abort,longform,5.277,-16.44,-3.01,yes,,main,
+host/explain.failure.g6-1#a,1,host__explain.failure.g6-1__a.t1.mp3,Sarah,explain.failure,longform,6.949,-16.44,-3.17,yes,,main,G6-50 (src/gsources.py)
+host/explain.failure.g6-1#a,2,host__explain.failure.g6-1__a.t2.mp3,Sarah,explain.failure,longform,6.531,-16.44,-3.22,yes,,main,G6-50 (src/gsources.py)
+host/explain.failure.g6-1#b,1,host__explain.failure.g6-1__b.t1.mp3,Chris,explain.failure,longform,3.527,-16.46,-1.87,yes,,main,
+host/explain.failure.g6-1#b,2,host__explain.failure.g6-1__b.t2.mp3,Chris,explain.failure,longform,3.657,-16.79,-1.86,yes,,main,
+host/explain.failure.g6-1#c,1,host__explain.failure.g6-1__c.t1.mp3,Sarah,explain.failure,longform,5.146,-16.44,-3.17,yes,,main,
+host/explain.failure.g6-1#c,2,host__explain.failure.g6-1__c.t2.mp3,Sarah,explain.failure,longform,4.911,-16.42,-3.12,yes,,main,
+host/explain.scrub.g6-1#a,1,host__explain.scrub.g6-1__a.t1.mp3,Sarah,explain.scrub,longform,7.053,-16.44,-3.02,yes,,main,G6-48 (src/gsources.py)
+host/explain.scrub.g6-1#a,2,host__explain.scrub.g6-1__a.t2.mp3,Sarah,explain.scrub,longform,6.583,-16.43,-3.21,yes,,main,G6-48 (src/gsources.py)
+host/explain.scrub.g6-1#b,1,host__explain.scrub.g6-1__b.t1.mp3,Chris,explain.scrub,longform,4.441,-16.93,-1.62,yes,,main,
+host/explain.scrub.g6-1#b,2,host__explain.scrub.g6-1__b.t2.mp3,Chris,explain.scrub,longform,4.911,-16.78,-2.03,yes,,main,
+host/explain.scrub.g6-1#c,1,host__explain.scrub.g6-1__c.t1.mp3,Sarah,explain.scrub,longform,5.042,-16.43,-3.04,yes,,main,
+host/explain.scrub.g6-1#c,2,host__explain.scrub.g6-1__c.t2.mp3,Sarah,explain.scrub,longform,5.329,-16.44,-3.13,yes,,main,
+host/explain.staging-risk.g6-1#a,1,host__explain.staging-risk.g6-1__a.t1.mp3,Sarah,explain.staging-risk,longform,6.217,-16.44,-3.22,yes,,main,G6-51 (src/gsources.py)
+host/explain.staging-risk.g6-1#a,2,host__explain.staging-risk.g6-1__a.t2.mp3,Sarah,explain.staging-risk,longform,6.165,-16.45,-3.07,yes,,main,G6-51 (src/gsources.py)
+host/explain.staging-risk.g6-1#b,1,host__explain.staging-risk.g6-1__b.t1.mp3,Chris,explain.staging-risk,longform,3.84,-16.43,-1.88,yes,,main,
+host/explain.staging-risk.g6-1#b,2,host__explain.staging-risk.g6-1__b.t2.mp3,Chris,explain.staging-risk,longform,4.624,-16.45,-1.59,yes,,main,
+host/explain.staging-risk.g6-1#c,1,host__explain.staging-risk.g6-1__c.t1.mp3,Sarah,explain.staging-risk,longform,4.493,-16.43,-3.23,yes,,main,
+host/explain.staging-risk.g6-1#c,2,host__explain.staging-risk.g6-1__c.t2.mp3,Sarah,explain.staging-risk,longform,4.833,-16.44,-3.4,yes,,main,
+host/haven-maxq.g6-1,1,host__haven-maxq.g6-1.t1.mp3,Sarah,haven-maxq,call,4.206,-16.44,-2.98,yes,,main,G6-25 (src/gsources.py)
+host/haven-maxq.g6-1,2,host__haven-maxq.g6-1.t2.mp3,Sarah,haven-maxq,call,4.493,-16.42,-3.3,yes,,main,G6-25 (src/gsources.py)
+host/haven-maxq.g6-2,1,host__haven-maxq.g6-2.t1.mp3,Sarah,haven-maxq,call,3.997,-16.43,-3.02,yes,,main,G6-25 (src/gsources.py)
+host/haven-maxq.g6-2,2,host__haven-maxq.g6-2.t2.mp3,Sarah,haven-maxq,call,3.657,-16.43,-3.18,yes,,main,G6-25 (src/gsources.py)
+host/haven-maxq.g6-3,1,host__haven-maxq.g6-3.t1.mp3,Sarah,haven-maxq,call,3.657,-16.43,-3.02,yes,,main,G6-25 (src/gsources.py)
+host/haven-maxq.g6-3,2,host__haven-maxq.g6-3.t2.mp3,Sarah,haven-maxq,call,4.023,-16.44,-2.97,yes,,main,G6-25 (src/gsources.py)
+host/idle.mission.m1.g6-1#a,1,host__idle.mission.m1.g6-1__a.t1.mp3,Sarah,idle.mission.m1,longform,5.616,-16.43,-2.95,yes,,main,G6-1 (src/gsources.py)
+host/idle.mission.m1.g6-1#a,2,host__idle.mission.m1.g6-1__a.t2.mp3,Sarah,idle.mission.m1,longform,5.669,-16.45,-3.38,yes,,main,G6-1 (src/gsources.py)
+host/idle.mission.m1.g6-1#b,1,host__idle.mission.m1.g6-1__b.t1.mp3,Chris,idle.mission.m1,longform,3.657,-16.43,-2.01,yes,,main,
+host/idle.mission.m1.g6-1#b,2,host__idle.mission.m1.g6-1__b.t2.mp3,Chris,idle.mission.m1,longform,3.422,-16.43,-2.05,yes,,main,
+host/idle.mission.m1.g6-1#c,1,host__idle.mission.m1.g6-1__c.t1.mp3,Sarah,idle.mission.m1,longform,4.78,-16.44,-3.23,yes,,main,
+host/idle.mission.m1.g6-1#c,2,host__idle.mission.m1.g6-1__c.t2.mp3,Sarah,idle.mission.m1,longform,4.859,-16.43,-3.38,yes,,main,
+host/idle.mission.m2.g6-1#a,1,host__idle.mission.m2.g6-1__a.t1.mp3,Sarah,idle.mission.m2,longform,6.818,-16.43,-3.19,yes,,main,G6-3 (src/gsources.py)
+host/idle.mission.m2.g6-1#a,2,host__idle.mission.m2.g6-1__a.t2.mp3,Sarah,idle.mission.m2,longform,6.635,-16.45,-3.37,yes,,main,G6-3 (src/gsources.py)
+host/idle.mission.m2.g6-1#b,1,host__idle.mission.m2.g6-1__b.t1.mp3,Chris,idle.mission.m2,longform,4.963,-16.44,-1.66,yes,,main,
+host/idle.mission.m2.g6-1#b,2,host__idle.mission.m2.g6-1__b.t2.mp3,Chris,idle.mission.m2,longform,5.433,-16.43,-2.01,yes,,main,
+host/idle.mission.m2.g6-1#c,1,host__idle.mission.m2.g6-1__c.t1.mp3,Sarah,idle.mission.m2,longform,5.146,-16.43,-3.27,yes,,main,
+host/idle.mission.m2.g6-1#c,2,host__idle.mission.m2.g6-1__c.t2.mp3,Sarah,idle.mission.m2,longform,4.963,-16.43,-3.33,yes,,main,
+host/idle.mission.m3.g6-1#a,1,host__idle.mission.m3.g6-1__a.t1.mp3,Sarah,idle.mission.m3,longform,6.296,-16.44,-3.25,yes,,main,G6-64 (src/gsources.py)
+host/idle.mission.m3.g6-1#a,2,host__idle.mission.m3.g6-1__a.t2.mp3,Sarah,idle.mission.m3,longform,5.695,-16.45,-3.23,yes,,main,G6-64 (src/gsources.py)
+host/idle.mission.m3.g6-1#b,1,host__idle.mission.m3.g6-1__b.t1.mp3,Chris,idle.mission.m3,longform,4.963,-16.4,-1.73,yes,,main,
+host/idle.mission.m3.g6-1#b,2,host__idle.mission.m3.g6-1__b.t2.mp3,Chris,idle.mission.m3,longform,5.016,-16.47,-1.79,yes,,main,
+host/idle.mission.m3.g6-1#c,1,host__idle.mission.m3.g6-1__c.t1.mp3,Sarah,idle.mission.m3,longform,5.094,-16.44,-3.09,yes,,main,
+host/idle.mission.m3.g6-1#c,2,host__idle.mission.m3.g6-1__c.t2.mp3,Sarah,idle.mission.m3,longform,5.016,-16.43,-3.14,yes,,main,
+host/idle.mission.m4.g6-1#a,1,host__idle.mission.m4.g6-1__a.t1.mp3,Sarah,idle.mission.m4,longform,5.878,-16.43,-2.69,yes,,main,G6-5 (src/gsources.py)
+host/idle.mission.m4.g6-1#a,2,host__idle.mission.m4.g6-1__a.t2.mp3,Sarah,idle.mission.m4,longform,6.165,-16.44,-3.0,yes,,main,G6-5 (src/gsources.py)
+host/idle.mission.m4.g6-1#b,1,host__idle.mission.m4.g6-1__b.t1.mp3,Chris,idle.mission.m4,longform,4.545,-16.73,-1.83,yes,,main,
+host/idle.mission.m4.g6-1#b,2,host__idle.mission.m4.g6-1__b.t2.mp3,Chris,idle.mission.m4,longform,4.362,-16.85,-1.59,yes,,main,
+host/idle.mission.m4.g6-1#c,1,host__idle.mission.m4.g6-1__c.t1.mp3,Sarah,idle.mission.m4,longform,3.344,-16.46,-2.84,yes,,main,
+host/idle.mission.m4.g6-1#c,2,host__idle.mission.m4.g6-1__c.t2.mp3,Sarah,idle.mission.m4,longform,3.657,-16.42,-2.99,yes,,main,
+host/idle.mission.m5.g6-1#a,1,host__idle.mission.m5.g6-1__a.t1.mp3,Sarah,idle.mission.m5,longform,7.419,-16.44,-3.23,yes,,main,G6-26 (src/gsources.py)
+host/idle.mission.m5.g6-1#a,2,host__idle.mission.m5.g6-1__a.t2.mp3,Sarah,idle.mission.m5,longform,7.288,-16.43,-3.27,yes,,main,G6-26 (src/gsources.py)
+host/idle.mission.m5.g6-1#b,1,host__idle.mission.m5.g6-1__b.t1.mp3,Chris,idle.mission.m5,longform,5.381,-16.65,-1.71,yes,,main,
+host/idle.mission.m5.g6-1#b,2,host__idle.mission.m5.g6-1__b.t2.mp3,Chris,idle.mission.m5,longform,5.512,-16.44,-1.76,yes,,main,
+host/idle.mission.m5.g6-1#c,1,host__idle.mission.m5.g6-1__c.t1.mp3,Sarah,idle.mission.m5,longform,4.911,-16.45,-3.3,yes,,main,
+host/idle.mission.m5.g6-1#c,2,host__idle.mission.m5.g6-1__c.t2.mp3,Sarah,idle.mission.m5,longform,5.016,-16.45,-3.29,yes,,main,
+host/idle.mission.m6.g6-1#a,1,host__idle.mission.m6.g6-1__a.t1.mp3,Sarah,idle.mission.m6,longform,8.62,-16.44,-3.36,yes,,main,G6-7 (src/gsources.py)
+host/idle.mission.m6.g6-1#a,2,host__idle.mission.m6.g6-1__a.t2.mp3,Sarah,idle.mission.m6,longform,8.803,-16.43,-3.17,yes,,main,G6-7 (src/gsources.py)
+host/idle.mission.m6.g6-1#b,1,host__idle.mission.m6.g6-1__b.t1.mp3,Chris,idle.mission.m6,longform,4.31,-16.45,-2.04,yes,,main,
+host/idle.mission.m6.g6-1#b,2,host__idle.mission.m6.g6-1__b.t2.mp3,Chris,idle.mission.m6,longform,4.18,-16.44,-1.68,yes,,main,
+host/idle.mission.m6.g6-1#c,1,host__idle.mission.m6.g6-1__c.t1.mp3,Sarah,idle.mission.m6,longform,4.728,-16.46,-3.04,yes,,main,
+host/idle.mission.m6.g6-1#c,2,host__idle.mission.m6.g6-1__c.t2.mp3,Sarah,idle.mission.m6,longform,5.146,-16.44,-3.05,yes,,main,
+host/idle.mission.m7.g6-1#a,1,host__idle.mission.m7.g6-1__a.t1.mp3,Sarah,idle.mission.m7,longform,5.433,-16.44,-2.84,yes,,main,G6-28 (src/gsources.py)
+host/idle.mission.m7.g6-1#a,2,host__idle.mission.m7.g6-1__a.t2.mp3,Sarah,idle.mission.m7,longform,5.433,-16.44,-2.87,yes,,main,G6-28 (src/gsources.py)
+host/idle.mission.m7.g6-1#b,1,host__idle.mission.m7.g6-1__b.t1.mp3,Chris,idle.mission.m7,longform,4.545,-16.97,-1.89,yes,,main,
+host/idle.mission.m7.g6-1#b,2,host__idle.mission.m7.g6-1__b.t2.mp3,Chris,idle.mission.m7,longform,4.598,-16.58,-1.78,yes,,main,
+host/idle.mission.m7.g6-1#c,1,host__idle.mission.m7.g6-1__c.t1.mp3,Sarah,idle.mission.m7,longform,4.859,-16.42,-3.09,yes,,main,
+host/idle.mission.m7.g6-1#c,2,host__idle.mission.m7.g6-1__c.t2.mp3,Sarah,idle.mission.m7,longform,4.598,-16.44,-3.34,yes,,main,
+host/landing.alt.10.g6-2,1,host__landing.alt.10.g6-2.t1.mp3,Sarah,landing.alt.10,call,4.127,-16.44,-3.14,yes,,main,
+host/landing.alt.10.g6-2,2,host__landing.alt.10.g6-2.t2.mp3,Sarah,landing.alt.10,call,3.944,-16.43,-3.06,yes,,main,
+host/landing.alt.100.g6-2,1,host__landing.alt.100.g6-2.t1.mp3,Sarah,landing.alt.100,call,3.161,-16.44,-3.45,yes,,main,
+host/landing.alt.100.g6-2,2,host__landing.alt.100.g6-2.t2.mp3,Sarah,landing.alt.100,call,2.952,-16.45,-3.33,yes,,main,
+host/landing.alt.1k.g6-2,1,host__landing.alt.1k.g6-2.t1.mp3,Sarah,landing.alt.1k,call,3.422,-16.44,-3.22,yes,,main,
+host/landing.alt.1k.g6-2,2,host__landing.alt.1k.g6-2.t2.mp3,Sarah,landing.alt.1k,call,3.527,-16.46,-3.14,yes,,main,
+host/landing.alt.500.g6-2,1,host__landing.alt.500.g6-2.t1.mp3,Sarah,landing.alt.500,call,3.161,-16.46,-3.35,yes,,main,
+host/landing.alt.500.g6-2,2,host__landing.alt.500.g6-2.t2.mp3,Sarah,landing.alt.500,call,3.161,-16.46,-2.78,yes,,main,
+host/landing.g6-3,1,host__landing.g6-3.t1.mp3,Sarah,landing,call,3.788,-16.44,-1.95,yes,,main,
+host/landing.g6-3,2,host__landing.g6-3.t2.mp3,Sarah,landing,call,4.415,-16.45,-3.15,yes,,main,
+host/landing.g6-4,1,host__landing.g6-4.t1.mp3,Sarah,landing,call,3.709,-16.55,-2.89,yes,,main,
+host/landing.g6-4,2,host__landing.g6-4.t2.mp3,Sarah,landing,call,4.023,-16.44,-3.14,yes,,main,
+host/landing.g6-5,1,host__landing.g6-5.t1.mp3,Sarah,landing,call,3.944,-16.43,-3.43,yes,,main,G6-27 (src/gsources.py)
+host/landing.g6-5,2,host__landing.g6-5.t2.mp3,Sarah,landing,call,4.023,-16.43,-3.58,yes,,main,G6-27 (src/gsources.py)
+host/menu.mission.history.m1.g6-1#a,1,host__menu.mission.history.m1.g6-1__a.t1.mp3,Sarah,menu.mission.history.m1,longform,5.381,-16.44,-3.15,yes,,main,G6-1 (src/gsources.py)
+host/menu.mission.history.m1.g6-1#a,2,host__menu.mission.history.m1.g6-1__a.t2.mp3,Sarah,menu.mission.history.m1,longform,5.669,-16.43,-3.15,yes,,main,G6-1 (src/gsources.py)
+host/menu.mission.history.m1.g6-1#b,1,host__menu.mission.history.m1.g6-1__b.t1.mp3,Chris,menu.mission.history.m1,longform,4.441,-16.78,-1.7,yes,,main,
+host/menu.mission.history.m1.g6-1#b,2,host__menu.mission.history.m1.g6-1__b.t2.mp3,Chris,menu.mission.history.m1,longform,4.493,-16.9,-1.79,yes,,main,
+host/menu.mission.history.m1.g6-1#c,1,host__menu.mission.history.m1.g6-1__c.t1.mp3,Sarah,menu.mission.history.m1,longform,5.277,-16.43,-3.26,yes,,main,
+host/menu.mission.history.m1.g6-1#c,2,host__menu.mission.history.m1.g6-1__c.t2.mp3,Sarah,menu.mission.history.m1,longform,5.016,-16.41,-3.25,yes,,main,
+host/menu.mission.history.m2.g6-1#a,1,host__menu.mission.history.m2.g6-1__a.t1.mp3,Sarah,menu.mission.history.m2,longform,5.799,-16.44,-2.92,yes,,main,G6-2 (src/gsources.py)
+host/menu.mission.history.m2.g6-1#a,2,host__menu.mission.history.m2.g6-1__a.t2.mp3,Sarah,menu.mission.history.m2,longform,6.113,-16.44,-3.1,yes,,main,G6-2 (src/gsources.py)
+host/menu.mission.history.m2.g6-1#b,1,host__menu.mission.history.m2.g6-1__b.t1.mp3,Chris,menu.mission.history.m2,longform,4.833,-16.44,-1.97,yes,,main,
+host/menu.mission.history.m2.g6-1#b,2,host__menu.mission.history.m2.g6-1__b.t2.mp3,Chris,menu.mission.history.m2,longform,4.859,-16.45,-2.18,yes,,main,
+host/menu.mission.history.m2.g6-1#c,1,host__menu.mission.history.m2.g6-1__c.t1.mp3,Sarah,menu.mission.history.m2,longform,5.016,-16.44,-3.05,yes,,main,
+host/menu.mission.history.m2.g6-1#c,2,host__menu.mission.history.m2.g6-1__c.t2.mp3,Sarah,menu.mission.history.m2,longform,4.911,-16.46,-3.17,yes,,main,
+host/menu.mission.history.m3.g6-1#a,1,host__menu.mission.history.m3.g6-1__a.t1.mp3,Sarah,menu.mission.history.m3,longform,5.982,-16.43,-3.28,yes,,main,G6-4 (src/gsources.py)
+host/menu.mission.history.m3.g6-1#a,2,host__menu.mission.history.m3.g6-1__a.t2.mp3,Sarah,menu.mission.history.m3,longform,6.165,-16.45,-3.35,yes,,main,G6-4 (src/gsources.py)
+host/menu.mission.history.m3.g6-1#b,1,host__menu.mission.history.m3.g6-1__b.t1.mp3,Chris,menu.mission.history.m3,longform,3.762,-16.3,-2.01,yes,,main,
+host/menu.mission.history.m3.g6-1#b,2,host__menu.mission.history.m3.g6-1__b.t2.mp3,Chris,menu.mission.history.m3,longform,3.84,-16.44,-2.14,yes,,main,
+host/menu.mission.history.m3.g6-1#c,1,host__menu.mission.history.m3.g6-1__c.t1.mp3,Sarah,menu.mission.history.m3,longform,6.087,-16.44,-3.21,yes,,main,
+host/menu.mission.history.m3.g6-1#c,2,host__menu.mission.history.m3.g6-1__c.t2.mp3,Sarah,menu.mission.history.m3,longform,6.113,-16.45,-3.22,yes,,main,
+host/menu.mission.history.m4.g6-1#a,1,host__menu.mission.history.m4.g6-1__a.t1.mp3,Sarah,menu.mission.history.m4,longform,5.878,-16.43,-2.53,yes,,main,G6-5 (src/gsources.py)
+host/menu.mission.history.m4.g6-1#a,2,host__menu.mission.history.m4.g6-1__a.t2.mp3,Sarah,menu.mission.history.m4,longform,6.165,-16.43,-3.22,yes,,main,G6-5 (src/gsources.py)
+host/menu.mission.history.m4.g6-1#b,1,host__menu.mission.history.m4.g6-1__b.t1.mp3,Chris,menu.mission.history.m4,longform,6.113,-16.45,-2.22,yes,,main,
+host/menu.mission.history.m4.g6-1#b,2,host__menu.mission.history.m4.g6-1__b.t2.mp3,Chris,menu.mission.history.m4,longform,5.747,-16.65,-1.83,yes,,main,
+host/menu.mission.history.m4.g6-1#c,1,host__menu.mission.history.m4.g6-1__c.t1.mp3,Sarah,menu.mission.history.m4,longform,5.146,-16.45,-3.36,yes,,main,
+host/menu.mission.history.m4.g6-1#c,2,host__menu.mission.history.m4.g6-1__c.t2.mp3,Sarah,menu.mission.history.m4,longform,4.963,-16.43,-3.44,yes,,main,
+host/menu.mission.history.m5.g6-1#a,1,host__menu.mission.history.m5.g6-1__a.t1.mp3,Sarah,menu.mission.history.m5,longform,7.001,-16.45,-3.25,yes,,main,G6-6 (src/gsources.py)
+host/menu.mission.history.m5.g6-1#a,2,host__menu.mission.history.m5.g6-1__a.t2.mp3,Sarah,menu.mission.history.m5,longform,7.053,-16.43,-3.2,yes,,main,G6-6 (src/gsources.py)
+host/menu.mission.history.m5.g6-1#b,1,host__menu.mission.history.m5.g6-1__b.t1.mp3,Chris,menu.mission.history.m5,longform,5.512,-16.48,-1.78,yes,,main,
+host/menu.mission.history.m5.g6-1#b,2,host__menu.mission.history.m5.g6-1__b.t2.mp3,Chris,menu.mission.history.m5,longform,5.878,-16.65,-1.67,yes,,main,
+host/menu.mission.history.m5.g6-1#c,1,host__menu.mission.history.m5.g6-1__c.t1.mp3,Sarah,menu.mission.history.m5,longform,4.493,-16.43,-3.34,yes,,main,
+host/menu.mission.history.m5.g6-1#c,2,host__menu.mission.history.m5.g6-1__c.t2.mp3,Sarah,menu.mission.history.m5,longform,4.493,-16.46,-3.3,yes,,main,
+host/menu.mission.history.m6.g6-1#a,1,host__menu.mission.history.m6.g6-1__a.t1.mp3,Sarah,menu.mission.history.m6,longform,6.113,-16.46,-3.5,yes,,main,G6-7 (src/gsources.py)
+host/menu.mission.history.m6.g6-1#a,2,host__menu.mission.history.m6.g6-1__a.t2.mp3,Sarah,menu.mission.history.m6,longform,6.087,-16.44,-3.27,yes,,main,G6-7 (src/gsources.py)
+host/menu.mission.history.m6.g6-1#b,1,host__menu.mission.history.m6.g6-1__b.t1.mp3,Chris,menu.mission.history.m6,longform,5.251,-16.8,-2.01,yes,,main,
+host/menu.mission.history.m6.g6-1#b,2,host__menu.mission.history.m6.g6-1__b.t2.mp3,Chris,menu.mission.history.m6,longform,5.564,-16.81,-1.83,yes,,main,
+host/menu.mission.history.m6.g6-1#c,1,host__menu.mission.history.m6.g6-1__c.t1.mp3,Sarah,menu.mission.history.m6,longform,4.963,-16.42,-3.12,yes,,main,
+host/menu.mission.history.m6.g6-1#c,2,host__menu.mission.history.m6.g6-1__c.t2.mp3,Sarah,menu.mission.history.m6,longform,5.146,-16.44,-2.98,yes,,main,
+host/menu.mission.history.m7.g6-1#a,1,host__menu.mission.history.m7.g6-1__a.t1.mp3,Sarah,menu.mission.history.m7,longform,6.348,-16.44,-2.89,yes,,main,G6-8 (src/gsources.py)
+host/menu.mission.history.m7.g6-1#a,2,host__menu.mission.history.m7.g6-1__a.t2.mp3,Sarah,menu.mission.history.m7,longform,5.878,-16.43,-3.35,yes,,main,G6-8 (src/gsources.py)
+host/menu.mission.history.m7.g6-1#b,1,host__menu.mission.history.m7.g6-1__b.t1.mp3,Chris,menu.mission.history.m7,longform,4.362,-16.44,-1.96,yes,,main,
+host/menu.mission.history.m7.g6-1#b,2,host__menu.mission.history.m7.g6-1__b.t2.mp3,Chris,menu.mission.history.m7,longform,4.859,-16.54,-1.77,yes,,main,
+host/menu.mission.history.m7.g6-1#c,1,host__menu.mission.history.m7.g6-1__c.t1.mp3,Sarah,menu.mission.history.m7,longform,4.545,-16.43,-3.28,yes,,main,
+host/menu.mission.history.m7.g6-1#c,2,host__menu.mission.history.m7.g6-1__c.t2.mp3,Sarah,menu.mission.history.m7,longform,4.206,-16.44,-3.06,yes,,main,
+host/recovered.g6-3,1,host__recovered.g6-3.t1.mp3,Sarah,recovered,call,3.892,-16.45,-3.02,yes,,main,
+host/recovered.g6-3,2,host__recovered.g6-3.t2.mp3,Sarah,recovered,call,4.127,-16.42,-3.17,yes,,main,
+host/recovered.g6-4,1,host__recovered.g6-4.t1.mp3,Sarah,recovered,call,4.075,-16.43,-3.38,yes,,main,
+host/recovered.g6-4,2,host__recovered.g6-4.t2.mp3,Sarah,recovered,call,4.206,-16.43,-3.24,yes,,main,
+host/recovered.g6-5,1,host__recovered.g6-5.t1.mp3,Sarah,recovered,call,3.892,-16.42,-3.18,yes,,main,
+host/recovered.g6-5,2,host__recovered.g6-5.t2.mp3,Sarah,recovered,call,3.788,-16.44,-3.08,yes,,main,
+host/splash.g6-1,1,host__splash.g6-1.t1.mp3,Sarah,splash,call,4.415,-16.44,-3.34,yes,,main,
+host/splash.g6-1,2,host__splash.g6-1.t2.mp3,Sarah,splash,call,3.474,-16.43,-3.07,yes,,main,
+host/splash.g6-2,1,host__splash.g6-2.t1.mp3,Sarah,splash,call,4.833,-16.44,-3.25,yes,,main,
+host/splash.g6-2,2,host__splash.g6-2.t2.mp3,Sarah,splash,call,5.146,-16.44,-3.34,yes,,main,
+host/touchdown.g6-3,1,host__touchdown.g6-3.t1.mp3,Sarah,touchdown,call,3.762,-16.44,-3.13,yes,,main,
+host/touchdown.g6-3,2,host__touchdown.g6-3.t2.mp3,Sarah,touchdown,call,3.709,-16.43,-3.09,yes,,main,
+host/touchdown.g6-4,1,host__touchdown.g6-4.t1.mp3,Sarah,touchdown,call,3.37,-16.45,-3.15,yes,,main,
+host/touchdown.g6-4,2,host__touchdown.g6-4.t2.mp3,Sarah,touchdown,call,3.422,-16.44,-3.04,yes,,main,
+host/touchdown.g6-5,1,host__touchdown.g6-5.t1.mp3,Sarah,touchdown,call,2.456,-16.43,-3.27,yes,,main,
+host/touchdown.g6-5,2,host__touchdown.g6-5.t2.mp3,Sarah,touchdown,call,2.821,-16.44,-3.4,yes,,main,
+mission-control/haven-maxq.g6-1,1,mission-control__haven-maxq.g6-1.t1.mp3,Eric,haven-maxq,call,2.403,-16.45,-2.75,yes,,main,G6-25 (src/gsources.py)
+mission-control/haven-maxq.g6-1,2,mission-control__haven-maxq.g6-1.t2.mp3,Eric,haven-maxq,call,2.403,-16.45,-2.64,yes,,main,G6-25 (src/gsources.py)
+mission-control/haven-maxq.g6-2,1,mission-control__haven-maxq.g6-2.t1.mp3,Eric,haven-maxq,call,2.691,-16.43,-2.88,yes,,main,G6-25 (src/gsources.py)
+mission-control/haven-maxq.g6-2,2,mission-control__haven-maxq.g6-2.t2.mp3,Eric,haven-maxq,call,2.638,-16.43,-2.95,yes,,main,G6-25 (src/gsources.py)
+mission-control/haven-maxq.g6-3,1,mission-control__haven-maxq.g6-3.t1.mp3,Eric,haven-maxq,call,2.873,-16.45,-3.38,yes,,main,G6-25 (src/gsources.py)
+mission-control/haven-maxq.g6-3,2,mission-control__haven-maxq.g6-3.t2.mp3,Eric,haven-maxq,call,2.926,-16.46,-3.32,yes,,main,G6-25 (src/gsources.py)
+mission-control/landing.alt.10.g6-3,1,mission-control__landing.alt.10.g6-3.t1.mp3,Eric,landing.alt.10,call,1.855,-16.44,-3.15,yes,,main,
+mission-control/landing.alt.10.g6-3,2,mission-control__landing.alt.10.g6-3.t2.mp3,Eric,landing.alt.10,call,1.855,-16.44,-2.72,yes,,main,
+mission-control/landing.alt.100.g6-3,1,mission-control__landing.alt.100.g6-3.t1.mp3,Eric,landing.alt.100,call,1.933,-16.43,-3.27,yes,,main,
+mission-control/landing.alt.100.g6-3,2,mission-control__landing.alt.100.g6-3.t2.mp3,Eric,landing.alt.100,call,1.907,-16.43,-3.2,yes,,main,
+mission-control/landing.alt.1k.g6-3,1,mission-control__landing.alt.1k.g6-3.t1.mp3,Eric,landing.alt.1k,call,2.038,-16.44,-2.92,yes,,main,
+mission-control/landing.alt.1k.g6-3,2,mission-control__landing.alt.1k.g6-3.t2.mp3,Eric,landing.alt.1k,call,2.168,-16.43,-2.92,yes,,main,
+mission-control/landing.alt.500.g6-3,1,mission-control__landing.alt.500.g6-3.t1.mp3,Eric,landing.alt.500,call,2.038,-16.45,-2.96,yes,,main,
+mission-control/landing.alt.500.g6-3,2,mission-control__landing.alt.500.g6-3.t2.mp3,Eric,landing.alt.500,call,1.933,-16.46,-2.92,yes,,main,
+mission-control/landing.g6-4,1,mission-control__landing.g6-4.t1.mp3,Eric,landing,call,2.168,-16.44,-3.01,yes,,main,
+mission-control/landing.g6-4,2,mission-control__landing.g6-4.t2.mp3,Eric,landing,call,2.116,-16.44,-2.84,yes,,main,
+mission-control/landing.g6-5,1,mission-control__landing.g6-5.t1.mp3,Eric,landing,call,2.325,-16.43,-2.8,yes,,main,
+mission-control/landing.g6-5,2,mission-control__landing.g6-5.t2.mp3,Eric,landing,call,2.038,-16.43,-3.08,yes,,main,
+mission-control/landing.g6-6,1,mission-control__landing.g6-6.t1.mp3,Eric,landing,call,2.743,-16.43,-2.86,yes,,main,
+mission-control/landing.g6-6,2,mission-control__landing.g6-6.t2.mp3,Eric,landing,call,2.691,-16.44,-2.48,yes,,main,
+mission-control/landing.g6-7,1,mission-control__landing.g6-7.t1.mp3,Eric,landing,call,3.187,-16.42,-2.53,yes,,main,G6-45 (src/gsources.py)
+mission-control/landing.g6-7,2,mission-control__landing.g6-7.t2.mp3,Eric,landing,call,3.109,-16.45,-2.82,yes,,main,G6-45 (src/gsources.py)
+mission-control/recovered.g6-3,1,mission-control__recovered.g6-3.t1.mp3,Eric,recovered,call,2.508,-16.45,-2.96,yes,,main,
+mission-control/recovered.g6-3,2,mission-control__recovered.g6-3.t2.mp3,Eric,recovered,call,2.508,-16.45,-3.24,yes,,main,
+mission-control/recovered.g6-4,1,mission-control__recovered.g6-4.t1.mp3,Eric,recovered,call,2.691,-16.43,-3.27,yes,,main,
+mission-control/recovered.g6-4,2,mission-control__recovered.g6-4.t2.mp3,Eric,recovered,call,2.638,-16.43,-2.99,yes,,main,
+mission-control/recovered.g6-5,1,mission-control__recovered.g6-5.t1.mp3,Eric,recovered,call,2.168,-16.42,-2.75,yes,,main,
+mission-control/recovered.g6-5,2,mission-control__recovered.g6-5.t2.mp3,Eric,recovered,call,2.22,-16.44,-2.53,yes,,main,
+mission-control/splash.g6-1,1,mission-control__splash.g6-1.t1.mp3,Eric,splash,call,2.09,-16.43,-3.09,yes,,main,
+mission-control/splash.g6-1,2,mission-control__splash.g6-1.t2.mp3,Eric,splash,call,2.168,-16.43,-3.34,yes,,main,
+mission-control/splash.g6-2,1,mission-control__splash.g6-2.t1.mp3,Eric,splash,call,3.056,-16.45,-2.6,yes,,main,
+mission-control/splash.g6-2,2,mission-control__splash.g6-2.t2.mp3,Eric,splash,call,3.161,-16.44,-2.56,yes,,main,
+mission-control/touchdown.g6-4,1,mission-control__touchdown.g6-4.t1.mp3,Eric,touchdown,call,2.769,-16.44,-3.21,yes,,main,
+mission-control/touchdown.g6-4,2,mission-control__touchdown.g6-4.t2.mp3,Eric,touchdown,call,2.952,-16.44,-2.91,yes,,main,
+mission-control/touchdown.g6-5,1,mission-control__touchdown.g6-5.t1.mp3,Eric,touchdown,call,2.351,-16.44,-2.85,yes,,main,
+mission-control/touchdown.g6-5,2,mission-control__touchdown.g6-5.t2.mp3,Eric,touchdown,call,2.273,-16.44,-2.67,yes,,main,
+mission-control/touchdown.g6-6,1,mission-control__touchdown.g6-6.t1.mp3,Eric,touchdown,call,2.351,-16.45,-2.72,yes,,main,
+mission-control/touchdown.g6-6,2,mission-control__touchdown.g6-6.t2.mp3,Eric,touchdown,call,2.403,-16.45,-2.53,yes,,main,
+mission-control/touchdown.g6-7,1,mission-control__touchdown.g6-7.t1.mp3,Eric,touchdown,call,2.038,-16.44,-3.2,yes,,main,
+mission-control/touchdown.g6-7,2,mission-control__touchdown.g6-7.t2.mp3,Eric,touchdown,call,2.09,-16.45,-2.97,yes,,main,
