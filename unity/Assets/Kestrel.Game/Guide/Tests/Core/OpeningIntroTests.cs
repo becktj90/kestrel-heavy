@@ -24,6 +24,7 @@ namespace Kestrel.Game.Guide.Tests
             var script = GuideScript.Load(root);
             StringAssert.Contains("I am Thrum", script.ById("first.1").Cards[0].Kid);
             StringAssert.Contains("KH-1", OpeningIntroSequence.CtaKid(script));
+            // Title case: GuideScript.Shouts rejects LAUNCH / MISSIONS. SKIP stays allowlisted.
             StringAssert.Contains("Launch", OpeningIntroSequence.CtaKid(script));
             StringAssert.Contains("Missions", OpeningIntroSequence.CtaKid(script));
             StringAssert.Contains("Your first rocket is ready", OpeningIntroSequence.CloseKid(script));
