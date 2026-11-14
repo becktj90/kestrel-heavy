@@ -101,6 +101,8 @@ namespace Kestrel.Core.Tests
             StringAssert.Contains("reportWatchdog.TryRelease(ascentOver, RecoveryLog.Active, cardUp, Time.unscaledTime)", host);
             StringAssert.Contains("bool cardUp = CardIsUp()", host);
             StringAssert.Contains("RetryShowCard()", host);
+            // Failure playback retries ShowCard even after UndoOpen cleared the latch (Codex P2).
+            StringAssert.Contains("else if (!cardUp && !RecoveryLog.Active)", host);
             // Watchdog must run even while the failure show plays (cardPending / RecoveryLog wait).
             int tryReleaseAt = host.IndexOf("reportWatchdog.TryRelease(ascentOver");
             int playedBranch = host.IndexOf("if (played)");

@@ -179,8 +179,13 @@ namespace Kestrel.Game.Failure
                     if (Tapped()) cardTapped = true;
                     if (FailureFx.CardOpens(age, CardDueAt, cardTapped, RecoveryLog.Active)) OpenCardNow();
                 }
-                else if (latch.Reported && !cardUp && !RecoveryLog.Active)
-                    RetryShowCard();
+                else if (!cardUp && !RecoveryLog.Active)
+                {
+                    // OpenCardNow cleared cardPending; ShowCardOrUndo may have UndoOpen'd the latch.
+                    // Keep presenting without requiring latch.Reported (Codex P2 on #531).
+                    try { ShowCard(); }
+                    catch (System.Exception e) { Debug.LogWarning("[Kestrel] post-flight card: " + e.Message); }
+                }
                 return;
             }
             var result = flight.Result;
