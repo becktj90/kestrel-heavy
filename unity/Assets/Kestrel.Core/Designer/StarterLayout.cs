@@ -458,7 +458,7 @@ namespace Kestrel.Core.Designer
             return f.Spend.Y;
         }
 
-        static float FuelRowH(StarterFrame f) => Line(f.LabelPt) + 2f + Touch;
+        static float FuelRowH(StarterFrame f) => Math.Max(Line(f.LabelPt), Line(f.EndPt)) + 2f + Touch;
 
         static float RowsHeight(StarterFrame f, StarterLayoutInput i, float w)
         {
@@ -481,7 +481,8 @@ namespace Kestrel.Core.Designer
         static void PlaceRows(StarterFrame f, StarterLayoutInput i, float x, float w, float y)
         {
             // With the "?" column the options lose 50 pt: on a narrow phone the labels wrap ("Engine / fuel") so
-            // "Kerosene" still fits its button.
+            // "Kerosene" still fits its button. Three landing chips ("Expend") need a narrower label than "Boosters"
+            // at 16 pt, or the word paints past the button on a 335-wide phone.
             float helpW = i.Help ? Touch + f.GapPt : 0f;
             bool wraps = false;
             float labelW = LabelWidth(f, w, false);
@@ -495,53 +496,80 @@ namespace Kestrel.Core.Designer
                     labelW = LabelWidth(f, w, true);
                 }
             }
-            float optX = x + labelW + f.GapPt, optW = Math.Max(Touch, x + w - helpW - optX);
-
-            f.Build = SideRow("build", x, y, labelW, optX, optW, i.Builds.Length);
-            Finish(f.Build, i, x, w, wraps);
-            y = AfterRow(f, i, StarterKnob.Build, f.Build, x, w);
-            f.Engine = SideRow("engine", x, y, labelW, optX, optW, i.Engines.Length);
-            Finish(f.Engine, i, x, w, wraps);
-            y = AfterRow(f, i, StarterKnob.Engine, f.Engine, x, w);
-            f.Stages = SideRow("stages", x, y, labelW, optX, optW, i.Stages.Length);
-            Finish(f.Stages, i, x, w, wraps);
-            y = AfterRow(f, i, StarterKnob.Stages, f.Stages, x, w);
-
-            // Fuel: the label line carries "Fuel" and the Less / More ends; the five notches span the whole row
-            // under it, so each notch stays a 44 pt target at 335.
-            var fuel = new StarterRowFrame { Key = "fuel" };
-            float lineH = Line(f.LabelPt);
-            fuel.Row = Box(x, y, w, FuelRowH(f));
-            fuel.Label = Box(x, y, labelW, lineH);
-            float endW = (float)Math.Ceiling(Math.Max(FlightHudLayout.TextWidth(StarterScreen.FuelLess, f.EndPt), FlightHudLayout.TextWidth(StarterScreen.FuelMore, f.EndPt))) + 2f;
-            float notchW = w - helpW;
-            fuel.Less = Box(optX, y, endW, lineH);
-            fuel.More = Box(x + notchW - endW, y, endW, lineH);
-            fuel.Options = Spread(x, y + lineH + 2f, notchW, StarterRocket.FuelNotches, OptionGap);
-            if (i.Help) fuel.Help = Box(x + w - Touch, y + lineH + 2f, Touch, Touch);
-            f.Fuel = fuel;
-            y = AfterRow(f, i, StarterKnob.FuelNotch, fuel, x, w);
-
-            if (i.LandingVisible)
+            float minLabel = 54f;
+            float y0 = y;
+            for (int attempt = 0; attempt < 8; attempt++)
             {
-                f.Landing = SideRow("landing", x, y, labelW, optX, optW, i.Landing.Length);
-                Finish(f.Landing, i, x, w, wraps);
-                y = AfterRow(f, i, StarterKnob.Landing, f.Landing, x, w);
-            }
-            else f.Landing = null;
+                y = y0;
+                float optX = x + labelW + f.GapPt, optW = Math.Max(Touch, x + w - helpW - optX);
 
-            if (i.BoostersVisible)
-            {
-                f.Boosters = SideRow("boosters", x, y, labelW, optX, optW, i.Boosters.Length);
-                Finish(f.Boosters, i, x, w, wraps);
-                AfterRow(f, i, StarterKnob.Boosters, f.Boosters, x, w);
-            }
-            else f.Boosters = null;
+                f.Build = SideRow("build", x, y, labelW, optX, optW, i.Builds.Length);
+                Finish(f.Build, i, x, w, wraps);
+                y = AfterRow(f, i, StarterKnob.Build, f.Build, x, w);
+                f.Engine = SideRow("engine", x, y, labelW, optX, optW, i.Engines.Length);
+                Finish(f.Engine, i, x, w, wraps);
+                y = AfterRow(f, i, StarterKnob.Engine, f.Engine, x, w);
+                f.Stages = SideRow("stages", x, y, labelW, optX, optW, i.Stages.Length);
+                Finish(f.Stages, i, x, w, wraps);
+                y = AfterRow(f, i, StarterKnob.Stages, f.Stages, x, w);
 
-            // Option words fit their buttons: shrink the option face (never below 13) rather than clip "Kerosene".
-            float pt = f.OptionPt;
-            while (pt > OptionMinPt && !OptionsFit(f, i, pt)) pt -= 0.5f;
-            f.OptionPt = pt;
+                // Fuel: the label line carries "Fuel" and the Less / More ends; the five notches span the whole row
+                // under it, so each notch stays a 44 pt target at 335.
+                var fuel = new StarterRowFrame { Key = "fuel" };
+                float lineH = Math.Max(Line(f.LabelPt), Line(f.EndPt));
+                fuel.Row = Box(x, y, w, FuelRowH(f));
+                fuel.Label = Box(x, y, labelW, lineH);
+                float endW = (float)Math.Ceiling(Math.Max(FlightHudLayout.TextWidth(StarterScreen.FuelLess, f.EndPt), FlightHudLayout.TextWidth(StarterScreen.FuelMore, f.EndPt))) + 2f;
+                float notchW = w - helpW;
+                fuel.Less = Box(optX, y, endW, lineH);
+                fuel.More = Box(x + notchW - endW, y, endW, lineH);
+                fuel.Options = Spread(x, y + lineH + 2f, notchW, StarterRocket.FuelNotches, OptionGap);
+                if (i.Help) fuel.Help = Box(x + w - Touch, y + lineH + 2f, Touch, Touch);
+                f.Fuel = fuel;
+                y = AfterRow(f, i, StarterKnob.FuelNotch, fuel, x, w);
+
+                if (i.LandingVisible)
+                {
+                    f.Landing = SideRow("landing", x, y, labelW, optX, optW, i.Landing.Length);
+                    Finish(f.Landing, i, x, w, wraps);
+                    y = AfterRow(f, i, StarterKnob.Landing, f.Landing, x, w);
+                }
+                else f.Landing = null;
+
+                if (i.BoostersVisible)
+                {
+                    f.Boosters = SideRow("boosters", x, y, labelW, optX, optW, i.Boosters.Length);
+                    Finish(f.Boosters, i, x, w, wraps);
+                    AfterRow(f, i, StarterKnob.Boosters, f.Boosters, x, w);
+                }
+                else f.Boosters = null;
+
+                // Option words fit their buttons: shrink the option face (never below 13) rather than clip "Kerosene".
+                float pt = f.OptionPt;
+                while (pt > OptionMinPt && !OptionsFit(f, i, pt)) pt -= 0.5f;
+                f.OptionPt = pt;
+                if (OptionsFit(f, i, pt) || labelW <= minLabel + 0.5f) break;
+                labelW = Math.Max(minLabel, labelW - 6f);
+                f.LabelPt = LabelPtThatFits(labelW, wraps, f.LabelPt);
+            }
+        }
+
+        /// <summary>Bold option faces paint a little wider than the 0.62 advance, so the fit check keeps a few points in hand.</summary>
+        const float OptionInkSlack = 3f;
+
+        static float LabelPtThatFits(float labelW, bool words, float start)
+        {
+            float pt = start;
+            while (pt > 10.5f && !LabelWordsFit(labelW, words, pt)) pt -= 0.5f;
+            return pt;
+        }
+
+        static bool LabelWordsFit(float labelW, bool words, float pt)
+        {
+            foreach (var l in SideLabels)
+                foreach (var part in words ? l.Split(' ') : new[] { l })
+                    if (FlightHudLayout.TextWidth(part, pt) > labelW - 4f) return false;
+            return true;
         }
 
         static bool WordsFit(string[] words, float rowW, float pt)
@@ -549,7 +577,7 @@ namespace Kestrel.Core.Designer
             if (words == null || words.Length == 0) return true;
             float each = (rowW - OptionGap * (words.Length - 1)) / words.Length;
             foreach (var word in words)
-                if (FlightHudLayout.TextWidth(word ?? "", pt) > each - 2f * OptionPadX) return false;
+                if (FlightHudLayout.TextWidth(word ?? "", pt) > each - 2f * OptionPadX - OptionInkSlack) return false;
             return true;
         }
 
@@ -575,7 +603,7 @@ namespace Kestrel.Core.Designer
             bool Fits(string[] words, HudBox[] boxes)
             {
                 for (int k = 0; k < words.Length && k < boxes.Length; k++)
-                    if (FlightHudLayout.TextWidth(words[k], pt) > boxes[k].W - 2f * OptionPadX) return false;
+                    if (FlightHudLayout.TextWidth(words[k], pt) > boxes[k].W - 2f * OptionPadX - OptionInkSlack) return false;
                 return true;
             }
             return Fits(i.Builds, f.Build.Options) && Fits(i.Engines, f.Engine.Options) && Fits(i.Stages, f.Stages.Options)
@@ -635,6 +663,12 @@ namespace Kestrel.Core.Designer
             for (int k = 0; k < i.Builds.Length && k < f.Build.Options.Length; k++) T("build-" + k, i.Builds[k], f.Build.Options[k], f.OptionPt, OptionPadX, false);
             for (int k = 0; k < i.Engines.Length && k < f.Engine.Options.Length; k++) T("engine-" + k, i.Engines[k], f.Engine.Options[k], f.OptionPt, OptionPadX, false);
             for (int k = 0; k < i.Stages.Length && k < f.Stages.Options.Length; k++) T("stages-" + k, i.Stages[k], f.Stages.Options[k], f.OptionPt, OptionPadX, false);
+            if (f.Landing != null)
+            {
+                T("landing-label", StarterScreen.LandingLabel, f.Landing.Label, f.LabelPt, 0f, f.Landing.LabelWraps);
+                for (int k = 0; k < i.Landing.Length && k < f.Landing.Options.Length; k++)
+                    T("landing-" + k, i.Landing[k], f.Landing.Options[k], f.OptionPt, OptionPadX, false);
+            }
             if (f.Boosters != null)
             {
                 T("boosters-label", StarterScreen.BoostersLabel, f.Boosters.Label, f.LabelPt, 0f, f.Boosters.LabelWraps);
