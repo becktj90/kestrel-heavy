@@ -5,11 +5,11 @@ using System.Collections.Generic;
 using System.IO;
 using Kestrel.Core.Data;
 using Kestrel.Core.Json;
-using Kestrel.Core.Timeline;
 using Kestrel.Core.Vehicle;
 using Kestrel.Pad;
 using Kestrel.Slice;
 using NUnit.Framework;
+using TimelinePad = Kestrel.Core.Timeline.Pad;
 
 namespace Kestrel.Game.Tests
 {
@@ -28,13 +28,14 @@ namespace Kestrel.Game.Tests
             foreach (var id in new[] { "stock", "super-heavy" })
             {
                 var d = cat.Preset(id);
-                var pad = Pad.For(cat, d);
+                // TimelinePad: bare Pad binds to namespace Kestrel.Pad when both usings are present.
+                var pad = TimelinePad.For(cat, d);
                 Assert.That(PadTower.ArchetypeFor(cat, d), Is.EqualTo(PadGenerator.ArchetypeFor(pad.id, pad.strongback)), id);
             }
             foreach (var file in new[] { "sounding-solid.json", "medium-kerolox-reusable.json", "hydrogen-upper.json" })
             {
                 var d = Template(file);
-                var pad = Pad.For(cat, d);
+                var pad = TimelinePad.For(cat, d);
                 Assert.That(PadTower.ArchetypeFor(cat, d), Is.EqualTo(PadGenerator.ArchetypeFor(pad.id, pad.strongback)), file);
             }
         }
@@ -53,7 +54,7 @@ namespace Kestrel.Game.Tests
                 },
                 strapOns = new StagePart { diameter = 1.6, propellant = "solid-apcp", propMass = 4000, engineCount = 1, count = 2 },
             };
-            var pad = Pad.For(cat, d);
+            var pad = TimelinePad.For(cat, d);
             Assert.That(pad.id, Is.EqualTo("pad.rail"));
             Assert.That(pad.strongback, Is.False);
             Assert.That(PadTower.ArchetypeFor(cat, d), Is.EqualTo(PadArchetype.Rail));
@@ -67,7 +68,7 @@ namespace Kestrel.Game.Tests
         {
             var cat = Cat();
             var d = cat.Preset("super-heavy");
-            Assert.That(Pad.For(cat, d).strongback, Is.True);
+            Assert.That(TimelinePad.For(cat, d).strongback, Is.True);
             Assert.That(PadTower.ArchetypeFor(cat, d), Is.EqualTo(PadArchetype.TowerStrongback));
             var reusable = Template("medium-kerolox-reusable.json");
             Assert.That(reusable.stages[0].diameter, Is.GreaterThanOrEqualTo(3.0));
@@ -79,7 +80,7 @@ namespace Kestrel.Game.Tests
         {
             var cat = Cat();
             var d = Design.FromJson(MiniJson.ParseObject(File.ReadAllText(Path.Combine(Repo, "tests", "fixtures", "designs", "sounding-solid.json"))));
-            Assert.That(Pad.For(cat, d).id, Is.EqualTo("pad.rail"));
+            Assert.That(TimelinePad.For(cat, d).id, Is.EqualTo("pad.rail"));
             Assert.That(PadTower.ArchetypeFor(cat, d), Is.EqualTo(PadArchetype.Rail));
         }
     }
