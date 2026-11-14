@@ -1378,6 +1378,20 @@ namespace Kestrel.Game.Shell
             sheet.style.display = DisplayStyle.None;
             sheet.style.flexDirection = FlexDirection.Column;
             sheet.style.overflow = Overflow.Hidden;
+            // Scrim before any click handler that closes the sheet (CS0165 if HideSheet captures it unassigned).
+            var scrim = new VisualElement { name = SettingsScrimName };
+            scrim.style.position = Position.Absolute;
+            scrim.style.left = 0f; scrim.style.right = 0f; scrim.style.top = 0f; scrim.style.bottom = 0f;
+            scrim.style.backgroundColor = new Color(0.02f, 0.03f, 0.07f, 0.62f);
+            scrim.style.display = DisplayStyle.None;
+            void HideSheet()
+            {
+                sheet.style.display = DisplayStyle.None;
+                scrim.style.display = DisplayStyle.None;
+            }
+            scrim.RegisterCallback<ClickEvent>(_ => HideSheet());
+            sheet.RegisterCallback<GeometryChangedEvent>(_ => scrim.style.display = sheet.style.display.value);
+
             var title = new Label("Settings") { name = "settings-title", pickingMode = PickingMode.Ignore };
             title.AddToClassList("kh-mm-sheet-title");
             title.style.fontSize = 16;
@@ -1611,25 +1625,11 @@ namespace Kestrel.Game.Shell
             close.style.marginRight = 0;
             close.style.alignSelf = Align.Stretch;
             SettingFont(close, "SpaceGrotesk-Bold");
-            close.clicked += () => { sheet.style.display = DisplayStyle.None; var sc = sheet.parent?.Q(SettingsScrimName); if (sc != null) sc.style.display = DisplayStyle.None; };
+            close.clicked += HideSheet;
 
             sheet.Add(title);
             sheet.Add(list);
             sheet.Add(close);
-
-            // L7: the sheet floated over the LAUNCH card. A dim scrim sits between Home and the sheet; tapping it closes.
-            var scrim = new VisualElement { name = SettingsScrimName };
-            scrim.style.position = Position.Absolute;
-            scrim.style.left = 0f; scrim.style.right = 0f; scrim.style.top = 0f; scrim.style.bottom = 0f;
-            scrim.style.backgroundColor = new Color(0.02f, 0.03f, 0.07f, 0.62f);
-            scrim.style.display = DisplayStyle.None;
-            void HideSheet()
-            {
-                sheet.style.display = DisplayStyle.None;
-                scrim.style.display = DisplayStyle.None;
-            }
-            scrim.RegisterCallback<ClickEvent>(_ => HideSheet());
-            sheet.RegisterCallback<GeometryChangedEvent>(_ => scrim.style.display = sheet.style.display.value);
 
             float fitW = -1f, fitH = -1f, measuredExtra = 0f;
             // After layout: when the rows came out taller than the estimate (wrapped note, theme Label chrome), grow the
