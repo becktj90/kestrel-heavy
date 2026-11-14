@@ -16,7 +16,7 @@
     "boosters+": "more boosters",
     "engine": "the other fuel",
     "landing": "Haven or Pad",
-    "landing-": "Throw away"
+    "landing-": "Expend"
   },
   "causes": {
     "maxq": {
