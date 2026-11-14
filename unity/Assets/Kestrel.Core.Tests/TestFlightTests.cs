@@ -9,6 +9,7 @@ using Kestrel.Core.Economy;
 using Kestrel.Core.Flight;
 using Kestrel.Core.Hangar;
 using Kestrel.Core.Json;
+using Kestrel.Core.Physics;
 using Kestrel.Core.Save;
 using NUnit.Framework;
 
@@ -116,6 +117,101 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual(TestFlightCopy.FuelTitle, card.Title);
             StringAssert.IsMatch(@"^Empty at 82 km, 3,100 m/s · [\d,]+ m/s short$", card.Engineer);
             Assert.AreEqual("prop-depletion", card.FixKind);
+        }
+
+        // ---------------------------------------------------------------- Physics ruling on #508
+
+        static readonly System.Text.RegularExpressions.Regex OrbitWord =
+            new System.Text.RegularExpressions.Regex(@"\borbit\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        [Test]
+        public void Escape_EnergyAtOrAboveZero_LeavingEarth_NoApogee_NotOrbit()
+        {
+            foreach (double energy in new[] { 0.0, 2e6 })
+            {
+                var facts = new TestFlightFacts
+                {
+                    LiftedOff = true, Outcome = "orbit", EnergyJPerKg = energy,
+                    ApoAltM = double.PositiveInfinity, PeriAltM = 300e3, DvLeftMps = 500,
+                };
+                var card = TestFlight.Card(facts);
+                Assert.AreEqual(TestOutcome.Escape, card.Outcome, "energy " + energy);
+                Assert.IsFalse(card.MadeOrbit);
+                Assert.AreEqual(TestFlightCopy.EscapeTitle, card.Title);
+                Assert.AreEqual(TestFlightCopy.EscapeEngineer.Replace("{vinf}", energy == 0 ? "0" : "2,000"), card.Engineer, "v_inf = sqrt(2E)");
+                StringAssert.DoesNotContain("km", card.Spoken, "no apogee on an escape");
+                StringAssert.DoesNotContain("-", card.Engineer);
+                StringAssert.DoesNotContain("∞", card.Spoken);
+                StringAssert.DoesNotContain("Infinity", card.Spoken);
+                Assert.IsFalse(OrbitWord.IsMatch(card.Spoken), card.Spoken);
+            }
+            Assert.AreEqual(2000.0, TestFlight.ExcessSpeed(2e6), 1e-9);
+            Assert.That(TestFlight.ExcessSpeed(-1), Is.NaN);
+        }
+
+        [Test]
+        public void Escape_UnsetOrbitState_IsNotAnEscape()
+        {
+            // The OrbitElements default (h = 0, energy = 0) is "no orbit state", never a zero-energy escape.
+            var result = new SimResult { outcome = "suborbital", orbit = new OrbitElements(), events = new List<SimEvent>() };
+            var facts = TestFlight.Facts(result, null, null, 1.3);
+            Assert.That(facts.EnergyJPerKg, Is.NaN);
+            var bound = new SimResult { outcome = "orbit", orbit = Orbit.Planar(Gravity.R_EARTH + 400e3, 0, 0, 7670), events = new List<SimEvent>() };
+            Assert.Less(TestFlight.Facts(bound, null, null, 1.3).EnergyJPerKg, 0);
+        }
+
+        [Test]
+        public void HillSphere_ApogeePast15MillionKm_KeepsTheNumbers_AddsSunNote()
+        {
+            var card = TestFlight.Card(new TestFlightFacts
+            {
+                LiftedOff = true, Outcome = "orbit", EnergyJPerKg = -1000, ApoAltM = 2e9, PeriAltM = 200e3, DvLeftMps = 120,
+            });
+            Assert.AreEqual(TestOutcome.Orbit, card.Outcome);
+            Assert.AreEqual("Orbit 2,000,000 × 200 km · 120 m/s left. " + TestFlightCopy.HillNote, card.Engineer);
+            var near = TestFlight.Card(new TestFlightFacts { LiftedOff = true, Outcome = "orbit", EnergyJPerKg = -1e6, ApoAltM = 1.4e9, PeriAltM = 200e3, DvLeftMps = 120 });
+            StringAssert.DoesNotContain(TestFlightCopy.HillNote, near.Engineer, "inside the Hill sphere");
+        }
+
+        [Test]
+        public void Suborbital_PerigeeUnderTheFloor_ApogeeOver_NoOrbitWordAnywhere()
+        {
+            foreach (var outcome in new[] { "suborbital", "orbit", "" })
+            {
+                var card = TestFlight.Card(new TestFlightFacts
+                {
+                    LiftedOff = true, Outcome = outcome, EnergyJPerKg = -2e7, ApoAltM = 300e3, PeriAltM = -2000e3, DvLeftMps = 0,
+                });
+                Assert.AreEqual(TestOutcome.Suborbital, card.Outcome, outcome);
+                Assert.AreEqual("Suborbital: perigee too low · 300 × -2,000 km", card.Engineer);
+                foreach (var line in new[] { card.Title, card.Kid, card.Engineer, card.HintLine, card.Spoken, TestFlightCopy.Eyebrow, TestFlightCopy.Retry, TestFlightCopy.NewDesign, TestFlightCopy.Home })
+                    Assert.IsFalse(OrbitWord.IsMatch(line), "\"orbit\" on the suborbital card: " + line);
+                Assert.AreEqual("prop-depletion", card.FixKind);
+            }
+            // Exactly on the floor is not an orbit either (the sim's rule is perigee ABOVE 120 km).
+            Assert.AreEqual(TestOutcome.Suborbital, TestFlight.Card(new TestFlightFacts { LiftedOff = true, Outcome = "orbit", ApoAltM = 400e3, PeriAltM = TestFlight.OrbitPerigeeFloorM }).Outcome);
+            // Never got past the floor: still "Fell back down".
+            Assert.AreEqual(TestOutcome.FellShort, TestFlight.Card(new TestFlightFacts { LiftedOff = true, Outcome = "suborbital", ApoAltM = 100e3, PeriAltM = -6000e3, PeakAltM = 100e3, PeakSpeedMps = 900 }).Outcome);
+        }
+
+        [Test]
+        public void OrbitDvLeft_IsRemainingVacDeltaV_Only()
+        {
+            // No sim (no tanks reading): no ideal-minus-spent estimate, so the card never disagrees with LiveSpare.
+            var result = new SimResult
+            {
+                outcome = "orbit", idealDeltaV = 9000, deltaVExpended = 1000, events = new List<SimEvent> { new SimEvent { type = "liftoff" } },
+                orbit = Orbit.Planar(Gravity.R_EARTH + 400e3, 0, 0, 7670),
+            };
+            var facts = TestFlight.Facts(result, null, null, 1.3);
+            Assert.That(facts.DvLeftMps, Is.NaN);
+            var card = TestFlight.Card(facts);
+            Assert.AreEqual(TestOutcome.Orbit, card.Outcome);
+            StringAssert.DoesNotContain("m/s left", card.Engineer, "no made-up Δv");
+            // Headless: the orbit card's Δv is the sim's RemainingVacDeltaV at the end.
+            var flown = TestFlight.FlyHeadless(Golden.Catalog, Template("hydrogen-upper"), 1);
+            Assert.That(flown.DvLeftMps, Is.GreaterThan(0));
+            StringAssert.EndsWith(Math.Round(flown.DvLeftMps).ToString("#,0", System.Globalization.CultureInfo.InvariantCulture) + " m/s left", TestFlight.Card(flown).Engineer);
         }
 
         [Test]

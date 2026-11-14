@@ -39,6 +39,13 @@ namespace Kestrel.Game.Tests
                     Engineer = TestFlightCopy.SpinEngineer.Replace("{angle}", "180").Replace("{alt}", "199") },
                 new TestFlightCard { Outcome = TestOutcome.FellShort, Kind = "fell-short", Title = TestFlightCopy.ShortTitle, Kid = TestFlightCopy.ShortKid, Hint = TestFlightCopy.ShortHint,
                     Engineer = TestFlightCopy.ShortEngineer.Replace("{alt}", "9,999").Replace("{speed}", "9,999").Replace("{needed}", "9,999") },
+                // Physics ruling on #508: escape, past the Hill sphere, and suborbital.
+                new TestFlightCard { Outcome = TestOutcome.Escape, Title = TestFlightCopy.EscapeTitle, Kid = TestFlightCopy.EscapeKid,
+                    Engineer = TestFlightCopy.EscapeEngineer.Replace("{vinf}", "99,999") },
+                new TestFlightCard { Outcome = TestOutcome.Orbit, Title = TestFlightCopy.OrbitTitle, Kid = TestFlightCopy.OrbitKid,
+                    Engineer = TestFlightCopy.OrbitEngineer.Replace("{apogee}", "9,999,999").Replace("{perigee}", "35,786").Replace("{dvLeft}", "9,999") + ". " + TestFlightCopy.HillNote },
+                new TestFlightCard { Outcome = TestOutcome.Suborbital, Kind = "fell-short", Title = TestFlightCopy.SubTitle, Kid = TestFlightCopy.SubKid, Hint = TestFlightCopy.SubHint,
+                    Engineer = TestFlightCopy.SubEngineer.Replace("{apogee}", "99,999").Replace("{perigee}", "-6,371") },
             };
         }
 

@@ -29,7 +29,7 @@ using Kestrel.Core.Vehicle;
 
 namespace Kestrel.Core.Flight
 {
-    public enum TestOutcome { Orbit, OutOfFuel, NoLiftoff, MaxQBreakup, LostControl, FellShort, Failure }
+    public enum TestOutcome { Orbit, OutOfFuel, NoLiftoff, MaxQBreakup, LostControl, FellShort, Failure, Escape, Suborbital }
 
     /// <summary>Kestrel UX copy for Test Flight (2026-11-11, authoritative). Every string is in the 335 px text-fit sweep.</summary>
     public static class TestFlightCopy
@@ -77,6 +77,15 @@ namespace Kestrel.Core.Flight
         public const string ShortKid = "It went up, but not fast enough to stay up.";
         public const string ShortHint = "More fuel, or another stage.";
         public const string HintPrefix = "Try: ";
+        // Physics ruling on #508 (DECISIONS #100). Escape: specific orbital energy >= 0. Not an orbit, no apogee printed.
+        public const string EscapeTitle = "Leaving Earth";
+        public const string EscapeKid = "It's going so fast that Earth can't pull it back.";
+        // Suborbital: perigee at or under the 120 km floor, apogee above it. The word "orbit" appears nowhere on this card.
+        public const string SubTitle = "Too low to stay up";
+        public const string SubKid = "It climbed high, but its path dips back into the air.";
+        public const string SubHint = "More fuel, or another stage.";
+        /// <summary>Apogee past Earth's Hill sphere (<see cref="TestFlight.HillSphereM"/>): the numbers stand, plus this.</summary>
+        public const string HillNote = "Sun's pull dominates out here.";
 
         public const string OrbitEngineer = "Orbit {apogee} × {perigee} km · {dvLeft} m/s left";
         public const string FuelEngineer = "Empty at {alt} km, {speed} m/s · {short} m/s short";
@@ -84,6 +93,11 @@ namespace Kestrel.Core.Flight
         public const string MaxQEngineer = "{q} kPa at {alt} km · limit {limit} kPa";
         public const string SpinEngineer = "{angle}° off course at {alt} km";
         public const string ShortEngineer = "Peak {alt} km · {speed} of {needed} m/s";
+        /// <summary>Orbit card when the tanks reading is missing: the numbers it has, never a made-up Δv.</summary>
+        public const string OrbitEngineerNoDv = "Orbit {apogee} × {perigee} km";
+        /// <summary>v∞ = √(2·energy), the speed left once Earth's pull is spent.</summary>
+        public const string EscapeEngineer = "Escape speed beaten · {vinf} m/s to spare";
+        public const string SubEngineer = "Suborbital: perigee too low · {apogee} × {perigee} km";
 
         /// <summary>Every fixed player string, for the text-fit sweep and the no-emoji check.</summary>
         public static readonly string[] All =
@@ -91,6 +105,7 @@ namespace Kestrel.Core.Flight
             HomeLabel, HomeSub, TestIt, Eyebrow, Rules, Retry, NewDesign, Home,
             OrbitTitle, OrbitKid, FuelTitle, FuelKid, FuelHint, LiftTitle, LiftKid, LiftHint,
             MaxQTitle, MaxQKid, MaxQHint, SpinTitle, SpinKid, SpinHint, ShortTitle, ShortKid, ShortHint,
+            EscapeTitle, EscapeKid, SubTitle, SubKid, SubHint, HillNote,
         };
     }
 
@@ -106,7 +121,11 @@ namespace Kestrel.Core.Flight
         /// <summary>Inertial speed at that highest point, m/s. At the top of an arc the speed is all sideways, so this is
         /// the speed that counts toward staying up.</summary>
         public double PeakSpeedMps = double.NaN;
-        /// <summary>Δv still in the tanks at the end (AscentSim.RemainingVacDeltaV), m/s.</summary>
+        /// <summary>Specific orbital energy at the end, J/kg (v²/2 − μ/r; the result's orbit). NaN when the sim gave no
+        /// orbit state. At or above 0 the rocket is leaving Earth.</summary>
+        public double EnergyJPerKg = double.NaN;
+        /// <summary>Δv still in the tanks at the end, m/s: AscentSim.RemainingVacDeltaV only, the figure LiveSpare shows
+        /// (no ideal-minus-spent estimate, which can disagree with it).</summary>
         public double DvLeftMps = double.NaN;
         /// <summary>Altitude and inertial speed at the failure (the telemetry sample at or just before it).</summary>
         public double FailAltM = double.NaN, FailSpeedMps = double.NaN, FailQPa = double.NaN;
@@ -133,6 +152,8 @@ namespace Kestrel.Core.Flight
                     case TestOutcome.Orbit: return "";
                     case TestOutcome.OutOfFuel: return "prop-depletion";   // More fuel → propellant load
                     case TestOutcome.FellShort: return "prop-depletion";   // More fuel, or another stage
+                    case TestOutcome.Suborbital: return "prop-depletion";  // More fuel, or another stage
+                    case TestOutcome.Escape: return "";
                     case TestOutcome.NoLiftoff: return "engine-out";       // More engines → engine count
                     case TestOutcome.MaxQBreakup: return "structural-maxq"; // a stronger frame → safety factor
                     case TestOutcome.LostControl: return "tumble";         // more steering or fins → fins
@@ -161,6 +182,12 @@ namespace Kestrel.Core.Flight
         /// build's own: the design's catalog orbit, leo400 when unset (MissionFlightSetup).
         /// </summary>
         public const double OrbitPerigeeFloorM = 120e3;
+        /// <summary>Earth's Hill sphere, about 1.5 million km: past it the Sun's pull dominates (Physics ruling on #508).</summary>
+        public const double HillSphereM = 1.5e9;
+
+        /// <summary>v∞ for a specific orbital energy at or above 0, m/s: √(2E). NaN below 0 or unknown.</summary>
+        public static double ExcessSpeed(double energyJPerKg)
+            => double.IsNaN(energyJPerKg) || energyJPerKg < 0 ? double.NaN : Math.Sqrt(2 * energyJPerKg);
         /// <summary>The structural-maxq cause that means dynamic pressure over the walls' limit (FailureMonitor.Cause).</summary>
         public const string QCause = "q";
         /// <summary>The tumble cause that measures an angle (FailureMonitor.Cause).</summary>
@@ -222,6 +249,8 @@ namespace Kestrel.Core.Flight
             f.Outcome = result.outcome ?? "";
             f.ApoAltM = result.orbit.apoAlt;
             f.PeriAltM = result.orbit.periAlt;
+            // A zero angular momentum is an unset orbit (the struct default), not a radial escape.
+            if (result.orbit.h > 0 && !double.IsNaN(result.orbit.energy)) f.EnergyJPerKg = result.orbit.energy;
             f.QLimPa = result.qLimPa;
             SimEvent failAt = null;
             if (result.events != null)
@@ -281,8 +310,6 @@ namespace Kestrel.Core.Flight
                 try { f.DvLeftMps = Math.Max(0, sim.RemainingVacDeltaV()); }
                 catch (Exception) { f.DvLeftMps = double.NaN; }
             }
-            if (double.IsNaN(f.DvLeftMps) && result.idealDeltaV > 0)
-                f.DvLeftMps = Math.Max(0, result.idealDeltaV - result.deltaVExpended);
             return f;
         }
 
@@ -301,14 +328,30 @@ namespace Kestrel.Core.Flight
                     Engineer = double.IsNaN(f.LiftoffTwr) ? "" : TestFlightCopy.LiftEngineer.Replace("{twr}", N2(f.LiftoffTwr)),
                 };
             if (ev != null) return FailureCard(ev, f);
-            if (f.Outcome == "orbit" && f.PeriAltM > OrbitPerigeeFloorM)
+            bool inAir = f.Outcome != "crash";
+            // Escape first: an unbound path has no apogee to print (Orbit.Elements gives +Infinity), and it is not an orbit.
+            if (inAir && f.LiftedOff && !double.IsNaN(f.EnergyJPerKg) && f.EnergyJPerKg >= 0)
                 return new TestFlightCard
                 {
-                    Outcome = TestOutcome.Orbit, Kind = "",
-                    Title = TestFlightCopy.OrbitTitle, Kid = TestFlightCopy.OrbitKid,
-                    Engineer = TestFlightCopy.OrbitEngineer
-                        .Replace("{apogee}", Km(f.ApoAltM)).Replace("{perigee}", Km(f.PeriAltM))
-                        .Replace("{dvLeft}", Whole(double.IsNaN(f.DvLeftMps) ? 0 : f.DvLeftMps)),
+                    Outcome = TestOutcome.Escape, Kind = "",
+                    Title = TestFlightCopy.EscapeTitle, Kid = TestFlightCopy.EscapeKid,
+                    Engineer = TestFlightCopy.EscapeEngineer.Replace("{vinf}", Whole(ExcessSpeed(f.EnergyJPerKg))),
+                };
+            if (f.Outcome == "orbit" && f.PeriAltM > OrbitPerigeeFloorM && Finite(f.ApoAltM))
+            {
+                string eng = (double.IsNaN(f.DvLeftMps) ? TestFlightCopy.OrbitEngineerNoDv : TestFlightCopy.OrbitEngineer)
+                    .Replace("{apogee}", Km(f.ApoAltM)).Replace("{perigee}", Km(f.PeriAltM))
+                    .Replace("{dvLeft}", Whole(f.DvLeftMps));
+                if (f.ApoAltM > HillSphereM) eng += ". " + TestFlightCopy.HillNote;
+                return new TestFlightCard { Outcome = TestOutcome.Orbit, Kind = "", Title = TestFlightCopy.OrbitTitle, Kid = TestFlightCopy.OrbitKid, Engineer = eng };
+            }
+            // Up past the floor but the low point is not: a suborbital arc. Labelled as such; "orbit" is never on it.
+            if (inAir && Finite(f.ApoAltM) && !double.IsNaN(f.PeriAltM) && f.ApoAltM > OrbitPerigeeFloorM && f.PeriAltM <= OrbitPerigeeFloorM)
+                return new TestFlightCard
+                {
+                    Outcome = TestOutcome.Suborbital, Kind = FellShortKind,
+                    Title = TestFlightCopy.SubTitle, Kid = TestFlightCopy.SubKid, Hint = TestFlightCopy.SubHint,
+                    Engineer = TestFlightCopy.SubEngineer.Replace("{apogee}", Km(f.ApoAltM)).Replace("{perigee}", Km(f.PeriAltM)),
                 };
             double peakAlt = double.IsNaN(f.PeakAltM) ? f.ApoAltM : f.PeakAltM;
             return new TestFlightCard
@@ -377,6 +420,7 @@ namespace Kestrel.Core.Flight
         static string Whole(double x) => double.IsNaN(x) ? "0" : Math.Round(x).ToString("#,0", Inv);
         static string One(double x) => double.IsNaN(x) ? "0" : x.ToString("#,0.0", Inv);
         static string N2(double x) => x.ToString("0.00", Inv);
+        static bool Finite(double x) => !double.IsNaN(x) && !double.IsInfinity(x);
 
         /// <summary>
         /// One test flight, headless: the free build's own setup (MissionFlightSetup with no mission: the design's catalog
