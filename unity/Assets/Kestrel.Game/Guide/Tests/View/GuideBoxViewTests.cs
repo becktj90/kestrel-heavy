@@ -53,7 +53,7 @@ namespace Kestrel.Game.Guide.Tests
             Assert.That(thrum.Q<Label>("guide-name").text, Does.Contain("HANGAR KEEPER"));
             var body = thrum.Q<BitmapTextElement>("guide-body");
             Assert.IsNotNull(body);
-            Assert.That(body.Text, Does.StartWith("Oh! A visitor!"));
+            Assert.That(body.Text, Does.StartWith("Oh! A visitor."));
             Assert.That(thrum.tooltip, Does.Contain("Thrum, hangar keeper"));
             Assert.AreEqual("1/4", thrum.Q<Label>("guide-index").text);
         }

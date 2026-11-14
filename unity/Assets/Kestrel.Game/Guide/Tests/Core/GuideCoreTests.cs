@@ -312,9 +312,9 @@ namespace Kestrel.Game.Guide.Tests
             Assert.AreEqual(1, voice.Announcements.Count);
             Assert.AreEqual(0, voice.Spoken.Count);
             Assert.That(voice.Announcements[0], Does.StartWith("Thrum, hangar keeper."));
-            Assert.That(voice.Announcements[0], Does.Contain("Card 1 of 5."));
-            Assert.AreEqual("1/5", stage.Models()[0].Index);
-            Assert.That(stage.Models()[0].Full, Does.StartWith("Oh! A visitor!"));
+            Assert.That(voice.Announcements[0], Does.Contain("Card 1 of 4."));
+            Assert.AreEqual("1/4", stage.Models()[0].Index);
+            Assert.That(stage.Models()[0].Full, Does.Contain("Oh! A visitor."));
 
             engine.Settings.ReadAloud = true;
             stage.Tap(0);
