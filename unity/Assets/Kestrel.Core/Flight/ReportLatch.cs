@@ -34,5 +34,17 @@ namespace Kestrel.Core.Flight
             closed = result;
             return true;
         }
+
+        /// <summary>
+        /// ShowCard bailed or threw after <see cref="TryOpen"/>: clear the latch so the same
+        /// result can open again. Without this, Reported stays true with no card on screen and
+        /// the post-flight report never appears (mission-done softlock).
+        /// </summary>
+        public void UndoOpen()
+        {
+            if (!Reported) return;
+            Reported = false;
+            closed = null;
+        }
     }
 }

@@ -42,6 +42,7 @@ namespace Kestrel.Game.Guide
 
         GuideStage stage;
         GuidePopView pop;
+        GuideStackView welcomeStack;
         GuideClipPlayer voice;
         VisualElement overlay;
         AudioSource blipSource;
@@ -134,19 +135,66 @@ namespace Kestrel.Game.Guide
         /// The overlay is absolute and ignores picking, so removing it leaves no gap in the layout.</summary>
         public void SyncSprite()
         {
+            var live = stage != null ? stage.Engine as LiveGuideEngine : null;
+            bool welcome = WelcomePlaying(live);
             if (SpriteOn())
             {
                 if (pop == null) Ensure();
+                if (welcome) EnsureWelcomeStack();
+                return;
+            }
+            if (welcome)
+            {
+                EnsureWelcomeStack();
                 return;
             }
             DropSprite();
             // Off: nothing consumes the engine's queue, so keep it empty. Turning the character on later starts clean.
-            var live = stage != null ? stage.Engine as LiveGuideEngine : null;
             if (live != null) live.DropQueued();
+        }
+
+        void EnsureWelcomeStack()
+        {
+            if (welcomeStack != null || stage == null) return;
+            var doc = Document != null ? Document : GetComponent<UIDocument>();
+            var parent = doc != null ? doc.rootVisualElement : null;
+            if (parent == null) return;
+            if (overlay == null)
+            {
+                overlay = new VisualElement { name = "guide-overlay", pickingMode = PickingMode.Ignore };
+                overlay.style.position = Position.Absolute;
+                overlay.style.left = 0;
+                overlay.style.right = 0;
+                overlay.style.top = 0;
+                overlay.style.bottom = 0;
+                parent.Add(overlay);
+            }
+            var art = GuideArt.Load();
+            welcomeStack = new GuideStackView(overlay, stage)
+            {
+                Glyphs = art.Glyphs,
+                Atlas = art.Atlas,
+                Portrait = art.Portrait,
+                PanelPerPoint = panelPerPoint,
+                Screen = screen,
+            };
+        }
+
+        void TearDownWelcomeStack()
+        {
+            if (welcomeStack == null) return;
+            welcomeStack.Root?.Q("guide-stack")?.RemoveFromHierarchy();
+            welcomeStack = null;
+            if (pop == null && overlay != null)
+            {
+                overlay.RemoveFromHierarchy();
+                overlay = null;
+            }
         }
 
         void DropSprite()
         {
+            TearDownWelcomeStack();
             if (pop == null && overlay == null && blipSource == null) return;
             Silence();
             if (stage != null) stage.Blip -= OnBlip;
@@ -167,7 +215,10 @@ namespace Kestrel.Game.Guide
         void Update()
         {
             SyncSprite();
-            if (stage == null || pop == null) return;
+            if (stage == null) return;
+            var liveEngine = stage.Engine as LiveGuideEngine;
+            bool welcome = WelcomePlaying(liveEngine);
+            if (!welcome && pop == null) return;
             if (blipUntil > 0f && Time.unscaledTime >= blipUntil && blipSource != null) blipSource.Stop();
             stage.Place = Place;
             stage.ReduceMotionOverride = PlayerPrefs.GetInt(GuideNative.ReduceMotionPref, 0) != 0 || GuideNative.ReduceMotion;
@@ -182,18 +233,29 @@ namespace Kestrel.Game.Guide
             }
             voice.Hold(paused);
             ApplyScreen();
-            if (GuideClipPlayer.InFlight || !GuidePopLayout.Shows(Place) || Hidden())
+            if (GuideClipPlayer.InFlight || !GuidePopLayout.Shows(Place) || (!welcome && Hidden()))
             {
-                if (voice.Sounding || voice.HasClip || voice.CardId.Length > 0) Silence();
-                else pop.Hide();
+                if (voice != null && (voice.Sounding || voice.HasClip || voice.CardId.Length > 0)) Silence();
+                else if (pop != null) pop.Hide();
                 return;
             }
             stage.Tick(Time.unscaledDeltaTime);
-            var live = stage.Engine as LiveGuideEngine;
-            if (live != null && seenWatch.Consume(live.State.SeenLines.Count, live.State.FirstRunDone))
-                GuideHost.Save(live);
-            Present(live);
+            if (liveEngine != null && seenWatch.Consume(liveEngine.State.SeenLines.Count, liveEngine.State.FirstRunDone))
+                GuideHost.Save(liveEngine);
+            if (welcome)
+            {
+                EnsureWelcomeStack();
+                welcomeStack.Tick(Time.unscaledDeltaTime);
+                if (pop != null) pop.Hide();
+                if (!WelcomePlaying(liveEngine)) TearDownWelcomeStack();
+                return;
+            }
+            TearDownWelcomeStack();
+            if (voice == null) return;
+            Present(liveEngine);
         }
+
+        static bool WelcomePlaying(LiveGuideEngine live) => live != null && OpeningIntroSequence.Active(live);
 
         void Present(LiveGuideEngine live)
         {
