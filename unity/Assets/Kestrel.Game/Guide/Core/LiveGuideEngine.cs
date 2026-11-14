@@ -155,7 +155,11 @@ namespace Kestrel.Game.Guide
             queued.Add(beat);
         }
 
-        public void SkipWelcome() => OpeningIntroSequence.MarkSkipped(state);
+        public void SkipWelcome()
+        {
+            OpeningIntroSequence.MarkSkipped(state);
+            DropQueued();
+        }
 
         public void Complete(string beatId) => Finish(beatId, true);
 

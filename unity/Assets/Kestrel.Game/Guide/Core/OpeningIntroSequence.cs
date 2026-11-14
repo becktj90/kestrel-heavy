@@ -46,7 +46,6 @@ namespace Kestrel.Game.Guide
         public static bool Active(LiveGuideEngine engine)
         {
             if (engine == null || engine.State.FirstRunDone) return false;
-            if (engine.Pending.Count > 0) return true;
             return !IsComplete(engine.State);
         }
 

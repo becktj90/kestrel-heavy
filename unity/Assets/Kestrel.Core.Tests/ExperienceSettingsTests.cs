@@ -33,13 +33,8 @@ namespace Kestrel.Core.Tests
             Assert.IsFalse(ExperienceSettings.ShowFullDesigner(p.Has, p.Get), "Show full designer is off by default");
             var flags = FeatureFlags.Load(Golden.Root);
             flags.ApplyPrefs(p.Has, p.Get);
-            // PR 6 (home-simple) and PR 5 (designer-starter): Starter Home keeps home.* off except the credits chip
-            // (docs/ECONOMY.md — bank readout on Home). Designer flags stay off until Show full designer.
-            foreach (var k in FeatureKeys.All)
-            {
-                bool on = (!k.StartsWith("home.") && !k.StartsWith("designer.")) || k == FeatureKeys.HomeCreditsChip;
-                Assert.AreEqual(on, flags.IsOn(k), k);
-            }
+            // PR 6 (home-simple) and PR 5 (designer-starter): a fresh save gets the Starter Home and the Starter designer (home.* and designer.* off).
+            foreach (var k in FeatureKeys.All) Assert.AreEqual(!k.StartsWith("home.") && !k.StartsWith("designer."), flags.IsOn(k), k);
             Assert.IsEmpty(p.Map, "reading never writes");
         }
 
