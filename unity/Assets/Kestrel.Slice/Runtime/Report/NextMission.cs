@@ -11,9 +11,12 @@ namespace Kestrel.Slice
         /// <summary>UiIds name of the Back to designer exit.</summary>
         public const string DesignerId = "report-designer";
 
-        public static void AddRoutes(VisualElement parent, ReportActions actions, float tap)
+        public static void AddRoutes(VisualElement parent, ReportActions actions, float tap, bool passed = false)
         {
-            parent.Add(Exit("report-next", ReportRoutes.NextLabel, ReportRoutes.NextTip, actions != null ? actions.Next : null, tap, "next"));
+            // Playthrough 2026-11-11: a miss with the next mission still locked lands on the list, so the label says so.
+            bool toList = NextLandsOnList(passed);
+            parent.Add(Exit("report-next", toList ? ReportRoutes.NextLockedLabel : ReportRoutes.NextLabel,
+                toList ? ReportRoutes.NextLockedTip : ReportRoutes.NextTip, actions != null ? actions.Next : null, tap, "next"));
             parent.Add(Exit("report-retry", ReportRoutes.AgainLabel, ReportRoutes.AgainTip, actions != null ? actions.Again : null, tap, "retry"));
             parent.Add(Exit(DesignerId, ReportRoutes.DesignerLabel, ReportRoutes.DesignerTip, actions != null ? actions.Designer : null, tap, "designer"));
             // Missions and Home share one row, so six exits still fit the five-row footer that
@@ -24,6 +27,19 @@ namespace Kestrel.Slice
             row.Add(Half(Exit("report-missions", ReportRoutes.MissionsLabel, ReportRoutes.MissionsTip, actions != null ? actions.Missions : null, tap, "missions")));
             row.Add(Half(Exit("report-home", ReportRoutes.HomeLabel, ReportRoutes.HomeTip, actions != null ? actions.Home : null, tap, "home")));
             parent.Add(row);
+        }
+
+        /// <summary>The live session's answer to <see cref="ReportRoutes.NextLandsOnList"/>. No session: false.</summary>
+        public static bool NextLandsOnList(bool passed)
+        {
+            var ctx = GameSession.Current;
+            if (ctx == null) return false;
+            try
+            {
+                var campaign = Kestrel.Game.Shell.ScreenStub.LoadCampaign();
+                return ReportRoutes.NextLandsOnList(campaign, ctx, Kestrel.Game.Shell.ScreenStub.ClearedCount(), passed);
+            }
+            catch (Exception) { return false; }
         }
 
         /// <summary>The footer row that holds Missions and Home side by side.</summary>
