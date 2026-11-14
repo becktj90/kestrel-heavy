@@ -53,6 +53,8 @@ namespace Kestrel.Slice
 
         public event Action LaunchRequested;
         public event Action BackRequested;
+        /// <summary>"Test it" (DECISIONS #102): fly this rocket as a test; the mission stays open.</summary>
+        public event Action TestRequested;
         /// <summary>The rocket window moved or resized (a Why? card opened or closed): the host re-frames its camera.</summary>
         public event Action RocketBoxChanged;
         /// <summary>The X-ray view opened (true) or closed (false).</summary>
@@ -82,7 +84,8 @@ namespace Kestrel.Slice
 
         readonly VisualElement rocketBox, header, sheet;
         readonly Label title, subtitle, spend, hint, badge, readiness, fuelLess, fuelMore;
-        readonly Button back, reset, launch;
+        readonly Button back, reset, launch, testIt;
+        bool testItShown;
         readonly Row build, engine, stages, fuel, boosters;
         readonly VisualElement whyCard, speedTrack, speedFill, speedNeed, tierSwitch;
         readonly StarterGlyph whyIcon;
@@ -197,6 +200,12 @@ namespace Kestrel.Slice
             launch = new Button(() => { if (LaunchReady) LaunchRequested?.Invoke(); }) { name = UiIds.StarterLaunch, text = StarterScreen.LaunchText };
             Style(launch, LaunchRed, Color.white, true);
             sheet.Add(launch);
+            // Test Flight (DECISIONS #102): the secondary "Test it", left of LAUNCH. Any rocket may fly as a test, so it
+            // is never gated by Honest Ready. Hidden until the game turns it on (ShowTestIt).
+            testIt = new Button(() => TestRequested?.Invoke()) { name = UiIds.StarterTestIt, text = TestFlightCopy.TestIt, tooltip = TestFlightCopy.TestItSpoken };
+            Style(testIt, CornerBg, Color.white, true);
+            testIt.style.display = DisplayStyle.None;
+            sheet.Add(testIt);
 
             back = new Button(() => BackRequested?.Invoke()) { name = UiIds.StarterBack, text = StarterScreen.BackText, tooltip = StarterScreen.BackHint };
             Style(back, CornerBg, Color.white, true);
@@ -570,9 +579,41 @@ namespace Kestrel.Slice
             badge.style.display = f.Badge.Live ? DisplayStyle.Flex : DisplayStyle.None;
             if (f.Badge.Live) { Pin(badge, f.Badge, f.Sheet); Font(badge, f.ReadinessPt); }
             Pin(readiness, f.Readiness, f.Sheet); Font(readiness, f.ReadinessPt);
-            Pin(launch, f.Launch, f.Sheet); Font(launch, f.CtaPt);
+            var launchBox = f.Launch;
+            testIt.style.display = testItShown ? DisplayStyle.Flex : DisplayStyle.None;
+            if (testItShown)
+            {
+                // Split the CTA row: "Test it" on the left third, LAUNCH keeps the rest (and its label).
+                var testBox = TestItBox(f.Launch);
+                launchBox.X = testBox.X + testBox.W + TestItGapPt;
+                launchBox.W = f.Launch.X + f.Launch.W - launchBox.X;
+                Pin(testIt, testBox, f.Sheet); Font(testIt, Mathf.Min(f.CtaPt, TestItMaxPt));
+                Radius(testIt, 14f);
+            }
+            Pin(launch, launchBox, f.Sheet); Font(launch, f.CtaPt);
             Radius(launch, 14f);
         }
+
+        /// <summary>"Test it" keeps the CTA's height; this many points between it and LAUNCH.</summary>
+        public const float TestItGapPt = 8f, TestItMaxPt = 17f, TestItShare = 0.36f;
+
+        /// <summary>The "Test it" box inside the CTA row, in points (the left <see cref="TestItShare"/>, at least 44 pt wide).</summary>
+        public static HudBox TestItBox(HudBox cta)
+        {
+            float w = Mathf.Max(44f, (cta.W - TestItGapPt) * TestItShare);
+            return new HudBox { X = cta.X, Y = cta.Y, W = w, H = cta.H };
+        }
+
+        /// <summary>Show or hide "Test it" (SliceApp turns it on for a mission's Starter).</summary>
+        public void ShowTestIt(bool on)
+        {
+            if (testItShown == on) return;
+            testItShown = on;
+            if (laidOut) Relayout();
+        }
+
+        /// <summary>The "Test it" button (tests and the text-fit sweep).</summary>
+        public Button TestItButton => testIt;
 
         void PlaceRow(Row row, StarterRowFrame rf, HudBox sheetBox, float labelPt, float optionPt)
         {

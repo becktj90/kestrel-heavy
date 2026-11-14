@@ -1,6 +1,7 @@
 // Home is the 3D hangar menu. Flight stays a placeholder until U3/U4 land. BuildConsole is the
 // flat console the EditMode tests still construct; the live Home path does not show it.
 using System;
+using Kestrel.Core.Features;
 using System.IO;
 using Kestrel.Core.Data;
 using Kestrel.Core.Designer;
@@ -108,8 +109,12 @@ namespace Kestrel.Game.Shell
                 Action launch = () => shell.Flow.HomePressed("launch");
                 Action design = () => shell.Flow.HomePressed("design");
                 Action missions = () => shell.Flow.HomePressed("missions");
+                // Test Flight's tile (DECISIONS #102) is on in the game from the first launch. EditMode layout tests
+                // build this Home without play mode and keep the Home they always measured unless they turn it on.
+                Action testFlight = () => shell.Flow.HomePressed(SceneFlow.TestFlightControl);
+                if (Application.isPlaying) HomeFeatures.TestFlightTile = true;
                 HomeFlagsBoot.Load();
-                _overlay = MainMenuOverlay.Build(shell.Root, _view, launch, design, missions, MainMenuLayout.ReducedMotion());
+                _overlay = MainMenuOverlay.Build(shell.Root, _view, launch, design, missions, MainMenuLayout.ReducedMotion(), testFlight: testFlight);
                 try { MainMenuOverlay.SetMissionLine(_overlay, NextMissionLine()); }
                 catch (Exception e) { Debug.LogWarning("[Kestrel] next mission line skipped: " + e.Message); }
                 try

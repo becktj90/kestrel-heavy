@@ -29,6 +29,8 @@ namespace Kestrel.Core.Flight
     {
         public HomePhoneType Type;
         public HomeRect Safe, Bar, Gear, Pop, Eyebrow, Title, Stats, Launch, Design, Missions, Codex, Thrum;
+        /// <summary>Test Flight's tile (DECISIONS #102): full width, directly under LAUNCH (and Design first), over MISSIONS.</summary>
+        public HomeRect TestFlight;
         public float Hero, StatFont, ThrumH;
         public int RecordLines, DesignCaptionLines, TileCaptionLines, ThrumLines, LaunchCaptionLines;
         public string Record;
@@ -236,6 +238,8 @@ namespace Kestrel.Core.Flight
         public const string ContinueCaption = "Back to your last rocket.";
         public const string MissionsCaption = "Pick any flight you've unlocked.";
         public const string CodexCaption = "Parts, places and flight notes.";
+        /// <summary>Test Flight's tile (UX spec): the name and its sub-line. TestFlightCopy holds the same words.</summary>
+        public const string TestFlightName = TestFlightCopy.HomeLabel, TestFlightCaption = TestFlightCopy.HomeSub;
         /// <summary>STARTER_COPY.md "18–20 px labels": a CTA label that needs less than this falls back to the short form.</summary>
         public const float CtaMinLabel = 20f;
 
@@ -323,6 +327,8 @@ namespace Kestrel.Core.Flight
             f.TileCaptionLines = show.Codex
                 ? Math.Max(TileCaptionLines(t, col, MissionsCaption), TileCaptionLines(t, col, CodexCaption))
                 : Math.Max(1, HomeTypeMetrics.Lines(HomeFace.GroteskMedium, MissionsCaption, t.TileCaption, tw - 2f * TileBorder - 2f * t.Pad));
+            if (show.TestFlight)
+                f.TileCaptionLines = Math.Max(f.TileCaptionLines, Math.Max(1, HomeTypeMetrics.Lines(HomeFace.GroteskMedium, TestFlightCaption, t.TileCaption, col - 2f * TileBorder - 2f * t.Pad)));
             float tileH = TileH(t, f.TileCaptionLines);
             f.ThrumShown = ThrumText(t, col, thrum ?? "", ThrumShort);
             f.ThrumLines = ThrumLines(t, col, f.ThrumShown);
@@ -334,6 +340,7 @@ namespace Kestrel.Core.Flight
             y -= tileH;
             f.Missions = new HomeRect(x, y, tw, tileH);
             if (show.Codex) f.Codex = new HomeRect(x + col - tw, y, tw, tileH);
+            if (show.TestFlight) { y -= Gap + tileH; f.TestFlight = new HomeRect(x, y, col, tileH); }
             if (show.DesignFirst) { y -= Gap + designH; f.Design = new HomeRect(x, y, col, designH); }
             y -= Gap + launchH; f.Launch = new HomeRect(x, y, col, launchH);
             if (show.Stats) { y -= Gap + statsH; f.Stats = new HomeRect(x, y, col, statsH); }

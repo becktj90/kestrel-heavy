@@ -350,6 +350,7 @@ namespace Kestrel.Game.Shell
                 case "orbit": Orbit(p, w, h); break;
                 case "book": Book(p, w, h); break;
                 case "gear": Gear(p, w, h); break;
+                case "flask": Flask(p, w, h); break;
                 default: Disc(p, w, h); break;
             }
         }
@@ -370,6 +371,29 @@ namespace Kestrel.Game.Shell
             p.LineTo(new Vector2(w * 0.28f, h * 0.42f));
             p.ClosePath();
             p.Stroke();
+        }
+
+        /// <summary>Test Flight's mark (DECISIONS #102): a lab flask, drawn, because no shipped font has the emoji.</summary>
+        public static void Flask(Painter2D p, float w, float h)
+        {
+            p.BeginPath();
+            p.MoveTo(new Vector2(w * 0.4f, h * 0.14f));
+            p.LineTo(new Vector2(w * 0.4f, h * 0.42f));
+            p.LineTo(new Vector2(w * 0.18f, h * 0.84f));
+            p.LineTo(new Vector2(w * 0.82f, h * 0.84f));
+            p.LineTo(new Vector2(w * 0.6f, h * 0.42f));
+            p.LineTo(new Vector2(w * 0.6f, h * 0.14f));
+            p.MoveTo(new Vector2(w * 0.32f, h * 0.14f));
+            p.LineTo(new Vector2(w * 0.68f, h * 0.14f));
+            p.Stroke();
+            // The liquid: a filled band in the bowl, so the mark is a shape and not a line alone.
+            p.BeginPath();
+            p.MoveTo(new Vector2(w * 0.3f, h * 0.62f));
+            p.LineTo(new Vector2(w * 0.7f, h * 0.62f));
+            p.LineTo(new Vector2(w * 0.79f, h * 0.8f));
+            p.LineTo(new Vector2(w * 0.21f, h * 0.8f));
+            p.ClosePath();
+            p.Fill();
         }
 
         static void Blueprint(Painter2D p, float w, float h)

@@ -23,6 +23,9 @@ namespace Kestrel.Core.Flight
         public bool Scroll;
         public WebHomeType Type;
         public HudBox Rocket, Menu, Title, Stats, Launch, Design, Missions, Codex, Gear, Exit, Audio, Hint;
+        /// <summary>Test Flight's tile (DECISIONS #102), MISSIONS-sized, directly under LAUNCH (and Design first). Empty
+        /// when <see cref="Kestrel.Core.Features.HomeShow.TestFlight"/> is off or the column has no room for it.</summary>
+        public HudBox TestFlight;
         /// <summary>The CTA word's width at 100 px (LAUNCH, or CONTINUE with a save).</summary>
         public float LaunchAt100 = HomeWideText.Launch;
         /// <summary>The primary CTA words (Starter Home); null on the legacy Place.</summary>
@@ -160,8 +163,11 @@ namespace Kestrel.Core.Flight
         {
             if (!show.Stats) f.Stats = default;
             if (!show.Thrum) f.Hint = default;
+            f.TestFlight = default;
             if (!f.Wide)
             {
+                // Portrait web: Test Flight takes the Design first slot under LAUNCH when that is hidden (no room else).
+                if (show.TestFlight && !show.DesignFirst && f.Design.Live) f.TestFlight = f.Design;
                 if (!show.DesignFirst) f.Design = default;
                 if (!show.Codex)
                 {
@@ -172,9 +178,17 @@ namespace Kestrel.Core.Flight
             }
             float y = f.Launch.Bottom + Gap;
             float tileH = f.Missions.H;
+            // The full frame stacks LAUNCH, Design first, MISSIONS and Codex. Test Flight (a MISSIONS-sized tile under
+            // LAUNCH) takes the room Design first or Codex gave up; with both shown there is none, and it stays off.
+            float room = f.Codex.Bottom;
             if (show.DesignFirst) y = f.Design.Bottom + Gap;
             else f.Design = default;
             if (!show.Codex) f.Codex = default;
+            if (show.TestFlight && !(show.DesignFirst && show.Codex) && y + tileH + Gap + tileH + (show.Codex ? Gap + f.Codex.H : 0f) <= room + 0.01f)
+            {
+                f.TestFlight = new HudBox { X = f.Missions.X, Y = y, W = f.Missions.W, H = tileH };
+                y += tileH + Gap;
+            }
             f.Missions = new HudBox { X = f.Missions.X, Y = y, W = f.Missions.W, H = tileH };
             if (show.Codex)
                 f.Codex = new HudBox { X = f.Codex.X, Y = f.Missions.Bottom + Gap, W = f.Codex.W, H = f.Codex.H };
@@ -448,6 +462,14 @@ namespace Kestrel.Core.Flight
             if (codex && HomeWideText.Lines(HomeWideText.CodexCaption, t.TileCaption, tileInner) > t.TileCaptionLines) return "codex caption does not fit";
             float tileBlock = Block(t.TileName, t.TileCaption, t.TileCaptionLines, 10f, 3f);
             if (tileBlock > f.Missions.H + 0.6f) return "missions text taller than the card";
+            if (f.TestFlight.Live)
+            {
+                float tfInner = Math.Max(1f, f.TestFlight.W - TileChrome);
+                // The flask glyph trails the name like the MISSIONS planet (no lamp): the same name budget.
+                if (HomeTypeMetrics.Width(HomeFace.FrauncesBold, TestFlightCopy.HomeLabel, t.TileName, 0.03f) > nameInner + 0.6f) return "Test Flight wider than the tile";
+                if (HomeTypeMetrics.Lines(HomeFace.GroteskMedium, TestFlightCopy.HomeSub, t.TileCaption, tfInner) > t.TileCaptionLines) return "Test Flight caption does not fit";
+                if (tileBlock > f.TestFlight.H + 0.6f) return "Test Flight text taller than the card";
+            }
             if (codex && tileBlock > f.Codex.H + 0.6f) return "codex text taller than the card";
 
             if (f.Stats.Live)

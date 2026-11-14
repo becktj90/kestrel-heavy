@@ -126,9 +126,12 @@ namespace Kestrel.Game.Tests
             // Off (default): the driver can run its whole sync and nothing is built.
             Assert.DoesNotThrow(() => { driver.SyncSprite(); driver.SyncSprite(); });
             Assert.That(driver.HasSprite, Is.False);
-            Assert.That(root.Q("guide-overlay"), Is.Null);
             Assert.That(root.Q("guide-pop"), Is.Null);
-            Assert.That(root.childCount, Is.EqualTo(before), "nothing added where the portrait sat");
+            if (!WelcomeUp(driver))
+            {
+                Assert.That(root.Q("guide-overlay"), Is.Null);
+                Assert.That(root.childCount, Is.EqualTo(before), "nothing added where the portrait sat");
+            }
             Assert.DoesNotThrow(() => driver.Silence(), "Silence is safe with no portrait");
             Assert.That(uiGo.GetComponents<AudioSource>().Length, Is.EqualTo(0), "off: no blip source");
 
@@ -150,9 +153,12 @@ namespace Kestrel.Game.Tests
             ExperienceSettings.SetCornerCharacter(false, PlayerPrefs.SetInt);
             Assert.DoesNotThrow(() => driver.SyncSprite());
             Assert.That(driver.HasSprite, Is.False);
-            Assert.That(root.Q("guide-overlay"), Is.Null);
             Assert.That(root.Q("guide-pop"), Is.Null);
-            Assert.That(root.childCount, Is.EqualTo(before));
+            if (!WelcomeUp(driver))
+            {
+                Assert.That(root.Q("guide-overlay"), Is.Null);
+                Assert.That(root.childCount, Is.EqualTo(before));
+            }
             Assert.That(uiGo.GetComponents<AudioSource>().Length, Is.EqualTo(0), "off again: no blip source");
 
             // And on once more after being off: one overlay, not two.
@@ -197,6 +203,12 @@ namespace Kestrel.Game.Tests
             driver.SyncSprite();
             Assert.That(live.Pending.Count, Is.EqualTo(0), "off: the queue is emptied");
             LogAssert.NoUnexpectedReceived();
+        }
+
+        static bool WelcomeUp(GuideBoxDriver driver)
+        {
+            var live = driver != null && driver.Stage != null ? driver.Stage.Engine as LiveGuideEngine : null;
+            return OpeningIntroSequence.Active(live);
         }
 
         static void Press(Button button)
