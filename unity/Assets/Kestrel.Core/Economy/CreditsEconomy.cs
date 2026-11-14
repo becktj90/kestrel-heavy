@@ -322,6 +322,18 @@ namespace Kestrel.Core.Economy
             return pay;
         }
 
+        /// <summary>Career restart: starting balance, no first-clears or medals remembered. Designs stay.</summary>
+        public void ResetToStart()
+        {
+            Balance = Table != null ? Table.Starting : 0;
+            PaidQuote = 0;
+            Gifted = 0;
+            LastMissionId = null;
+            firstClears.Clear();
+            medals.Clear();
+            Save();
+        }
+
         public void Save()
         {
             if (store == null || Table == null) return;
