@@ -4645,19 +4645,19 @@
    "event": "color.pad",
    "channel": "host",
    "layer": "color",
-   "text": "In November 2025, New Glenn's first stage landed on Jacklyn.",
-   "spokenText": "In November 2025, New Glenn's first stage landed on Jacklyn.",
+   "text": "In December 2015, a Falcon 9 booster became the first from an orbital launch to land upright.",
+   "spokenText": "In December 2015, a Falcon 9 booster became the first from an orbital launch to land upright.",
    "voice": "Sarah",
    "voiceId": "EXAVITQu4vr4xnSDxMaL",
    "voiceDir": "host",
    "model": "eleven_multilingual_v2",
    "file": "host/color.pad.m7.1.mp3",
-   "durationSec": 4.644,
+   "durationSec": 6.583,
    "lufs": -16.44,
-   "truePeakDb": -3.19,
+   "truePeakDb": -3.3,
    "normalization": "linear",
-   "hash": "90d5a02b575f",
-   "sha256": "61f50612ed8ee36539345939ed2e792cabcf57b08502baaab1e419d34a3192f5",
+   "hash": "3531750df29b",
+   "sha256": "177a251b246263890cacdd04a3d29c4f04161a7d3a3bf895aeab7fd52f33c6bb",
    "requires": {
     "mission": "m7"
    },
@@ -4666,7 +4666,7 @@
    ],
    "mission": "m7",
    "sources": [
-    "H5"
+    "S16"
    ]
   },
   {
@@ -4674,19 +4674,19 @@
    "event": "color.pad",
    "channel": "cohost",
    "layer": "color",
-   "text": "Jacklyn waited about six hundred kilometres downrange in the Atlantic.",
-   "spokenText": "Jacklyn waited about six hundred kilometres downrange in the Atlantic.",
+   "text": "Landing ships wait far downrange, so the booster needn't fly all the way back.",
+   "spokenText": "Landing ships wait far downrange, so the booster needn't fly all the way back.",
    "voice": "Chris",
    "voiceId": "iP95p4xoKVk53GoZ742B",
    "voiceDir": "cohost",
    "model": "eleven_multilingual_v2",
    "file": "cohost/color.pad.m7.2.mp3",
-   "durationSec": 3.39,
-   "lufs": -16.45,
-   "truePeakDb": -1.83,
+   "durationSec": 4.728,
+   "lufs": -16.43,
+   "truePeakDb": -2.35,
    "normalization": "linear",
-   "hash": "08d5123995c1",
-   "sha256": "872e06bab160cef42b3dc4cc3bcdcc752e4faa794abb44d5c4ca467f9db1b253",
+   "hash": "bc8c7d05171d",
+   "sha256": "93b5d2a6d1c14febe23616936751e44ed85fe2313ac7e253f134abe6da7cee44",
    "requires": {
     "mission": "m7"
    },
@@ -4695,7 +4695,7 @@
    ],
    "mission": "m7",
    "sources": [
-    "H5"
+    "S16"
    ]
   },
   {

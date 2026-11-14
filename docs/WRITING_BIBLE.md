@@ -146,8 +146,10 @@ are left out of the clip library (as PR #30 already does). Say "Score clipped." 
 
 ### 6.6 Names and trademarks
 
-- **Banned anywhere (spoken text, captions, code enums, file names):** Blue Origin, New
-  Glenn, Jacklyn, LC-36. Also avoid any other real company, vehicle, or ship name.
+- **Real names (DECISIONS #100, #101, see §8):** real names, dates and commonly known
+  companies are fine in true, sourced facts, Blue Origin, New Glenn, Jacklyn and LC-36
+  included when the history is relevant. Never imply that Kestrel Heavy, the KH rocket, Pier 7
+  or Haven are related to or are assets of Blue Origin. The game's own world below stays fictional.
 - **Use instead:** missions `KH-n` (for example KH-3), launch site **Pier 7**, recovery
   barge **Haven**, rocket "the stack" / "the booster" / "the upper (stage)".
 - Generic aerospace terms are fine and encouraged: Max-Q, MECO, SECO, LOX, methane,
@@ -231,9 +233,17 @@ misspellings.
 
 ## 8. Banned content [1.0]
 
-- **Real brands and people:** no real companies, vehicles, ships, pads, people, or
-  trademarks (Blue Origin, New Glenn, Jacklyn, LC-36, SpaceX, NASA marks, astronaut names,
-  etc.). Applies to text, audio, code enums, file names, art.
+- **Real brands and people:** no real brand marks, logos or trade dress in art, UI, code enums
+  or file names, and no real company, vehicle, ship or pad presented as part of the game's own
+  world. Spoken and written facts may use real names; see the exception below.
+  **Exception (DECISIONS #100 and #101, superseding #77's narrower scope):** real names, real
+  history, real dates and commonly known companies (for example Falcon 9) are allowed on every
+  surface, Codex included, when they tell true facts. Blue Origin, New Glenn, Jacklyn and LC-36
+  may be named as real history when it is relevant and sourced (#101). Each fact has a source id
+  and a Codex or Physics check. Kestrel Heavy is not related to Blue Origin: nothing may imply
+  affiliation or endorsement, or that the KH rocket, Pier 7 or Haven are real Blue Origin assets.
+  KH missions, the KH rocket, Pier 7 and Haven stay fictional and are never presented as real.
+  Full rule: `docs/narration-facts.md`.
 - **Scary or violent framing:** no death, injury, explosions described graphically, fire on
   people, weapons, military payloads, disaster imagery. Failures are "stack lost," "range safe."
 - **Monetization pressure:** no "buy now," no countdown offers, no FOMO, no "your friends

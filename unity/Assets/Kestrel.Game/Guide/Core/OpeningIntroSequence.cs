@@ -107,17 +107,28 @@ namespace Kestrel.Game.Guide
 
         static string PebbleName(Campaign campaign)
         {
-            var m1 = campaign?.Missions != null && campaign.Missions.Count > 0 ? campaign.Missions[0] : null;
-            if (m1?.Briefing != null && !string.IsNullOrEmpty(m1.Briefing.PayloadName)) return m1.Briefing.PayloadName;
+            var m1 = Kh1(campaign);
+            if (m1 != null && !string.IsNullOrEmpty(m1.PayloadName)) return m1.PayloadName;
             return "Pebble";
         }
 
         static string ApogeeKm(Campaign campaign)
         {
-            var m1 = campaign?.Missions != null && campaign.Missions.Count > 0 ? campaign.Missions[0] : null;
-            if (m1?.Target != null && m1.Target.ApoKm > 0)
-                return m1.Target.ApoKm.ToString("0", CultureInfo.InvariantCulture);
+            var m1 = Kh1(campaign);
+            if (m1 != null && m1.ApoKm > 0)
+                return m1.ApoKm.ToString("0", CultureInfo.InvariantCulture);
             return "10";
+        }
+
+        static CampaignMission Kh1(Campaign campaign)
+        {
+            if (campaign?.Missions == null) return null;
+            for (int i = 0; i < campaign.Missions.Count; i++)
+            {
+                var row = campaign.Missions[i];
+                if (row != null && row.Index == 1) return row;
+            }
+            return campaign.Missions.Count > 0 ? campaign.Missions[0] : null;
         }
     }
 }

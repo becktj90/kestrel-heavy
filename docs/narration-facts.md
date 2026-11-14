@@ -26,9 +26,8 @@ AND over fact keys. Values: exact (number, bool, string), a comparison string on
 
 ## Historical commentary (DECISIONS #77)
 
-In-game commentary may name real companies, rockets, programs, ships and people when it tells true
-spaceflight history — for example Sputnik, Apollo, Saturn V, Falcon 9, New Glenn, Jacklyn. This
-supersedes WRITING_BIBLE §6.6 and §8 for the historical commentary lines only. A historical take:
+DECISIONS #100 and #101 (below) now set the naming rule for every surface; this section only describes the
+shape of the mission-gated historical takes. A historical take:
 
 - is a color-layer take (`"layer": "color"`) on a `color.*` event, gated to exactly one mission:
   `"requires": {"mission": "m<n>"}`, `"claims": ["mission"]`, plus `"mission": "m<n>"` and
@@ -36,9 +35,10 @@ supersedes WRITING_BIBLE §6.6 and §8 for the historical commentary lines only.
 - states no fact about the flown design (no engine counts, no "booster", no strap-ons, no
   Haven/pad/site claims) — the claim-vs-design verifier only ever sees `claims: ["mission"]`;
 - has every fact sourced in `docs/plans/per-mission-commentary.md` (S-rows reuse
-  `docs/narration-sources.md`; H-rows are checked there). The lint exempts historical takes from
-  the banned-names rule (`blue origin|new glenn|jacklyn|lc-36`) and fails any other take that
-  names them, and fails a mission-gated take that has no sources or does not claim `mission`.
+  `docs/narration-sources.md`; H-rows are checked there). The lint fails a mission-gated take that
+  has no sources or does not claim `mission`, and runs the no-affiliation check (DECISIONS #101) on
+  every take. As with "oxygen", a historical take's "booster" is history, not a design claim, so
+  the claim-vs-design verifier skips it on mission-gated historical takes.
 
 The game's own world stays fictional: pads, ships, missions and rockets keep their names (Pier 7,
 Haven, KH-n, the stack), and no real brand or trade dress is used in art, UI, store copy or code
@@ -46,13 +46,49 @@ enums. The mission id is threaded into `NarrationFacts` at the two narration ent
 (`FlightDriver` from the aimed mission, `SliceApp.BeginCountNarration` from
 `AscentFlight.CurrentMission()`); a flight with no mission id simply never hears these lines.
 
+### Real names on every surface (DECISIONS #100, #101)
+
+Trevor, 2026-11-11 8:28 AM ET (#100): *"Use real names and real history and real dates. It should be
+educational. The kestrel heavy missions are fictional but all other things can use real world
+information. You can use other companies too as long as it's common knowledge."*
+
+Trevor, 2026-11-11 8:36 AM ET (#101, superseding the banned-names part of #100): *"It is not related
+to blue origin and can name new Glenn and Jaqueline if that history is relevant"* ("Jaqueline" =
+Jacklyn).
+
+- Real names, history, dates and **commonly known companies** (for example Falcon 9) are allowed on
+  **every surface**: webcast color, mission previews, designer, idle or pad, menus, and Codex.
+- **Blue Origin, New Glenn, Jacklyn and LC-36** may be named as real history **when the history is
+  relevant and sourced**, like any other real fact.
+- **Every fact needs a source id** (`docs/narration-sources.md` S- and G-rows, or
+  `docs/plans/per-mission-commentary.md` H-rows) **and a Codex or Physics check** (Codex for history
+  and game facts, Physics for physics claims, both for mixed lines) before it is recorded.
+- **No affiliation.** Kestrel Heavy is not related to Blue Origin. No line, Codex entry or listing
+  text may imply affiliation or endorsement, or that the KH rocket, Pier 7 or Haven are real Blue
+  Origin assets. The lint's no-affiliation check fails any take that names Blue Origin, New Glenn,
+  Jacklyn or LC-36 without sources, together with Kestrel, KH, Haven or Pier 7, or with affiliation
+  wording (our, partner, official, sponsor, endorse).
+- **The game's own world stays fictional**: KH missions, the KH rocket, the pad (Pier 7) and the
+  barge Haven are never presented as real, and no line says the player's stack is a real rocket.
+- **No implied endorsement** of any company.
+- Word caps: in-flight lines (feedback, status, color) stay at 14 words per spoken line; menu,
+  designer, idle and mission-preview lines may run up to 24 words.
+
+Any fact about the flown design still needs `requires`/`claims` as usual; a history line that
+states none is `neutral`.
+
+**m20 (Far Hold) apogee note (Codex/Physics, 2026-11-11):** m20's C3 -0.25 path has an apogee of about
+3.2 million km. That is outside Earth's Hill sphere (about 1.5 million km), where in reality the Sun's
+gravity dominates. The game's two-body model keeps it bound to Earth, so "still tied to Earth" is fine
+as a game statement, but **no line may claim the real-world path comes back to Earth**.
+
 Propellants: `kerolox`, `hydrolox`, `methalox`, `solid`, `storable`.
 
 ## `claims`
 Non-empty list of the keys the spoken line asserts; a subset of the `requires` keys. Other `requires` keys are routing only.
 
 ## Lint
-`tests/narration-facts-lint.test.cjs` (`npm test`): tag form, keys and values, fact words need claims or a neutral reason, banned names, both manifests byte-equal, every mp3 present in both trees with its sha256 and a Unity `.meta`, −16 LUFS ±1 and ≤ −1.5 dBTP, and a coverage floor: every shipped design, on every pad, keeps true mission-control takes for each event it flies; and a claim-vs-design verifier that reads the spoken text of every take eligible for a design (starters, golden sets, winners, templates, presets, the hopper, on all four pads) and checks each stated fact (engine counts, stage words, strap-ons, propellants, Haven/deck/ground, pad names, "coming home") against the raw design JSON. A line that states one of those facts must claim it in a tag; a neutral line may not state it.
+`tests/narration-facts-lint.test.cjs` (`npm test`): tag form, keys and values, fact words need claims or a neutral reason, the no-affiliation check for Blue Origin names (DECISIONS #101), both manifests byte-equal, every mp3 present in both trees with its sha256 and a Unity `.meta`, −16 LUFS ±1 and ≤ −1.5 dBTP, and a coverage floor: every shipped design, on every pad, keeps true mission-control takes for each event it flies; and a claim-vs-design verifier that reads the spoken text of every take eligible for a design (starters, golden sets, winners, templates, presets, the hopper, on all four pads) and checks each stated fact (engine counts, stage words, strap-ons, propellants, Haven/deck/ground, pad names, "coming home") against the raw design JSON. A line that states one of those facts must claim it in a tag; a neutral line may not state it.
 
 ## Adding a clip
 Append it after the event's existing takes (the pre-picker round-robin plays them in file order), tag it, generate with the fixed voice and settings from `tools/clipgen/gen_static.py`, normalize to −16 LUFS / −1.5 dBTP, copy the mp3 into the Unity folder with a `.meta`, and update both manifests. Note: re-running `gen_static.py` rebuilds the manifest from `web/js/narration/manifest.js` and would drop the tags and the PR A clips; port the tags first.

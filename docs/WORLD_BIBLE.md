@@ -13,8 +13,15 @@ Companion doc: `docs/WRITING_BIBLE.md` (tone, line limits, narrator spec, dialec
 
 ## 1. Ground rules [1.0]
 
-- **All fictional.** No real companies, people, vehicles, ships, pads, or trademarks.
-  Banned examples: Blue Origin, New Glenn, Jacklyn, LC-36, SpaceX, NASA branding.
+- **The game's own world is fictional.** KH missions, the KH rocket ("the stack"), the pad
+  (Pier 7) and the barge Haven are invented and never presented as real. No real brand marks,
+  logos or trade dress in art, UI, code enums or file names.
+- **Real-world facts use real names (DECISIONS #100, #101).** Real people, programs, agencies,
+  vehicles, dates and commonly known companies (for example NASA, Apollo, Falcon 9, and Blue
+  Origin, New Glenn, Jacklyn or LC-36 when the history is relevant) are fine in true, sourced
+  facts on every surface, Codex included. Kestrel Heavy is not related to Blue Origin or any other
+  company: nothing may imply affiliation or endorsement, or that the KH rocket, Pier 7 or Haven
+  are a real company's assets.
   Generic aerospace words (Max-Q, MECO, LOX, methane, GTO) are fine.
 - **Honest physics.** The world never bends the sim. Story explains what happened; it
   doesn't change what happened.

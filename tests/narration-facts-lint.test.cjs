@@ -23,10 +23,25 @@ const ENUM = (k) => (/propellant/.test(k) ? (k === 'propellant.all' ? [...PROPS,
 const CMP_RE = /^(>=|<=|!=|>|<)-?\d+$/;
 const FACT_WORDS = /\b(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|\d+|engines?|cores?|cluster|chambers?|methane|LOX|kerosene|hydrogen|methalox|kerolox|hydrolox|solids?|strap-?ons?|boosters?|upper stage|(first|second|third)[- ]stage|legs|fins?|finless|halves|fairing|Haven|barge|landing|pad landing|Pier 7|Coastal Pad B|Salt Flat Pad|North Reach|strakes?)\b/i;
 const ALLOW = /SES-1|Max-Q|T-minus \d+/gi;
-// DECISIONS #77: historical commentary lines may name real companies, rockets, programs, ships and
-// people. A take is historical only when it is gated to one campaign mission AND carries sources;
-// those takes are exempt from the banned-names rule. Every other take still fails on a banned name.
-const BANNED = /blue origin|new glenn|jacklyn|lc-36/i;
+// DECISIONS #77, widened by #100 and #101: real names, history, dates and commonly known companies are
+// allowed on every narration surface, including Blue Origin, New Glenn, Jacklyn and LC-36 when the history is
+// relevant and sourced (#101). Kestrel Heavy is NOT related to Blue Origin, so the old banned-names rule is
+// replaced by a no-affiliation check: a take that names Blue Origin, New Glenn, Jacklyn or LC-36 must carry
+// sources, and must not put them next to the game's own world (Kestrel, KH, Haven, Pier 7) or use
+// affiliation wording (our, partner, official, sponsor, endorse).
+const BO_NAMES = /blue origin|new glenn|jacklyn|lc-36/i;
+const OWN_WORLD = /\bkestrel\b|\bKH\b|\bKH-\d+|\bhaven\b|\bpier 7\b/i;
+const AFFILIATION = /\b(our|ours|partner(s|ed|ship)?|official(ly)?|sponsor(s|ed)?|endorse[sd]?|endorsement)\b/i;
+function affiliationErrors(c) {
+  const errs = [];
+  for (const t of [c.text, c.spokenText]) {
+    if (!t || !BO_NAMES.test(t)) continue;
+    if (OWN_WORLD.test(t)) errs.push(`${c.id}: names ${t.match(BO_NAMES)[0]} in the same take as ${t.match(OWN_WORLD)[0]} (implies affiliation, DECISIONS #101)`);
+    if (AFFILIATION.test(t)) errs.push(`${c.id}: names ${t.match(BO_NAMES)[0]} with affiliation wording "${t.match(AFFILIATION)[0]}" (DECISIONS #101)`);
+    if (!Array.isArray(c.sources) || c.sources.length === 0) errs.push(`${c.id}: names ${t.match(BO_NAMES)[0]} without sources (DECISIONS #101)`);
+  }
+  return [...new Set(errs)];
+}
 const isHistorical = (c) => c.requires && typeof c.requires.mission === 'string'
   && Array.isArray(c.sources) && c.sources.length > 0;
 
@@ -86,10 +101,10 @@ test('every clip carries exactly one valid fact tag form', () => {
   assert.deepEqual(errs, []);
 });
 
-test('fact-word lines are gated or carry a neutral reason; no banned names', () => {
+test('fact-word lines are gated or carry a neutral reason; no implied Blue Origin affiliation', () => {
   for (const c of clips) {
+    assert.deepEqual(affiliationErrors(c), [], `${c.id}: affiliation`);
     for (const t of [c.text, c.spokenText]) {
-      assert.ok(isHistorical(c) || !BANNED.test(t), `${c.id}: banned name`);
       if (FACT_WORDS.test(t.replace(ALLOW, ''))) {
         assert.ok((c.claims && c.claims.length) || (c.neutral && c.neutralReason), `${c.id}: fact words need claims or neutralReason`);
       }
@@ -97,12 +112,10 @@ test('fact-word lines are gated or carry a neutral reason; no banned names', () 
   }
 });
 
-test('historical takes (DECISIONS #77): mission-gated, sourced, and the only takes that may name real programs', () => {
+test('historical takes (DECISIONS #77/#100/#101): mission-gated and sourced; no implied affiliation on any take', () => {
   const errs = [];
   for (const c of clips) {
-    if (BANNED.test(c.text) || BANNED.test(c.spokenText)) {
-      if (!isHistorical(c)) errs.push(`${c.id}: banned name on a non-historical take`);
-    }
+    errs.push(...affiliationErrors(c));
     if (c.requires && 'mission' in c.requires) {
       if (!MISSIONS.includes(c.requires.mission)) errs.push(`${c.id}: bad mission ${c.requires.mission}`);
       if (!isHistorical(c)) errs.push(`${c.id}: mission-gated take needs sources`);
@@ -111,6 +124,16 @@ test('historical takes (DECISIONS #77): mission-gated, sourced, and the only tak
     }
   }
   assert.deepEqual(errs, []);
+});
+
+test('no-affiliation check flags Blue Origin names next to the game world or affiliation wording (DECISIONS #101)', () => {
+  const t = (text, sources = ['H5']) => affiliationErrors({ id: 'x', text, spokenText: text, sources }).length;
+  assert.equal(t("In November 2025, New Glenn's first stage landed on Jacklyn."), 0);
+  assert.ok(t('Like New Glenn, Haven waits downrange.') > 0);
+  assert.ok(t('Our partner Blue Origin flies from LC-36.') > 0);
+  assert.ok(t('The official New Glenn of Kestrel Heavy.') > 0);
+  assert.ok(t('New Glenn flew in 2025.', []) > 0);
+  assert.equal(t('Falcon 9 landed at Landing Zone 1 in 2015.', []), 0);
 });
 
 test('every clip file exists in both trees with the recorded sha256, and loudness is in spec', () => {
@@ -240,7 +263,9 @@ function statedFacts(c) {
   if (/\bthird stage\b/i.test(t)) out.push(['third stage', /^(stages|lit\.stage)$/, (d, ctx) => d.stages.length >= 3 && (!ctx['lit.stage'] || ctx['lit.stage'] === 3)]);
   if (/another stage|carries the payload|final push|insertion (is )?complete/i.test(t)) out.push(['stage position', /^(stages|lit\.last|lit\.stage)$/, (d, ctx) => /another stage/i.test(t) ? ctx['lit.stage'] < d.stages.length : ctx['lit.stage'] === d.stages.length]);
   if (/\bupper\b/i.test(t)) out.push(['upper stage', /^(stages|lit\.stage|lit\.last)$/, (d) => d.stages.length >= 2]);
-  if (/\bbooster\b/i.test(t)) out.push(['booster', /^(stages|strapons|recovery|lit\.stage)/, (d) => d.stages.length >= 2 || !!(d.strapOns && d.strapOns.count > 0)]);
+  // A historical take's "booster" is history (for example the first upright landing in 2015), not a claim
+  // about the flown design, so like the oxygen rule below it does not apply to mission-gated historical takes.
+  if (/\bbooster\b/i.test(t) && !isHistorical(c)) out.push(['booster', /^(stages|strapons|recovery|lit\.stage)/, (d) => d.stages.length >= 2 || !!(d.strapOns && d.strapOns.count > 0)]);
   if (/Haven|barge|\bdeck\b|sea state|in the drink/i.test(t)) out.push(['Haven', /^recovery$/, (d) => recoveryOf(d) === 'barge']);
   if (/hit the ground/i.test(t)) out.push(['ground', /^recovery$/, (d) => recoveryOf(d) === 'rtls']);
   if (REC_EVENTS.has(c.event) && /\bpad\b/i.test(t)) out.push(['landing on the pad', /^recovery$/, (d) => recoveryOf(d) === 'rtls']);

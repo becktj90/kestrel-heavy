@@ -225,12 +225,12 @@ Theme: The first orbital booster landing (Falcon 9, 2015) and the tower catch (S
 
 Flight: 5,500 kg comsat to transfer orbit, booster lands on Haven.
 
-Theme: New Glenn lands on Jacklyn (2025) and the first droneship landing (2016).
+Theme: the first upright booster landing (2015) and the first droneship landing (2016). (Was: New Glenn on Jacklyn, 2025; re-recorded 2026-11-11 under DECISIONS #100, Codex-approved text, kept under #101. m7.2 is generic on purpose: Orbcomm-2 landed on land, at Landing Zone 1, so it is not tied to m7.1.)
 
 | Take | Window | Voice | Line | Sources |
 |------|--------|-------|------|---------|
-| `host/color.pad.m7.1` | `color.pad` | H | In November 2025, New Glenn's first stage landed on Jacklyn. | H5 |
-| `cohost/color.pad.m7.2` | `color.pad` | C | Jacklyn waited about six hundred kilometres downrange in the Atlantic. | H5 |
+| `host/color.pad.m7.1` | `color.pad` | H | In December 2015, a Falcon 9 booster became the first from an orbital launch to land upright. | S16 |
+| `cohost/color.pad.m7.2` | `color.pad` | C | Landing ships wait far downrange, so the booster needn't fly all the way back. | S16 |
 | `host/color.coast.m7.1` | `color.coast` | H | A transfer orbit stretches from low orbit out to thirty-six thousand kilometres. | H6 |
 | `cohost/color.recovery.m7.1` | `color.recovery` | C | The first droneship landing was a Falcon 9, in April 2016. | H7 |
 
@@ -396,6 +396,8 @@ Flight: 3,200 kg probe on a C3 -0.25 path, 4-hour coast.
 
 Theme: Voyager 1, the farthest human-made object (1977– ).
 
+Note: m20's apogee is about 3.2 million km, outside Earth's Hill sphere (about 1.5 million km). The game's two-body model keeps it bound, but no line may claim the real path comes back (see `docs/narration-facts.md`).
+
 | Take | Window | Voice | Line | Sources |
 |------|--------|-------|------|---------|
 | `host/color.pad.m20.1` | `color.pad` | H | Voyager 1 launched in 1977 and is still flying, past the planets. | H22 |
@@ -418,7 +420,7 @@ S-rows live in `docs/narration-sources.md` (checked Oct 28 2026). H-rows were ch
 - **H2**: NOAA NESDIS, "Celebrating 65 Years of the World's First Weather Satellite" — https://www.nesdis.noaa.gov/news/celebrating-65-years-of-the-worlds-first-weather-satellite — TIROS-1, 1 Apr 1960, 270 lb, two TV cameras, 78 days, 19,000+ usable pictures.
 - **H3**: NASA, "50 Years Ago: Apollo Astronauts Land, Take First Steps on Moon" — https://www.nasa.gov/centers-and-facilities/kennedy/50-years-ago-apollo-astronauts-land-take-first-steps-on-moon/ — Saturn V five F-1s, 7.5M lb thrust; + Saturn V (Wikipedia) — https://en.wikipedia.org/wiki/Saturn_V — 111 m, 140,000 kg to LEO, 13 flights, no loss of crew or payload.
 - **H4**: SpaceX Flight 5 mission record, as quoted by Muskularity — https://muskularity.com/space/starship-flight-tests/ — 13 Oct 2024, "on our first try, Mechazilla caught the booster", chopstick arms, Starbase.
-- **H5**: Space.com, "Blue Origin lands huge New Glenn rocket booster for 1st time after acing Mars ESCAPADE launch for NASA" — https://www.space.com/space-exploration/launches-spacecraft/blue-origin-lands-huge-new-glenn-rocket-booster-for-1st-time-after-acing-mars-escapade-launch-for-nasa — NG-2, 13 Nov 2025, ESCAPADE, booster "Never Tell Me The Odds" landed on Jacklyn ~375 miles (604 km) downrange; NG-1 (16 Jan 2025) lost the booster.
+- **H5** (unused since the 2026-11-11 m7 re-record; DECISIONS #101 would allow it again as relevant, sourced history): Space.com, "Blue Origin lands huge New Glenn rocket booster for 1st time after acing Mars ESCAPADE launch for NASA" — https://www.space.com/space-exploration/launches-spacecraft/blue-origin-lands-huge-new-glenn-rocket-booster-for-1st-time-after-acing-mars-escapade-launch-for-nasa — NG-2, 13 Nov 2025, ESCAPADE, booster "Never Tell Me The Odds" landed on Jacklyn ~375 miles (604 km) downrange; NG-1 (16 Jan 2025) lost the booster.
 - **H6**: The mission's own target in data/campaign.json (KH-7/KH-15: ellipse 200 × 35,786 km). No external source needed; it describes the flown transfer, not history.
 - **H7**: Guinness World Records, "First rocket landing at sea after deploying a payload in orbit" — https://www.guinnessworldrecords.com/world-records/484421-first-rocket-landing-at-sea-after-deploying-a-payload-in-orbit — 8 Apr 2016, Falcon 9 core B1021, CRS-8, landed on Of Course I Still Love You, 300 km off Florida; + Universe Today — https://www.universetoday.com/articles/sensational-photos-show-super-smooth-droneship-touchdown-of-spacex-falcon-booster-spacex-vp-interview
 - **H8**: NASA, "60 Years Ago: John Glenn, the First American to Orbit the Earth aboard Friendship 7" — https://www.nasa.gov/history/60-years-ago-john-glenn-the-first-american-to-orbit-the-earth-aboard-friendship-7/ — 20 Feb 1962, three orbits, Friendship 7.

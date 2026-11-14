@@ -143,11 +143,6 @@ namespace Kestrel.Game.Guide
                 if (welcome) EnsureWelcomeStack();
                 return;
             }
-            if (welcome)
-            {
-                EnsureWelcomeStack();
-                return;
-            }
             DropSprite();
             // Off: nothing consumes the engine's queue, so keep it empty. Turning the character on later starts clean.
             if (live != null) live.DropQueued();
