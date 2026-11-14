@@ -129,6 +129,7 @@ namespace Kestrel.Core.Flight
         public double CoastHours, MaxG = double.NaN, ReliabilityMin = double.NaN;
         public bool MarginNonNegative, StrapOnsAllowed, NoRedRisks, RandomFailures, LandBoosters;
         public string LandingMode, LandingGrade, LandingSite;
+        /// <summary>PayloadName is briefing.payloadName (KH-1 is Pebble). Empty when the briefing omits it.</summary>
         public string PayloadName, Customer, Control, Goal, WhatItIs, WhatItDoes, Why, Form, CodexId, Band;
         public readonly List<string> Unlocks = new List<string>();
 
