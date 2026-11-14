@@ -217,9 +217,7 @@ namespace Kestrel.Core.Flight
             else if (!fuel)
                 kid = "This booster keeps no landing fuel, so it cannot slow down for Haven.";
             else if (!legs)
-                kid = starter
-                    ? "No landing was picked. The booster tries for Haven with its fuel, but it has no legs."
-                    : "This booster has no landing legs, so it cannot stand on Haven.";
+                kid = "This booster has no landing legs, so it cannot stand on Haven.";
             else
                 kid = starter
                     ? "No landing was picked. The booster tries for Haven anyway. It is not graded."
