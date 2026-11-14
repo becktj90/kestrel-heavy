@@ -1,4 +1,5 @@
 using Kestrel.Core.Guide;
+using Kestrel.Core.Ui;
 using Kestrel.Game.Audio;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -147,27 +148,33 @@ namespace Kestrel.Game.Guide
             {
                 // Welcome keeps its own stack without the corner pop; drop any pop left from an earlier On.
                 // Lines that are not the welcome are still dropped below once the intro is finished.
-                if (pop != null)
-                {
-                    Silence();
-                    if (stage != null) stage.Blip -= OnBlip;
-                    pop.Pop?.RemoveFromHierarchy();
-                    pop = null;
-                    if (blipSource != null)
-                    {
-                        if (Application.isPlaying) Destroy(blipSource);
-                        else DestroyImmediate(blipSource);
-                        blipSource = null;
-                    }
-                    blipClip = null;
-                    blipUntil = 0f;
-                    shownKey = "";
-                }
+                DropCornerPop();
                 EnsureWelcomeStack();
                 return;
             }
             DropSprite();
             if (live != null) live.DropQueued();
+        }
+
+        void DropCornerPop()
+        {
+            if (pop != null)
+            {
+                pop.Tapped -= OnTap;
+                if (pop.Pop != null) pop.Pop.RemoveFromHierarchy();
+                pop = null;
+            }
+            if (stage != null) stage.Blip -= OnBlip;
+            Silence();
+            if (blipSource != null)
+            {
+                if (Application.isPlaying) Destroy(blipSource);
+                else DestroyImmediate(blipSource);
+                blipSource = null;
+                blipClip = null;
+            }
+            blipUntil = 0f;
+            shownKey = "";
         }
 
         void EnsureWelcomeStack()
@@ -250,6 +257,7 @@ namespace Kestrel.Game.Guide
             }
             voice.Hold(paused);
             ApplyScreen();
+            if (welcomeStack != null) welcomeStack.Screen = screen;
             if (GuideClipPlayer.InFlight || !GuidePopLayout.Shows(Place) || (!welcome && Hidden()))
             {
                 if (voice != null && (voice.Sounding || voice.HasClip || voice.CardId.Length > 0)) Silence();
@@ -376,6 +384,32 @@ namespace Kestrel.Game.Guide
             float widthPt = Screen.width / dpr;
             float panelW = overlay != null && overlay.resolvedStyle.width > 1f ? overlay.resolvedStyle.width : widthPt;
             panelPerPoint = widthPt > 1f ? panelW / widthPt : 1f;
+            float footer = MenuFooterPoints();
+            if (footer > GuidePacing.MenuFooterPt) screen = screen.WithFooter(footer);
+        }
+
+        /// <summary>Points from the panel bottom up to the top of the Home keys, so the welcome box sits above them.</summary>
+        float MenuFooterPoints()
+        {
+            if (Place != GuidePlace.Menu || panelPerPoint <= 0f) return 0f;
+            var doc = Document != null ? Document : GetComponent<UIDocument>();
+            var root = doc != null ? doc.rootVisualElement : null;
+            if (root == null || root.worldBound.height < 1f) return 0f;
+            string[] ids = {
+                UiIds.HomePrimary, UiIds.HomeMissions, UiIds.HomeDesign, UiIds.HomeCodex, UiIds.HomeThrum,
+            };
+            float top = float.MaxValue;
+            for (int i = 0; i < ids.Length; i++)
+            {
+                var e = root.Q(ids[i]);
+                if (e == null || e.resolvedStyle.display == DisplayStyle.None) continue;
+                if (e.worldBound.height < 1f || e.worldBound.width < 1f) continue;
+                if (e.worldBound.yMin < top) top = e.worldBound.yMin;
+            }
+            if (top == float.MaxValue) return 0f;
+            float px = root.worldBound.yMax - top + 8f * panelPerPoint;
+            if (px < 1f) return 0f;
+            return px / panelPerPoint;
         }
 
         static string RepoRoot()

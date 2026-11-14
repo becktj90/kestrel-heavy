@@ -230,7 +230,9 @@ namespace Kestrel.Game.Tests
 
             var line = panel.Root.Q<Label>(UiIds.StarterReadiness);
             var badge = panel.Root.Q<Label>(UiIds.StarterBadge);
-            Assert.AreEqual("Too heavy to leave the pad. Try less fuel.", line.text);
+            StringAssert.Contains("Too heavy to leave the pad. Try less fuel.", line.text);
+            StringAssert.Contains("Kc", line.text);
+            StringAssert.Contains("Holds", line.text);
             Assert.AreEqual(StarterScreen.HeavyBadge, badge.text);
             Assert.IsTrue(UiTreeChecks.Visible(line), "the message is on screen");
             Assert.IsTrue(UiTreeChecks.Visible(badge), "the badge is on screen");
@@ -316,7 +318,9 @@ namespace Kestrel.Game.Tests
                 Assert.AreEqual(StarterReadinessCopy.Current.Badge(cause), badgeLabel.text, where + " the Honest Ready badge");
                 Assert.AreNotEqual(StarterScreen.ReadyBadge, badgeLabel.text, where);
                 Assert.AreNotEqual(StarterScreen.TightBadge, badgeLabel.text, where);
-                StringAssert.StartsWith(StarterReadinessCopy.Current.Causes[cause].Kid, lineLabel.text, where);
+                StringAssert.Contains(StarterReadinessCopy.Current.Causes[cause].Kid, lineLabel.text, where);
+                StringAssert.Contains("Kc", lineLabel.text, where);
+                StringAssert.Contains("Holds", lineLabel.text, where);
                 Assert.IsTrue(UiTreeChecks.Visible(badgeLabel), where + " the badge is on screen");
                 Assert.IsTrue(UiTreeChecks.Visible(lineLabel), where + " the reason is on screen");
                 Assert.IsTrue(launch.enabledSelf, where + " a bad but buildable rocket still launches");
