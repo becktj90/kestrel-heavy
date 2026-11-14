@@ -34,11 +34,15 @@ namespace Kestrel.Game.Guide.Tests
             Assert.AreEqual("first.1.c1", engine.Pending[0].Cards[0].Id);
             Assert.AreEqual("first.host", engine.Pending[1].Id);
             Assert.AreEqual("first.cohost", engine.Pending[2].Id);
-            Assert.AreEqual("first.cta", engine.Pending[3].Id);
-            Assert.AreEqual(4, engine.Pending.Count);
+            Assert.AreEqual("first.close", engine.Pending[3].Id);
+            Assert.AreEqual("first.sendoff", engine.Pending[4].Id);
+            Assert.AreEqual("first.cta", engine.Pending[5].Id);
+            Assert.AreEqual(6, engine.Pending.Count);
             engine.Complete("first.1");
             engine.Complete("first.host");
             engine.Complete("first.cohost");
+            engine.Complete("first.close");
+            engine.Complete("first.sendoff");
             engine.Complete("first.cta");
             Assert.IsTrue(engine.State.FirstRunDone);
             GuideHooks.Home(engine);
@@ -62,6 +66,8 @@ namespace Kestrel.Game.Guide.Tests
                 Assert.IsTrue(Has(loaded, "first.host"));
                 loaded.Complete("first.host");
                 loaded.Complete("first.cohost");
+                loaded.Complete("first.close");
+                loaded.Complete("first.sendoff");
                 loaded.Complete("first.cta");
                 Assert.IsTrue(loaded.State.FirstRunDone);
                 loaded.State.Save(dir);

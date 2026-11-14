@@ -64,6 +64,21 @@
       ]
     },
     {
+      "id": "first.close",
+      "trigger": "guide.first",
+      "when": "close",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": true,
+      "cards": [
+        {
+          "id": "first.close.c1",
+          "kid": "Your first rocket is ready. Shall we roll it out?",
+          "eng": "First hop: 10 km up, then home. Pebble rides on top."
+        }
+      ]
+    },
+    {
       "id": "brief.kh1",
       "trigger": "guide.brief",
       "when": "m1",

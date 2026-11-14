@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-11",
+ "generatedAt": "2026-11-14",
  "model": "eleven_multilingual_v2",
  "format": "mp3 44.1kHz mono 96k",
  "loudness": {
@@ -8,7 +8,7 @@
   "lra": 7,
   "method": "pre-gain + alimiter (4x oversampled), then ffmpeg loudnorm two-pass linear"
  },
- "source": "web/js/narration/manifest.js (mc/host/cohost channels; token lines excluded); tools/clipgen/mission-lines.json (per-mission historical commentary, DECISIONS #77); tools/clipgen/mission-tech-lines.json (per-mission technical commentary)",
+ "source": "web/js/narration/manifest.js (mc/host/cohost channels; token lines excluded); tools/clipgen/mission-lines.json (per-mission historical commentary, DECISIONS #77); tools/clipgen/mission-tech-lines.json (per-mission technical commentary); tools/clipgen/intro-lines.json (first-run intro)",
  "clips": [
   {
    "id": "mission-control/pad.1",
@@ -9684,6 +9684,171 @@
     "T38",
     "T39"
    ]
+  },
+  {
+   "id": "host/intro.b2.1",
+   "event": "intro",
+   "channel": "host",
+   "text": "Twenty flights stand between this hangar and the far hold.",
+   "spokenText": "Twenty flights stand between this hangar and the far hold.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/intro.b2.1.mp3",
+   "durationSec": 3.204,
+   "lufs": -16.45,
+   "truePeakDb": -3.23,
+   "normalization": "linear",
+   "hash": "397757e85f50",
+   "sha256": "c91acc61eaa89a58b117511ee3949fe52d54189aee546df9e916cb50f71f6489",
+   "sources": [
+    "data/campaign.json"
+   ],
+   "neutral": true,
+   "neutralReason": "intro line; states the twenty-mission career board, no vehicle fact"
+  },
+  {
+   "id": "host/intro.b2.2",
+   "event": "intro",
+   "channel": "host",
+   "text": "First hop first. A small hop, then the edge of space.",
+   "spokenText": "First hop first. A small hop, then the edge of space.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/intro.b2.2.mp3",
+   "durationSec": 3.437,
+   "lufs": -16.43,
+   "truePeakDb": -3.39,
+   "normalization": "linear",
+   "hash": "7ef2ce688c41",
+   "sha256": "6d87b774a62087f5be1cc347e08258c6328dc1b3423c3cde0ffe3705992a0e6b",
+   "sources": [
+    "data/campaign.json"
+   ],
+   "neutral": true,
+   "neutralReason": "intro line; first-hop goal, no vehicle fact"
+  },
+  {
+   "id": "host/intro.b2.3",
+   "event": "intro",
+   "channel": "host",
+   "text": "After that: tiny orbit, weather eye, and heavy lifting.",
+   "spokenText": "After that: tiny orbit, weather eye, and heavy lifting.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/intro.b2.3.mp3",
+   "durationSec": 3.483,
+   "lufs": -16.44,
+   "truePeakDb": -3.36,
+   "normalization": "linear",
+   "hash": "8b5d20be1aa9",
+   "sha256": "fe7a1eb20888de2ec5ccf7cec8df7f2abe9b948e88081f7b3161282bcd40d844",
+   "sources": [
+    "data/campaign.json"
+   ],
+   "neutral": true,
+   "neutralReason": "intro line; mission names, no vehicle fact"
+  },
+  {
+   "id": "cohost/intro.b3.1",
+   "event": "intro",
+   "channel": "cohost",
+   "text": "Every mission sets a budget. Build inside it, and fly.",
+   "spokenText": "Every mission sets a budget. Build inside it, and fly.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/intro.b3.1.mp3",
+   "durationSec": 2.972,
+   "lufs": -16.43,
+   "truePeakDb": -2.22,
+   "normalization": "linear",
+   "hash": "99ae5ea71cb5",
+   "sha256": "d89d34d8629019305aba8999573519519852a617f0f888d993e01922e6fe9983",
+   "sources": [
+    "docs/ECONOMY.md"
+   ],
+   "neutral": true,
+   "neutralReason": "intro line; per-mission budget rule, no vehicle fact"
+  },
+  {
+   "id": "cohost/intro.b3.2",
+   "event": "intro",
+   "channel": "cohost",
+   "text": "Land the booster, and most of its cost comes back.",
+   "spokenText": "Land the booster, and most of its cost comes back.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/intro.b3.2.mp3",
+   "durationSec": 2.647,
+   "lufs": -16.44,
+   "truePeakDb": -2.01,
+   "normalization": "linear",
+   "hash": "dec027cda94c",
+   "sha256": "0ee222197b00c844feec7613ef6c2a493ba894e6223b64ebbde7e4bd6562b44d",
+   "sources": [
+    "docs/ECONOMY.md"
+   ],
+   "requires": {
+    "stages": ">=2"
+   },
+   "claims": [
+    "stages"
+   ]
+  },
+  {
+   "id": "cohost/intro.b3.3",
+   "event": "intro",
+   "channel": "cohost",
+   "text": "A miss pays nothing, and the range keeps you flying.",
+   "spokenText": "A miss pays nothing, and the range keeps you flying.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/intro.b3.3.mp3",
+   "durationSec": 2.601,
+   "lufs": -16.43,
+   "truePeakDb": -2.28,
+   "normalization": "linear",
+   "hash": "feb9325a6cc2",
+   "sha256": "234e2493c5719d28a5244e87c764e2754a704613a5a447cb864500beffffcc3d",
+   "sources": [
+    "docs/ECONOMY.md"
+   ],
+   "neutral": true,
+   "neutralReason": "intro line; miss pays nothing and range floor, no vehicle fact"
+  },
+  {
+   "id": "host/intro.b4.1",
+   "event": "intro",
+   "channel": "host",
+   "text": "First hop. Let us fly.",
+   "spokenText": "First hop. Let us fly.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/intro.b4.1.mp3",
+   "durationSec": 1.95,
+   "lufs": -16.43,
+   "truePeakDb": -3.13,
+   "normalization": "linear",
+   "hash": "4ff2d971e249",
+   "sha256": "9e11db0f06838975899b3b1dc4a2569f6ca55c6778dfd7509e66161985415c80",
+   "sources": [
+    "data/campaign.json"
+   ],
+   "neutral": true,
+   "neutralReason": "intro line; send-off, no vehicle fact"
   }
  ],
  "factTags": "Every clip has exactly one of neutral:true (+neutralReason) or requires+claims. Keys and operators: docs/narration-facts.md. Lint: tests/narration-facts-lint.test.cjs."

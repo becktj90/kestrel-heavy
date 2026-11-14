@@ -14,7 +14,7 @@ namespace Kestrel.Core.Tests
         public void EveryManifestCardResolvesInThePlayerLayout()
         {
             var catalog = GuideClipCatalog.Load(Golden.Root);
-            Assert.AreEqual(78, catalog.Count, "the shipped guide manifest");
+            Assert.AreEqual(79, catalog.Count, "the shipped guide manifest");
             string dest = Path.Combine(Path.GetTempPath(), "kh-guide-pack-" + Guid.NewGuid().ToString("N"));
             try
             {
@@ -36,7 +36,7 @@ namespace Kestrel.Core.Tests
                 }
                 string streamManifest = Path.Combine(dest, "unity", "Assets", "StreamingAssets", "narration", "guide", "manifest.json");
                 Assert.IsTrue(File.Exists(streamManifest));
-                Assert.AreEqual(78, GuideClipPack.CountAudio(Path.GetDirectoryName(streamManifest)));
+                Assert.AreEqual(79, GuideClipPack.CountAudio(Path.GetDirectoryName(streamManifest)));
             }
             finally
             {
