@@ -196,8 +196,8 @@ namespace Kestrel.Core.Flight
         }
 
         /// <summary>Why an expendable stage cannot land, in the words the flight shows. The fix names a control the player
-        /// can see: the full designer's Recovery section, or, on the Starter screen (which has no Recovery control), the
-        /// missions whose rocket comes with the landing built in.</summary>
+        /// can see: the full designer's Recovery / Landing section (picking Haven arms legs and fuel), or, on the Starter
+        /// screen (which has no Recovery control), the missions whose rocket comes with the landing built in.</summary>
         public static void Why(in RecoveryCraft craft, out string kid, out string engineer)
             => Why(craft, Kestrel.Core.Designer.StarterScreen.UseStarter(Kestrel.Core.Features.FeatureFlags.Active), out kid, out engineer);
 
