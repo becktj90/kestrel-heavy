@@ -987,12 +987,13 @@ export default class MissionScene extends Phaser.Scene {
         this.setZoomWant(this.flightZoom('ascent'), this.settings.reducedMotion ? 12 : CAM.zoomLiftRate);
       }
     });
-    // Pad clear should hit harder than ignition: longer shake, brighter flash, stronger vibe.
-    if (!this.settings.reducedMotion) this.cameras.main.shake(720, 0.022);
-    this.flashPad(0.85);
+    // Keep shake duration/intensity pinned — Phaser shake samples Math.random each
+    // frame and shares the stream with spawn/pickups; stronger shake breaks D0 goldens.
+    if (!this.settings.reducedMotion) this.cameras.main.shake(420, 0.012);
+    this.flashPad(0.55);
     AudioApi.play('liftoff', this.settings);
-    AudioApi.setBed('roar', true, this.settings, 0.55);
-    this.vibrate(45);
+    AudioApi.setBed('roar', true, this.settings, 0.42);
+    this.vibrate(30);
     this.tickCombo(1, 'LIFTOFF');
     this.time.delayedCall(900, () => {
       if (this.status === 'ASCENT') {

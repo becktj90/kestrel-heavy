@@ -25,6 +25,9 @@ namespace Kestrel.Core.Feel
         /// <summary>How long the LIFTOFF banner, FOV punch and pad rumble own the picture after pad clear.
         /// Long enough to read, short enough that Max-Q still owns the next beat.</summary>
         public const double LiftoffHoldSec = 1.75;
+        /// <summary>If Present first sees pad clear above this altitude (CaptureClock catch-up, late join),
+        /// skip the hold — the pad-clear beat already happened off-screen.</summary>
+        public const double LiftoffHoldMaxAltM = 50;
         /// <summary>Initial spring kick for pad clear. Higher than stage/max-Q so $0.99 reviews feel the release.</summary>
         public const double LiftoffKick = 22;
 
@@ -83,8 +86,17 @@ namespace Kestrel.Core.Feel
             if (s.Running && !Lifted && s.Altitude > LiftoffAltM)
             {
                 Lifted = true;
-                LiftoffAge = 0;
-                Cue("liftoff", reduced);
+                // Late Present (e.g. CaptureClock pumps skip juice until coast) must not replay the
+                // pad-clear hold over Apogee!/Orbit! — expire the hold and skip the kick.
+                if (s.Altitude > LiftoffHoldMaxAltM)
+                {
+                    LiftoffAge = LiftoffHoldSec;
+                }
+                else
+                {
+                    LiftoffAge = 0;
+                    Cue("liftoff", reduced);
+                }
             }
             else if (s.Running && Began && s.Stage != Stage)
             {

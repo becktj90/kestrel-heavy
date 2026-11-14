@@ -2282,7 +2282,9 @@ namespace Kestrel.Slice
             hPulse.text = pulse.Detail;
             // Pad clear owns the banner for FlightPresenter.LiftoffHoldSec so the first second of flight
             // reads as a product beat (the $0.99 / five-star bar), not a quiet "Climbing" pill.
-            if (flying && juice != null && juice.Call == "LIFTOFF")
+            // Coast climax (Apogee!/Orbit!) and Lost always win — never paint LIFTOFF over them.
+            if (flying && flight != null && !flight.Coasting && !flight.Lost
+                && juice != null && juice.Call == "LIFTOFF")
             {
                 hVerdict.text = "LIFTOFF";
                 if (hPulse != null) hPulse.text = "Clear of the tower";
