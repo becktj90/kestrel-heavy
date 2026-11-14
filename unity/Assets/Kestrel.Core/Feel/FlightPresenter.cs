@@ -20,6 +20,17 @@ namespace Kestrel.Core.Feel
         public const double PitchRate = 4.2;
         public const double PitchRateReduced = 200;
 
+        /// <summary>Same 1 m gate as AscentSim / Headless liftoff events and TimelineGenerator term.liftoff.</summary>
+        public const double LiftoffAltM = 1.0;
+        /// <summary>How long the LIFTOFF banner, FOV punch and pad rumble own the picture after pad clear.
+        /// Long enough to read, short enough that Max-Q still owns the next beat.</summary>
+        public const double LiftoffHoldSec = 1.75;
+        /// <summary>If Present first sees pad clear above this altitude (CaptureClock catch-up, late join),
+        /// skip the hold — the pad-clear beat already happened off-screen.</summary>
+        public const double LiftoffHoldMaxAltM = 50;
+        /// <summary>Initial spring kick for pad clear. Higher than stage/max-Q so $0.99 reviews feel the release.</summary>
+        public const double LiftoffKick = 22;
+
         public ShakeState Shake;
         public DebrisField Debris;
         public double Punch, Flash, Pitch = double.NaN;
@@ -28,10 +39,13 @@ namespace Kestrel.Core.Feel
         public int Stage = -1;
         public int HapticMs;
         public bool HapticHard;
-        public bool Began, Lost, QCue;
+        /// <summary>True once the flight is running. Liftoff juice waits for <see cref="Lifted"/> (alt &gt; 1 m), matching the sim's term.liftoff.</summary>
+        public bool Began, Lifted, Lost, QCue;
         public string Band = "nominal";
         public string Call = "NOMINAL";
         public string Line = "";
+        /// <summary>Seconds since pad clear while the liftoff hold is live. NaN before liftoff.</summary>
+        public double LiftoffAge = double.NaN;
 
         public FlightPresenter(int debrisCapacity)
         {
@@ -47,7 +61,8 @@ namespace Kestrel.Core.Feel
             Stage = -1;
             HapticMs = 0;
             HapticHard = false;
-            Began = Lost = QCue = false;
+            Began = Lifted = Lost = QCue = false;
+            LiftoffAge = double.NaN;
             Band = "nominal";
             Call = "NOMINAL";
             Line = "";
@@ -65,9 +80,25 @@ namespace Kestrel.Core.Feel
             {
                 Began = true;
                 Stage = s.Stage;
-                Cue("liftoff", reduced);
             }
-            else if (s.Running && s.Stage != Stage)
+            // Arcade juice on pad clear, not on Launch()/Running. Firing at countdown start left the
+            // shake dead by T+0 (KH-3 playtest: "Rocket just quietly lifts off.").
+            if (s.Running && !Lifted && s.Altitude > LiftoffAltM)
+            {
+                Lifted = true;
+                // Late Present (e.g. CaptureClock pumps skip juice until coast) must not replay the
+                // pad-clear hold over Apogee!/Orbit! — expire the hold and skip the kick.
+                if (s.Altitude > LiftoffHoldMaxAltM)
+                {
+                    LiftoffAge = LiftoffHoldSec;
+                }
+                else
+                {
+                    LiftoffAge = 0;
+                    Cue("liftoff", reduced);
+                }
+            }
+            else if (s.Running && Began && s.Stage != Stage)
             {
                 Stage = s.Stage;
                 Cue("stage", reduced);
@@ -110,6 +141,24 @@ namespace Kestrel.Core.Feel
                 CameraRig.Lead(s.Speed * Math.Cos(ar), s.Speed * Math.Sin(ar), s.VehicleHeight, out LeadX, out LeadY);
             }
 
+            // Pad clear owns a short hold: keep a readable LIFTOFF line, a FOV punch and a decaying rumble
+            // so the release feels like a product beat, not a one-frame kick.
+            bool liftoffHold = Lifted && !Lost && !double.IsNaN(LiftoffAge) && LiftoffAge < LiftoffHoldSec;
+            if (liftoffHold)
+            {
+                LiftoffAge += dt;
+                double remain = 1.0 - LiftoffAge / LiftoffHoldSec;
+                if (remain < 0) remain = 0;
+                if (!reduced)
+                {
+                    // Continuous low rumble while the hold is live; amplitude falls with the hold.
+                    double phase = LiftoffAge * 38.0;
+                    CameraRig.Kick(ref Shake, 3.4 * remain, CueAngle("liftoff") + 0.55 * Math.Sin(phase));
+                    if (Punch < 0.55 * remain) Punch = 0.55 * remain;
+                    if (Flash < 0.35 * remain) Flash = 0.35 * remain;
+                }
+            }
+
             Punch = CameraRig.DecayPunch(Math.Max(0, Punch), dt);
             if (!reduced) CameraRig.StepShake(ref Shake, dt);
             else Shake = default;
@@ -133,12 +182,19 @@ namespace Kestrel.Core.Feel
             Band = risk.Band;
             Call = risk.Call;
             Line = risk.Line;
+            // Airframe alarms still win; otherwise the hold paints the big LIFTOFF callout on the webcast card.
+            if (liftoffHold && risk.Band != "critical" && risk.Band != "lost")
+            {
+                Call = "LIFTOFF";
+                Line = "LIFTOFF — clear of the tower";
+            }
         }
 
         void Cue(string name, bool reduced)
         {
             var c = FlightCues.For(name, reduced);
-            if (!reduced) CameraRig.Kick(ref Shake, c.Shake * 16, CueAngle(name));
+            double kick = name == "liftoff" ? LiftoffKick : 16;
+            if (!reduced) CameraRig.Kick(ref Shake, c.Shake * kick, CueAngle(name));
             if (c.Punch > Punch) Punch = c.Punch;
             if (c.Flash > Flash) Flash = c.Flash;
             HapticMs = (int)c.HapticMs;
