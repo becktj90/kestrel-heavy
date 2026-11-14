@@ -606,6 +606,14 @@ namespace Kestrel.Core.Flight
             info.engines = s.engineCount > 0 ? s.engineCount : 1;
             if (s.count > 1) info.engines *= s.count;
             info.reliability = eng != null ? eng.reliability : 1;
+            // Starter manufacturing (shop scrap): engines are a little more likely to quit. Standard / missing key: unchanged.
+            if (d != null && !string.IsNullOrEmpty(d.manufacturing) && d.manufacturing != "standard")
+            {
+                double scale = Designer.StarterManufacturing.EngineReliabilityScale(d.manufacturing);
+                info.reliability *= scale;
+                if (info.reliability > 1) info.reliability = 1;
+                if (info.reliability < 0) info.reliability = 0;
+            }
             info.thrustN = point.known ? point.thrustVac * info.engines : 0;
             info.pc = point.known && eng != null ? (s.engineParams != null && s.engineParams.pcSet ? s.engineParams.pc : eng.pc) : 0;
             if (eng != null)

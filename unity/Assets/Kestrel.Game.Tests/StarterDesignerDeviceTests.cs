@@ -107,8 +107,11 @@ namespace Kestrel.Game.Tests
             if (key != null)
             {
                 var p = key.Split('-');
-                StarterRocket.TryEngine(p[0], out var e);
-                r.Engine = e; r.Stages = int.Parse(p[1]); r.FuelNotch = int.Parse(p[2].Substring(1)); r.Boosters = int.Parse(p[3].Substring(1));
+                int i = 0;
+                if (StarterManufacturing.TryParse(p[0], out var build) && (p[0] == "shop" || p[0] == "flight" || p[0] == "standard"))
+                { r.BuildGrade = build; i = 1; }
+                StarterRocket.TryEngine(p[i], out var e);
+                r.Engine = e; r.Stages = int.Parse(p[i + 1]); r.FuelNotch = int.Parse(p[i + 2].Substring(1)); r.Boosters = int.Parse(p[i + 3].Substring(1));
                 Assert.AreEqual(key, r.Choice.Key, id + " setting");
             }
             return r;
