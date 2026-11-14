@@ -1,3 +1,5 @@
+using System;
+using System.Reflection;
 using Kestrel.Core.Ui;
 using Kestrel.Game.Shell;
 using Kestrel.Slice;
@@ -88,11 +90,30 @@ namespace Kestrel.Game.Tests
                 foreach (var b in hud.Query<Button>().ToList())
                     Assert.IsNotEmpty(b.tooltip, b.name);
                 Assert.IsFalse(driver.Held);
+                int restarts = 0, exits = 0;
+                UnityEngine.Object.DestroyImmediate(chrome);
+                // Re-bind on a fresh HUD so Restart/Exit wire to the confirm counters.
+                hud = new VisualElement { name = UiIds.ScreenFlight };
+                chrome = go.AddComponent<FlightChrome>();
+                chrome.Bind(hud, driver.Hold, () => restarts++, () => exits++);
                 chrome.Show(true);
                 driver.Hold(true);
                 Assert.IsTrue(chrome.Paused);
                 Assert.IsTrue(driver.Held);
                 Assert.IsFalse(hud.Q(UiIds.ScreenPause).ClassListContains("hidden"));
+                var restart = hud.Q<Button>(UiIds.PauseRestart);
+                var exit = hud.Q<Button>(UiIds.PauseExitHome);
+                Press(restart);
+                Assert.That(restart.text, Does.Contain("Tap again"));
+                Assert.AreEqual(0, restarts, "first Restart tap only arms confirm");
+                Press(restart);
+                Assert.AreEqual(1, restarts);
+                chrome.Show(true);
+                Press(exit);
+                Assert.That(exit.text, Does.Contain("Tap again"));
+                Assert.AreEqual(0, exits);
+                Press(exit);
+                Assert.AreEqual(1, exits);
                 chrome.Show(false);
                 driver.Hold(false);
                 Assert.IsFalse(driver.Held);
@@ -100,7 +121,22 @@ namespace Kestrel.Game.Tests
                 var chase = ChaseCamera.DesiredOffset(Vector3.up, 50f, 0f);
                 Assert.AreEqual(chase, chrome.Frame(chase));
             }
-            finally { Object.DestroyImmediate(go); }
+            finally { UnityEngine.Object.DestroyImmediate(go); }
+        }
+
+        static void Press(Button button)
+        {
+            Assert.That(button, Is.Not.Null);
+            const BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+            object clickable = typeof(Button).GetProperty("clickable", flags)?.GetValue(button);
+            Assert.That(clickable, Is.Not.Null, button.name);
+            FieldInfo field = null;
+            for (var type = clickable.GetType(); type != null && field == null; type = type.BaseType)
+                field = type.GetField("clicked", flags);
+            Assert.That(field, Is.Not.Null, "clickable.clicked");
+            var act = field.GetValue(clickable) as Action;
+            Assert.That(act, Is.Not.Null, button.name);
+            act();
         }
 
         [Test]

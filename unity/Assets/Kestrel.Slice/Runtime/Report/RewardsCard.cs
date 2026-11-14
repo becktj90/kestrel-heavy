@@ -46,6 +46,8 @@ namespace Kestrel.Slice
                 scroll.Add(StarRow(debriefSafe.Stars));
                 if (!string.IsNullOrEmpty(debriefSafe.KcHeadline))
                     scroll.Add(Line(UiIds.ReportKcHeadline, debriefSafe.KcHeadline, 20, FontStyle.Bold, ReportCardChrome.Sun));
+                // Key-moment haptic (G3): pass / rewards card show. HangarNative respects kh.hangar.haptics.
+                HangarNative.Play(Haptic.Payoff, HangarFeel.Pattern(Haptic.Payoff, SliceData.Feel));
             }
             scroll.Add(Line("failure-cause", debriefSafe.CauseTitle, 22, FontStyle.Bold, ReportCardChrome.Cream));
             scroll.Add(Line("failure-numbers", debriefSafe.Numbers, 16, FontStyle.Bold, ReportCardChrome.Sun));

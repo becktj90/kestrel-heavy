@@ -13,8 +13,9 @@ namespace Kestrel.Game.Audio.Tests
         public void ManifestKeysClipsByEventId()
         {
             var cat = Load();
-            Assert.AreEqual(445, cat.ClipCount);
-            Assert.AreEqual(62, cat.EventCount);
+            Assert.AreEqual(449, cat.ClipCount);
+            Assert.AreEqual(63, cat.EventCount);
+
             Assert.AreEqual(8, cat.Count("liftoff"));
             Assert.AreEqual(0, cat.Count("theme"));
             Assert.IsTrue(cat.TryLine("liftoff", 0, out var first));

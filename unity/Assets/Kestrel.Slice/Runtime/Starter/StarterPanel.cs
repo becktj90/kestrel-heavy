@@ -297,6 +297,7 @@ namespace Kestrel.Slice
             // hard Validate block, whose one plain reason is the line; a rocket the predictor says breaks up shows its
             // cause and still launches (and may explode). An unchecked setting reads "Test-flying it" until TickPrediction lands.
             // Spend (cost · hold-together) leads the readiness body so manufacturing choices stay visible without a sheet line.
+            bool wasReady = LaunchReady;
             LaunchReady = StarterScreen.ReadinessNow(r, out var b, out var rest);
             badge.text = b;
             badge.style.color = b == StarterScreen.ReadyBadge ? ReadyGreen : b == StarterScreen.TightBadge ? TightAmber : ShortRed;
@@ -305,6 +306,9 @@ namespace Kestrel.Slice
             launch.SetEnabled(LaunchReady);
             launch.style.backgroundColor = LaunchReady ? LaunchRed : LaunchOff;
             launch.tooltip = LaunchReady ? "Launch this rocket." : rest;
+            // Key-moment haptic when the starter rocket becomes launch-ready (same payoff as HangarFeel).
+            if (LaunchReady && !wasReady)
+                HangarNative.Play(Haptic.Payoff, HangarFeel.Pattern(Haptic.Payoff, SliceData.Feel));
             RefreshTiers();
             Relayout();
         }

@@ -59,6 +59,7 @@ namespace Kestrel.Game.Tests
             int prev = PlayerPrefs.GetInt(HangarFeel.HapticsPref, 1);
             try
             {
+                Assert.AreEqual(HangarFeel.HapticsPref, Kestrel.Game.Shell.MainMenuLayout.HapticsPref, "Settings sheet and Hangar share one key");
                 PlayerPrefs.SetInt(HangarFeel.HapticsPref, 1);
                 HangarNative.Play(Haptic.Payoff, new[] { 18, 30, 18 });
                 Assert.AreEqual(Haptic.Payoff, HangarNative.LastHaptic);

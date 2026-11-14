@@ -18,9 +18,11 @@ namespace Kestrel.Core.Flight.Narration
     }
 
     /// <summary>
-    /// The calls no sim event names: pad, tank press, SECO, Karman line and the booster entry burn. Each is due only
+    /// The calls no sim event names: pad, tank press, SECO, and the booster entry burn. Each is due only
     /// when its event really happens on this flight, for this design (the generated timeline says the design flies it,
     /// see <see cref="CallSchedule"/>, and the live count or flight says it happened now), and each fires once.
+    /// The Karman line is not a Call: the catalog only ships <c>color.karman</c> (via <see cref="ColorWindows"/>).
+    /// <see cref="Karman"/> remains the timeline narration id that sets <see cref="CallSchedule.HasKarman"/>.
     /// A due call never steps on another call: it is held while a call is waiting, never cuts one that is playing
     /// (calls queue, as every call does), and before liftoff it starts only into silence and only with a take that
     /// ends before T-0. A call that cannot go out while it is still about now is dropped. Pure, so it is tested
@@ -52,6 +54,7 @@ namespace Kestrel.Core.Flight.Narration
         readonly bool recovery;
         readonly List<Due> due = new List<Due>();
         readonly HashSet<string> seen = new HashSet<string>();
+        // held: B01 hold_start. prevAlt tracks altitude; bare karman Call stays silent (color.karman only).
         bool counting, launched, topCutoff, held;
         double countT = double.NaN, prevAlt = double.NaN;
         int beatsSeen;
@@ -150,12 +153,11 @@ namespace Kestrel.Core.Flight.Narration
             else if (type == "failure" || type == "impact") topCutoff = false;
         }
 
-        /// <summary>The flight's altitude. The Karman call is due on the step that crosses 100 km, on a design whose timeline crosses it.</summary>
-        public void OnAltitude(double altM, double now)
-        {
-            if (!double.IsNaN(prevAlt) && calls.HasKarman && ColorWindows.KarmanCrossed(prevAlt, altM)) Add(Karman, 0, now, false);
-            prevAlt = altM;
-        }
+        /// <summary>
+        /// Altitude tick kept for callers. Does not offer a Call: there is no bare <c>karman</c> take in the
+        /// catalog. The crossing is spoken as <see cref="ColorWindows.Karman"/> (<c>color.karman</c>).
+        /// </summary>
+        public void OnAltitude(double altM, double now) { prevAlt = altM; _ = now; }
 
         /// <summary>
         /// The booster's live phase marks on the flight clock (<see cref="RecoveryLog.FlightMarks"/>) and the rail's

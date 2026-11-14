@@ -8,7 +8,7 @@ using NUnit.Framework;
 
 namespace Kestrel.Core.Tests.Narration
 {
-    /// <summary>Pad, tank-press, SECO, Karman and entry calls: due only when the event really happens for the flown design.</summary>
+    /// <summary>Pad, tank-press, SECO and entry calls: due only when the event really happens for the flown design. Karman is color.karman, not a Call.</summary>
     public class CallTriggersTests
     {
         static CallSchedule Truth(int[] press = null, int[] seco = null, bool karman = false, bool entry = false)
@@ -129,21 +129,15 @@ namespace Kestrel.Core.Tests.Narration
         }
 
         [Test]
-        public void Karman_OnTheStepThatCrosses100Km_Once_AndOnlyWhenTheTimelineCrossesIt()
+        public void Karman_IsNotOfferedAsACall_ColorKarmanIsTheVoice()
         {
+            Assert.AreEqual("karman", CallTriggers.Karman, "timeline narration id / CallSchedule.HasKarman");
+            Assert.AreEqual("color.karman", ColorWindows.Karman, "the catalog event the player hears");
             var t = new CallTriggers(Truth(karman: true), 2, false);
             t.OnAltitude(99000, 0);
-            Assert.IsEmpty(Drain(t, 0));
             t.OnAltitude(100500, 1);
-            CollectionAssert.AreEqual(new[] { "karman" }, Drain(t, 1));
-            t.OnAltitude(99000, 2);
-            t.OnAltitude(101000, 3);
-            Assert.IsEmpty(Drain(t, 3), "once");
-
-            var low = new CallTriggers(Truth(), 2, false);
-            low.OnAltitude(99000, 0);
-            low.OnAltitude(100500, 1);
-            Assert.IsEmpty(Drain(low, 1));
+            Assert.IsEmpty(Drain(t, 1), "no bare karman Call — offering one would fail silently (no takes)");
+            Assert.IsTrue(Truth(karman: true).HasKarman, "timeline truth still marks designs that cross 100 km");
         }
 
         [Test]
@@ -177,12 +171,13 @@ namespace Kestrel.Core.Tests.Narration
         [Test]
         public void FlightCalls_NeverGoOverAWaitingCall_QueueBehindAPlayingOne_AndExpire()
         {
-            var t = new CallTriggers(Truth(karman: true), 2, false);
-            t.OnAltitude(99000, 0);
-            t.OnAltitude(100100, 10);
+            var marks = new[] { Mark(RecoveryPhase.Entry, 330) };
+            var t = new CallTriggers(Truth(entry: true), 2, false, true);
+            t.OnRecovery(marks, 331, 10);
             Assert.IsFalse(t.Next(10, true, true, out _), "a call is waiting: never replace it");
             Assert.IsFalse(t.Next(11, false, true, out _));
             Assert.IsTrue(t.Next(12, true, false, out var cue), "a call is playing and none waits: queue behind it (calls never cut calls)");
+            Assert.AreEqual(CallTriggers.Entry, cue.EventId);
             Assert.IsFalse(cue.PreLaunch);
             Assert.IsTrue(double.IsPositiveInfinity(cue.MaxSec));
             Assert.IsFalse(t.Next(10 + CallTriggers.FreshSec + 0.01, false, false, out _), "past its moment it is dropped, not said late");
