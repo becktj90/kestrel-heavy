@@ -83,7 +83,7 @@ namespace Kestrel.Slice
         readonly VisualElement rocketBox, header, sheet;
         readonly Label title, subtitle, spend, hint, badge, readiness, fuelLess, fuelMore;
         readonly Button back, reset, launch;
-        readonly Row build, engine, stages, fuel, boosters;
+        readonly Row build, engine, stages, fuel, landing, boosters;
         readonly VisualElement whyCard, speedTrack, speedFill, speedNeed, tierSwitch;
         readonly StarterGlyph whyIcon;
         readonly Label whyText, speedLabel, speedStatus;
@@ -125,8 +125,12 @@ namespace Kestrel.Slice
             stages = MakeRow(UiIds.StarterStages, "stages", StarterScreen.StagesLabel, StarterRocket.StageValues.Count, k => UiIds.StarterStagesOption(StarterRocket.StageValues[k]), k => Pick(StarterKnob.Stages, () => Rocket.Stages = StarterRocket.StageValues[k]));
             fuel = MakeRow(UiIds.StarterFuel, "fuel", StarterScreen.FuelLabel, StarterRocket.FuelNotches, k => UiIds.StarterFuelNotch(k + 1), k => Pick(StarterKnob.FuelNotch, () => Rocket.FuelNotch = k));
             boosters = MakeRow(UiIds.StarterBoosters, "boosters", StarterScreen.BoostersLabel, StarterRocket.BoosterValues.Count, k => UiIds.StarterBoostersOption(StarterRocket.BoosterValues[k]), k => Pick(StarterKnob.Boosters, () => Rocket.Boosters = StarterRocket.BoosterValues[k]));
+            landing = MakeRow(UiIds.StarterLanding, "landing", StarterScreen.LandingLabel, StarterRocket.LandingOrder.Count,
+                k => UiIds.StarterLandingOption(StarterRocket.LandingOrder[k]),
+                k => Pick(StarterKnob.Landing, () => Rocket.Landing = StarterRocket.LandingOrder[k]));
             for (int i = 0; i < StarterRocket.BuildOrder.Count; i++) build.Options[i].text = StarterScreen.OptionText(StarterRocket.BuildOrder[i]);
             for (int i = 0; i < StarterRocket.EngineOrder.Count; i++) engine.Options[i].text = StarterScreen.OptionText(StarterRocket.EngineOrder[i]);
+            for (int i = 0; i < StarterRocket.LandingOrder.Count; i++) landing.Options[i].text = StarterRocket.LandingLabel(StarterRocket.LandingOrder[i]);
             for (int i = 0; i < StarterRocket.StageValues.Count; i++) stages.Options[i].text = StarterRocket.StageValues[i].ToString(System.Globalization.CultureInfo.InvariantCulture);
             for (int i = 0; i < StarterRocket.BoosterValues.Count; i++) boosters.Options[i].text = StarterScreen.BoosterText(StarterRocket.BoosterValues[i]);
             build.Label.tooltip = StarterScreen.BuildHint;
@@ -134,6 +138,7 @@ namespace Kestrel.Slice
             stages.Label.tooltip = StarterScreen.StagesHint;
             fuel.Label.tooltip = StarterScreen.FuelHint;
             boosters.Label.tooltip = StarterScreen.BoostersHint;
+            landing.Label.tooltip = StarterScreen.LandingHint;
             for (int i = 0; i < StarterRocket.FuelNotches; i++)
             {
                 var dot = new VisualElement { name = "starter-fuel-dot-" + (i + 1), pickingMode = PickingMode.Ignore };
@@ -148,8 +153,9 @@ namespace Kestrel.Slice
             fuelMore.style.unityTextAlign = TextAnchor.MiddleRight;
             fuel.Box.Add(fuelLess);
             fuel.Box.Add(fuelMore);
-            build.Knob = StarterKnob.Build; engine.Knob = StarterKnob.Engine; stages.Knob = StarterKnob.Stages; fuel.Knob = StarterKnob.FuelNotch; boosters.Knob = StarterKnob.Boosters;
-            foreach (var row in new[] { build, engine, stages, fuel, boosters })
+            build.Knob = StarterKnob.Build; engine.Knob = StarterKnob.Engine; stages.Knob = StarterKnob.Stages; fuel.Knob = StarterKnob.FuelNotch;
+            landing.Knob = StarterKnob.Landing; boosters.Knob = StarterKnob.Boosters;
+            foreach (var row in new[] { build, engine, stages, fuel, landing, boosters })
             {
                 var r = row;
                 r.Help = new Button(() => ToggleWhy(r.Knob)) { name = UiIds.StarterWhy(r.Knob), text = Copy?.WhyButton ?? "?" };
@@ -281,6 +287,8 @@ namespace Kestrel.Slice
                 fuel.Options[k].tooltip = StarterScreen.FuelSpoken(k);
             }
             fuel.Box.tooltip = StarterScreen.FuelSpoken(r.FuelNotch);
+            Select(landing, k => r.Landing == StarterRocket.LandingOrder[k], k => r.IsLandingAllowed(StarterRocket.LandingOrder[k]));
+            landing.Box.style.display = r.LandingVisible ? DisplayStyle.Flex : DisplayStyle.None;
             Select(boosters, k => r.Boosters == StarterRocket.BoosterValues[k], k => r.IsBoostersAllowed(StarterRocket.BoosterValues[k]));
             boosters.Box.EnableInClassList("starter-locked", r.BoostersLocked);
             boosters.Label.style.color = r.BoostersLocked ? Muted : Ink;
@@ -331,7 +339,8 @@ namespace Kestrel.Slice
             if (Xray != null) Xray.Engineer = Tier == ExperienceTier.Engineer;
 
             if (WhyOpen == StarterKnob.Boosters && !r.BoostersVisible) WhyOpen = StarterKnob.None;
-            foreach (var row in new[] { build, engine, stages, fuel, boosters })
+            if (WhyOpen == StarterKnob.Landing && !r.LandingVisible) WhyOpen = StarterKnob.None;
+            foreach (var row in new[] { build, engine, stages, fuel, landing, boosters })
             {
                 bool on = row.Knob == WhyOpen;
                 row.Help.EnableInClassList("starter-on", on);
@@ -435,9 +444,9 @@ namespace Kestrel.Slice
             Input = new StarterLayoutInput
             {
                 Width = wPt, Height = hPt, SafeTop = safeT, SafeBottom = safeB, SafeLeft = safeL, SafeRight = safeR,
-                Wide = wide, ReserveExit = reserveExit, BoostersVisible = r.BoostersVisible,
+                Wide = wide, ReserveExit = reserveExit, BoostersVisible = r.BoostersVisible, LandingVisible = r.LandingVisible,
                 Title = title.text, Subtitle = subtitle.text, Hint = hint.text, Badge = badge.text, Readiness = readiness.text,
-                Builds = Texts(build), Engines = Texts(engine), Stages = Texts(stages), Boosters = Texts(boosters),
+                Builds = Texts(build), Engines = Texts(engine), Stages = Texts(stages), Landing = Texts(landing), Boosters = Texts(boosters),
                 Help = Copy != null && Copy.Why.Count > 0, HelpText = Copy?.WhyButton ?? "?",
                 WhyOpen = WhyOpen, WhyText = whyText.text,
                 Speed = Speed.Visible, SpeedLabel = Speed.Label, SpeedStatus = Speed.Status,
@@ -496,6 +505,8 @@ namespace Kestrel.Slice
             PlaceRow(fuel, f.Fuel, f.Sheet, f.LabelPt, f.OptionPt);
             Pin(fuelLess, f.Fuel.Less, f.Fuel.Row); Font(fuelLess, f.EndPt);
             Pin(fuelMore, f.Fuel.More, f.Fuel.Row); Font(fuelMore, f.EndPt);
+            landing.Box.style.display = f.Landing != null ? DisplayStyle.Flex : DisplayStyle.None;
+            if (f.Landing != null) PlaceRow(landing, f.Landing, f.Sheet, f.LabelPt, f.OptionPt);
             for (int k = 0; k < fuelDots.Length && k < f.Fuel.Options.Length; k++)
             {
                 float d = 14f * upp, ow = f.Fuel.Options[k].W * upp, oh = f.Fuel.Options[k].H * upp;
@@ -529,9 +540,9 @@ namespace Kestrel.Slice
             }
 
             // "?" buttons, the Why? card, the speed bar, the X-ray button.
-            foreach (var row in new[] { build, engine, stages, fuel, boosters })
+            foreach (var row in new[] { build, engine, stages, fuel, landing, boosters })
             {
-                var rf = row == build ? f.Build : row == engine ? f.Engine : row == stages ? f.Stages : row == fuel ? f.Fuel : f.Boosters;
+                var rf = row == build ? f.Build : row == engine ? f.Engine : row == stages ? f.Stages : row == fuel ? f.Fuel : row == landing ? f.Landing : f.Boosters;
                 bool on = rf != null && rf.Help.Live;
                 row.Help.style.display = on ? DisplayStyle.Flex : DisplayStyle.None;
                 if (!on) continue;

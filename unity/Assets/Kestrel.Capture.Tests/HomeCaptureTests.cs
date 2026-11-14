@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Kestrel.Core.Features;
+using Kestrel.Core.Guide;
 using Kestrel.Core.Ui;
 using Kestrel.Game.Guide;
 using Kestrel.Game.Shell;
@@ -29,6 +30,8 @@ namespace Kestrel.Capture.Tests
     [Category("DeviceCapture")]
     public class HomeCaptureTests
     {
+        static readonly string[] WelcomeBeats = { "first.1", "first.host", "first.cohost", "first.cta" };
+
         const int Frames = 60;          // most frames to wait for the play-mode viewport to take a new size
         const int ReadyFrames = 600;    // most frames to wait for Boot to land on Home (FlightCapture.BootToCount's cap)
         const int SettleFrames = 12;    // frames after Home is up, for layout and the GeometryChanged re-lay-out
@@ -149,6 +152,13 @@ namespace Kestrel.Capture.Tests
                 yield return null;
             }
             CaptureCamera.Clear();
+            GuideSession.Bind(null);
+            string saves = Path.Combine(Application.persistentDataPath, "saves");
+            Directory.CreateDirectory(saves);
+            var guideState = GuideState.Fresh(false, false);
+            guideState.FirstRunDone = true;
+            foreach (var id in WelcomeBeats) guideState.MarkSeen(id);
+            File.WriteAllText(Path.Combine(saves, GuideState.SaveKey + ".json"), guideState.ToJson());
             SceneManager.LoadScene(SceneFlow.BootScene, LoadSceneMode.Single);
             // Until Boot's SceneFlow has settled on Home and the shell holds the Home root (FlightCapture.BootToCount's
             // signal), then a few frames for layout (HeroLift re-lays out on GeometryChanged). With IntroPlayed set Home
@@ -173,10 +183,10 @@ namespace Kestrel.Capture.Tests
             var home = root.Q(UiIds.ScreenHome);
             Assert.IsNotNull(home, name + " " + UiIds.ScreenHome);
             // Captures are the settled Home, not the first-run welcome stack over the CTAs.
-            var guide = GuideSession.Engine as LiveGuideEngine;
-            if (guide != null)
+            var liveGuide = GuideSession.Engine as LiveGuideEngine;
+            if (liveGuide != null)
             {
-                guide.SkipWelcome();
+                liveGuide.SkipWelcome();
                 foreach (var driver in UnityEngine.Object.FindObjectsByType<GuideBoxDriver>(FindObjectsSortMode.None))
                     driver.SyncSprite();
             }

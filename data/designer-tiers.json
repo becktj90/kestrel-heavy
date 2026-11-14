@@ -42,6 +42,12 @@
         "icon": "boosters",
         "text": "Boosters add extra push at liftoff, when the rocket is heaviest. They drop away once their fuel is gone.",
         "locked": "This mission flies two boosters that come back and land. They add push at liftoff, so they stay on."
+      },
+      {
+        "row": "landing",
+        "codex": "booster-landing",
+        "icon": "landing",
+        "text": "Haven or Pad keeps fuel for the trip home and puts legs on the booster. Throw away means no landing."
       }
     ]
   },

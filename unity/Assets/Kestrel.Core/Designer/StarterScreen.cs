@@ -45,16 +45,18 @@ namespace Kestrel.Core.Designer
 
         // ---- copy (Kestrel UX, STARTER_COPY.md §b) ----
 
-        public const string BuildLabel = "Build", EngineLabel = "Engine fuel", StagesLabel = "Stages", FuelLabel = "Fuel", BoostersLabel = "Boosters";
+        public const string BuildLabel = "Build", EngineLabel = "Engine fuel", StagesLabel = "Stages", FuelLabel = "Fuel", LandingLabel = "Landing", BoostersLabel = "Boosters";
         // Short labels so three options fit a 335-wide phone with the "?" column ("Standard" overflowed).
         public const string ShopBuild = "Shop", StandardBuild = "Base", FlightBuild = "Safe";
         public const string Kerosene = "Kerosene", Methane = "Methane", NoBoosters = "None";
+        public const string LandingExpend = "Expend", LandingHaven = "Haven", LandingPad = "Pad";
         public const string FuelLess = "Less", FuelMore = "More";
         public const string BuildHint = "Shop is cheap and risky. Flight costs more and holds together.";
         public const string EngineHint = "Kerosene is punchy. Methane burns cleaner.";
         public const string StagesHint = "More stages drop weight on the way up.";
         public const string FuelHint = "More fuel goes farther but weighs more.";
         public const string BoostersHint = "Side boosters add push at liftoff.";
+        public const string LandingHint = "Expend skips landing. Haven or Pad brings the booster home with legs and landing fuel.";
         public const string HydrogenHint = "Top stage uses hydrogen on this mission.";
         public const string BoostersLockedHint = "This mission flies 2 boosters that land.";
         public const string ShopHint = "Workshop scrap: cheaper, more likely to blow up.";
@@ -92,6 +94,7 @@ namespace Kestrel.Core.Designer
                 case StarterKnob.Stages: return HydrogenAuto(r) ? HydrogenHint : StagesHint;
                 case StarterKnob.FuelNotch: return FuelHint;
                 case StarterKnob.Boosters: return r.BoostersLocked ? BoostersLockedHint : BoostersHint;
+                case StarterKnob.Landing: return LandingHint;
             }
             if (r.BoostersVisible && r.BoostersLocked) return BoostersLockedHint;
             if (HydrogenAuto(r)) return HydrogenHint;

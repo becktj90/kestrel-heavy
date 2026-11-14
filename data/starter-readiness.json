@@ -14,7 +14,9 @@
     "stages+": "another stage",
     "boosters-": "fewer boosters",
     "boosters+": "more boosters",
-    "engine": "the other fuel"
+    "engine": "the other fuel",
+    "landing": "Haven or Pad",
+    "landing-": "Expend"
   },
   "causes": {
     "maxq": {
@@ -93,7 +95,7 @@
       "badge": "✗ Can't land.",
       "kid": "It would not keep fuel to land.",
       "engineer": "Landing reserve Δv below the boost-back need at stage-1 burnout speed.",
-      "fixes": ["fuel-", "engine"]
+      "fixes": ["landing", "fuel+"]
     },
     "booster-landing": {
       "badge": "✗ Can't land.",
