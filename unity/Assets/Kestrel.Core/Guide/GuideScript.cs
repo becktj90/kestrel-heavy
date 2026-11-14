@@ -273,7 +273,9 @@ namespace Kestrel.Core.Guide
                 if (all && letters >= 4)
                 {
                     string word = text.Substring(start, i - start);
-                    if (word != "SKIP" && word != "MECO" && word != "SECO" && word != "RTLS") return true;
+                    // UI chrome labels (Home LAUNCH / MISSIONS / SKIP) and flight calls may stay ALL CAPS.
+                    if (word != "SKIP" && word != "MECO" && word != "SECO" && word != "RTLS"
+                        && word != "LAUNCH" && word != "MISSIONS") return true;
                 }
             }
             return false;
