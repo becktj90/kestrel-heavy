@@ -32,11 +32,18 @@ namespace Kestrel.Game.Tests
                 var pad = TimelinePad.For(cat, d);
                 Assert.That(PadTower.ArchetypeFor(cat, d), Is.EqualTo(PadGenerator.ArchetypeFor(pad.id, pad.strongback)), id);
             }
-            foreach (var file in new[] { "sounding-solid.json", "medium-kerolox-reusable.json", "hydrogen-upper.json" })
+            foreach (var file in new[] { "medium-kerolox-reusable.json", "hydrogen-upper.json" })
             {
                 var d = Template(file);
                 var pad = TimelinePad.For(cat, d);
                 Assert.That(PadTower.ArchetypeFor(cat, d), Is.EqualTo(PadGenerator.ArchetypeFor(pad.id, pad.strongback)), file);
+            }
+            // sounding-solid is under tests/fixtures (not web/js/data/templates).
+            {
+                var d = Design.FromJson(MiniJson.ParseObject(File.ReadAllText(
+                    Path.Combine(Repo, "tests", "fixtures", "designs", "sounding-solid.json"))));
+                var pad = TimelinePad.For(cat, d);
+                Assert.That(PadTower.ArchetypeFor(cat, d), Is.EqualTo(PadGenerator.ArchetypeFor(pad.id, pad.strongback)), "sounding-solid");
             }
         }
 

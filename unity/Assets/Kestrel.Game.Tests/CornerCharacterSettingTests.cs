@@ -141,6 +141,11 @@ namespace Kestrel.Game.Tests
             Assert.That(root.Q("guide-overlay"), Is.Not.Null);
             Assert.That(root.Q("guide-pop"), Is.Not.Null);
             Assert.That(root.Q("guide-overlay").pickingMode, Is.EqualTo(PickingMode.Ignore), "the overlay never takes touches or space");
+            // Finish the opening intro so Off can tear the portrait down (welcome forces the stack even when off).
+            var liveOn = driver.Stage != null ? driver.Stage.Engine as LiveGuideEngine : null;
+            Assert.That(liveOn, Is.Not.Null);
+            liveOn.SkipWelcome();
+            driver.SyncSprite();
 
             // Off again: gone at once, the tree is back to what it was.
             ExperienceSettings.SetCornerCharacter(false, PlayerPrefs.SetInt);
@@ -180,6 +185,8 @@ namespace Kestrel.Game.Tests
             Assert.That(driver.HasSprite, Is.True);
             var live = driver.Stage != null ? driver.Stage.Engine as LiveGuideEngine : null;
             Assume.That(live, Is.Not.Null, "needs the real guide script");
+            live.SkipWelcome();
+            driver.SyncSprite();
             ExperienceSettings.SetCornerCharacter(false, PlayerPrefs.SetInt);
             driver.SyncSprite();
             Assert.That(driver.HasSprite, Is.False);
