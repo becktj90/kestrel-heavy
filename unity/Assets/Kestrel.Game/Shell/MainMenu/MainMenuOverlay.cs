@@ -181,9 +181,15 @@ namespace Kestrel.Game.Shell
             });
             // The Thrum corner pop rests under the gear and the wordmark while Home is up (phone column only).
             GuideBoxDriver.ClearTopPanel = () => PopClearTop(root, full);
+            GuideBoxDriver.MenuFooterPanel = () => PopMenuFooter(root, full);
             // Starter Home (home.thrum off) has no Thrum: his corner pop stays off Home too, so nothing floats over the rocket.
             GuideBoxDriver.HideOnMenu = () => !HomeFeatures.Current().Thrum;
-            root.RegisterCallback<DetachFromPanelEvent>(_ => { GuideBoxDriver.ClearTopPanel = null; GuideBoxDriver.HideOnMenu = null; });
+            root.RegisterCallback<DetachFromPanelEvent>(_ =>
+            {
+                GuideBoxDriver.ClearTopPanel = null;
+                GuideBoxDriver.HideOnMenu = null;
+                GuideBoxDriver.MenuFooterPanel = null;
+            });
             launchKey.RegisterCallback<GeometryChangedEvent>(_ =>
             {
                 float h = full.resolvedStyle.height; if (h <= 0f) return;
@@ -349,6 +355,17 @@ namespace Kestrel.Game.Shell
             var gear = full != null ? full.Q("home-settings") : null;
             if (gear != null && gear.worldBound.height > 1f) clear = Mathf.Max(clear, gear.worldBound.yMax - origin);
             return float.IsNaN(clear) ? 0f : clear;
+        }
+
+        /// <summary>Panel pixels from the bottom of Home up to the top of LAUNCH, so the welcome box clears the key.</summary>
+        public static float PopMenuFooter(VisualElement root, VisualElement full)
+        {
+            if (root == null || full == null || root.panel == null) return 0f;
+            if (root.resolvedStyle.display == DisplayStyle.None) return 0f;
+            var key = root.Q("home-primary");
+            if (key == null || key.worldBound.height < 1f || full.worldBound.height < 1f) return 0f;
+            float footer = full.worldBound.yMax - key.worldBound.yMin;
+            return float.IsNaN(footer) || footer < 1f ? 0f : footer;
         }
 
         /// <summary>Landscape web: the wordmark sits on the hero, and the action cards sit in a column
