@@ -132,29 +132,35 @@ namespace Kestrel.Pad
             float reach = Math.Min(3.2f, Math.Max(0f, P.NearFaceZ - tipMin));
             if (reach < 1.6f) return;
             float hw = Math.Min(P.Width * 0.32f, 3.6f), h = Math.Min(P.LevelHeight * 0.5f, 2.8f);
-            var levels = new List<int>(3);
-            if (P.CrewLevel >= 1 && P.CrewLevel < P.Levels) levels.Add(P.CrewLevel);
-            int mid = Math.Max(1, P.Levels / 2);
-            if (!levels.Contains(mid)) levels.Add(mid);
-            int low = Math.Max(1, P.Levels / 4);
-            if (levels.Count < 2 && !levels.Contains(low)) levels.Add(low);
-            foreach (int l in levels)
+            // One hero closeout room (crew level, else mid) keeps PadPerf under the 40k tris ceiling while
+            // still reading as an enclosed gantry room next to the stack.
+            int l = P.CrewLevel >= 1 && P.CrewLevel < P.Levels ? P.CrewLevel : Math.Max(1, P.Levels / 2);
             {
                 float y = (l + 1) * P.LevelHeight;
                 float z0 = P.NearFaceZ, z1 = z0 - reach;
                 string id = $"tower.room.{l:00}";
-                if (Graph.Contains(id)) continue;
+                if (Graph.Contains(id)) return;
                 var e = Graph.Add(id, ElementCategory.Structure, $"tower.l{l:00}", "steel", "service-room", "enclosed", "walkable");
                 e.Center = new Vec3(0, y + h * 0.5f, (z0 + z1) * 0.5f);
                 e.Size = new Vec3(hw * 2, h, reach);
                 e.DisplayName = $"Service room {l + 1}";
-                // Lean set: one floor, one roof, face frame. Reuses existing Deck/ArmBrace batches.
-                Add(id, $"{id}.floor", MemberKind.Deck, new Vec3(0, y + 0.06f, z0), new Vec3(0, y + 0.06f, z1), MaterialRole.Galvanized, "floor", "enclosed");
-                Add(id, $"{id}.roof", MemberKind.Deck, new Vec3(0, y + h, z0), new Vec3(0, y + h, z1), MaterialRole.Galvanized, "roof", "enclosed");
+                // Floor/roof: tile DeckW planks across the declared room width. PadRenderer only scales
+                // beam length, so a single centred plank would read as a 0.9 m strip (Codex P2).
+                // Three planks whose centres span ±hw read as a full-width deck inside the tris budget.
+                const int n = 3;
+                for (int i = 0; i < n; i++)
+                {
+                    float x = -hw + DeckW * 0.5f + (hw * 2f - DeckW) * i / (n - 1);
+                    Add(id, $"{id}.floor.{i}", MemberKind.Deck, new Vec3(x, y + 0.06f, z0), new Vec3(x, y + 0.06f, z1), MaterialRole.Galvanized, "floor", "enclosed");
+                    Add(id, $"{id}.roof.{i}", MemberKind.Deck, new Vec3(x, y + h, z0), new Vec3(x, y + h, z1), MaterialRole.Galvanized, "roof", "enclosed");
+                }
+                // Face + side enclosure frame (vehicle face at z1, sides at ±hw).
                 Add(id, $"{id}.sill", MemberKind.ArmBrace, new Vec3(-hw, y, z1), new Vec3(hw, y, z1), MaterialRole.PaintedSteel, "sill");
                 Add(id, $"{id}.lintel", MemberKind.ArmBrace, new Vec3(-hw, y + h, z1), new Vec3(hw, y + h, z1), MaterialRole.PaintedSteel, "lintel");
-                Add(id, $"{id}.post.l", MemberKind.ArmBrace, new Vec3(-hw, y, z0), new Vec3(-hw, y + h, z1), MaterialRole.PaintedSteel, "post");
-                Add(id, $"{id}.post.r", MemberKind.ArmBrace, new Vec3(hw, y, z0), new Vec3(hw, y + h, z1), MaterialRole.PaintedSteel, "post");
+                Add(id, $"{id}.post.l", MemberKind.ArmBrace, new Vec3(-hw, y, z1), new Vec3(-hw, y + h, z1), MaterialRole.PaintedSteel, "post");
+                Add(id, $"{id}.post.r", MemberKind.ArmBrace, new Vec3(hw, y, z1), new Vec3(hw, y + h, z1), MaterialRole.PaintedSteel, "post");
+                Add(id, $"{id}.side.l", MemberKind.ArmBrace, new Vec3(-hw, y + h * 0.5f, z0), new Vec3(-hw, y + h * 0.5f, z1), MaterialRole.PaintedSteel, "side");
+                Add(id, $"{id}.side.r", MemberKind.ArmBrace, new Vec3(hw, y + h * 0.5f, z0), new Vec3(hw, y + h * 0.5f, z1), MaterialRole.PaintedSteel, "side");
             }
         }
 

@@ -200,7 +200,15 @@ namespace Kestrel.Pad.Tests
                     foreach (var room in rooms)
                     {
                         var mem = L.Members.Where(m => m.ParentId == room.Id).ToList();
-                        Assert.That(mem.Count, Is.GreaterThanOrEqualTo(6), where + " " + room.Id);
+                        Assert.That(mem.Count, Is.GreaterThanOrEqualTo(10), where + " " + room.Id);
+                        int floors = mem.Count(m => m.Id.Contains(".floor."));
+                        int roofs = mem.Count(m => m.Id.Contains(".roof."));
+                        Assert.That(floors, Is.GreaterThanOrEqualTo(2), where + " " + room.Id + " tiled floor");
+                        Assert.That(roofs, Is.EqualTo(floors), where + " " + room.Id + " matching roof");
+                        // Plank centres span the declared room width (DeckW mesh), not a single mid strip.
+                        float roomHw = room.Size.X * 0.5f;
+                        var floorXs = mem.Where(m => m.Id.Contains(".floor.")).Select(m => m.A.X).OrderBy(x => x).ToList();
+                        Assert.That(floorXs.Last() - floorXs.First(), Is.GreaterThanOrEqualTo(roomHw * 2f - TowerLayout.DeckW - 0.05f), where + " " + room.Id + " floor covers width");
                         float tipZ = mem.Min(m => Math.Min(m.A.Z, m.B.Z));
                         Assert.That(tipZ, Is.GreaterThan(r + 0.5f), where + " " + room.Id + " stays outside the vehicle");
                     }
