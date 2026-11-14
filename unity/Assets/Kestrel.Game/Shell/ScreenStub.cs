@@ -430,6 +430,18 @@ namespace Kestrel.Game.Shell
             career.RestartFromFirst();
             if (CreditsPlay.Current != null) CreditsPlay.Current.ResetToStart();
             else career.Wallet?.ResetToStart();
+            // Designs stay, but CONTINUE must not reopen KH-3/4 while Cleared is 0.
+            var first = campaign.Mission(1);
+            string firstId = first != null ? first.Id : null;
+            try { new DesignLibrary(store).RebindResumeMission(firstId); }
+            catch (Exception e) { Debug.LogWarning("[Kestrel] resume rebind skipped: " + e.Message); }
+            if (!string.IsNullOrEmpty(firstId))
+            {
+                try { career.NoteMission(firstId); }
+                catch (Exception e) { Debug.LogWarning("[Kestrel] lastMissionId reset skipped: " + e.Message); }
+            }
+            PadHandoff.Clear();
+            GameSession.Clear();
             return true;
         }
 
