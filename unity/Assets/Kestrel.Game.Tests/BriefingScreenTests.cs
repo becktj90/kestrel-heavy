@@ -30,8 +30,8 @@ namespace Kestrel.Game.Tests
             Assert.AreEqual("Optional.", root.Q<Label>("briefing-bonus-note").text);
             Assert.AreEqual("Land the booster", root.Q<Label>("briefing-bonus-0").text);
             Assert.AreEqual("Keep peak g under 4", root.Q<Label>("briefing-bonus-1").text);
-            Assert.AreEqual("Budget 40,000,000 Kc", root.Q<Label>("briefing-budget").text);
-            Assert.AreEqual("Reward 40,000,000 Kc", root.Q<Label>("briefing-reward").text);
+            Assert.AreEqual("Budget 140,000 Kc", root.Q<Label>("briefing-budget").text);
+            Assert.AreEqual("Reward 140,000 Kc", root.Q<Label>("briefing-reward").text);
             Assert.AreEqual("Gentle off.", root.Q<Label>("briefing-gentle").text);
 
             var card = MissionBriefing.Load(Repo, 4, 0, ctx.Seed);
