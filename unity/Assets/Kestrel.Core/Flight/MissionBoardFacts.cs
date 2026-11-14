@@ -136,6 +136,28 @@ namespace Kestrel.Core.Flight
             };
         }
 
+        /// <summary>Daily challenge card (ENGAGEMENT_SPEC §3): local seed, same mission for everyone today.</summary>
+        public static MissionBoardFacts Daily(DailyPick pick, bool canLaunch, string bestLine)
+        {
+            string title = pick.Title ?? "Daily";
+            string day = string.IsNullOrEmpty(pick.DayKey) ? "today" : pick.DayKey;
+            return new MissionBoardFacts
+            {
+                Title = "Daily Challenge",
+                Customer = "Customer · everyone today",
+                Orbit = "Same flight for every player on " + day + ".",
+                Mass = "Mass · the mission's load",
+                Difficulty = "Difficulty · today's pick",
+                Best = string.IsNullOrEmpty(bestLine) ? "Best · no flight yet" : bestLine,
+                Briefing = "Today's flight: " + title + ". Local seed, no streak and no expiry.",
+                Primary = canLaunch ? "Fly daily" : "Design first",
+                PrimaryTip = canLaunch ? "Fly today's shared challenge." : "Open the designer with today's load.",
+                Node = "Daily",
+                CanGo = !string.IsNullOrEmpty(pick.MissionId),
+                Access = MissionBoardAccess.Open,
+            };
+        }
+
         public static string DifficultyWord(string band)
         {
             if (string.Equals(band, "hard", StringComparison.OrdinalIgnoreCase)) return "Hard";
