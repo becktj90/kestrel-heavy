@@ -4,6 +4,7 @@
 // The generated pad's +Z axis (umbilical contract: "+Z toward the pad tower") is yawed to point at the Fit position,
 // behind the vehicle and away from the chase camera.
 using System.Collections.Generic;
+using Kestrel.Core.Data;
 using Kestrel.Core.Vehicle;
 using Kestrel.Kit.Contracts;
 using Kestrel.Pad;
@@ -21,12 +22,24 @@ namespace Kestrel.Slice
         /// <summary>Tower direction (x, z) and minimum height for a rocket of height h and max half-width r (metres).</summary>
         public static (float x, float z, float height) Fit(float h, float r) => PadShowcase.Fit(h, r);
 
-        /// <summary>Same rule as Kestrel.Core.Timeline.Pad.For when only size is known: tower for stages >= 3 m across.</summary>
+        /// <summary>Fallback when only the mesh half-width is known: tower for stacks ≥ 3 m across.
+        /// Prefer <see cref="ArchetypeFor(Catalog, Design)"/> so strongback and first-stage diameter follow Pad.For.</summary>
         public static PadArchetype DefaultArchetype(float r) => r * 2f >= 3f ? PadArchetype.Tower : PadArchetype.Rail;
 
-        public static Transform Create(Material template)
+        /// <summary>Visual pad archetype for a design: same hardware rules as the timeline (<see cref="Kestrel.Core.Timeline.Pad.For"/>).
+        /// Rail for cores under 3 m; tower otherwise; strongback when the stack is liquid on a tower.
+        /// Mesh half-width (strap-ons) must not pick the archetype — only first-stage diameter does.</summary>
+        public static PadArchetype ArchetypeFor(Catalog catalog, Design design)
+        {
+            if (catalog == null || design == null) return PadArchetype.Rail;
+            var pad = Kestrel.Core.Timeline.Pad.For(catalog, design);
+            return PadGenerator.ArchetypeFor(pad.id, pad.strongback);
+        }
+
+        public static Transform Create(UnityEngine.Material template)
         {
             // template no longer used (Kit materials are shared, SRP Batcher friendly); parameter kept for callers.
+            // UnityEngine.Material: Kestrel.Core.Data also defines Material (catalog propellant/tank data).
             var root = new GameObject("PadTower").transform;
             var pad = new GameObject("Pad").transform; pad.SetParent(root, false);
             return root;

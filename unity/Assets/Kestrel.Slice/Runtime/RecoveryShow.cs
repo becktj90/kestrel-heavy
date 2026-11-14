@@ -51,7 +51,7 @@ namespace Kestrel.Slice
         // assist floor); everyone else gets Assisted, so a player who never touches the controls
         // lands exactly as on Auto-assist.
         VisualElement burnPanel;
-        Label burnTitle;
+        Label burnTitle, burnNumbers;
         bool burnHeld, tiltLeftHeld, tiltRightHeld;
 
         public bool SteerCamera { get; private set; }
@@ -340,6 +340,7 @@ namespace Kestrel.Slice
         public bool NumbersShownForCapture => numbers != null && numbers.style.display == DisplayStyle.Flex;
         public bool StickShownForCapture => stick != null && stick.style.display == DisplayStyle.Flex;
         public bool BurnPanelShownForCapture => burnPanel != null && burnPanel.style.display == DisplayStyle.Flex;
+        public string BurnNumbersForCapture => burnNumbers != null ? burnNumbers.text : null;
         public bool InsetShownForCapture => inset != null && inset.enabled;
         public bool DeckShownForCapture => deck != null && deck.gameObject.activeSelf;
         public BoosterFate FateForCapture => landing != null ? landing.Fate : BoosterFate.None;
@@ -495,11 +496,19 @@ namespace Kestrel.Slice
                 // numbers stay the engineer's extended line.
                 bool burn = BurnActive(sample);
                 bool dev = DevReadout();
-                numbers.style.display = burn || dev ? DisplayStyle.Flex : DisplayStyle.None;
+                numbers.style.display = !burn && dev ? DisplayStyle.Flex : DisplayStyle.None;
                 if (burn)
                 {
                     var burnReadout = LandingBurnDirector.Readout(sample, craft, landing != null ? landing.DeckOffsetM : 0);
-                    numbers.text = "LANDING BURN  " + burnReadout.Line();
+                    if (burnNumbers != null)
+                    {
+                        string line = burnReadout.Line();
+                        burnNumbers.text = line;
+                        float u = units > 0.5f ? units : 1f;
+                        var box = burnPanel != null ? burnPanel.parent : null;
+                        float w = box != null && box.resolvedStyle.width > 0 ? box.resolvedStyle.width / u : 335f;
+                        burnNumbers.style.fontSize = LandingBurnHud.FontFor(line, w) * u;
+                    }
                 }
                 else if (dev)
                 {
@@ -694,12 +703,18 @@ namespace Kestrel.Slice
                     burnPanel.style.flexDirection = FlexDirection.Column;
                     burnPanel.style.display = DisplayStyle.None;
                     burnTitle = new Label { name = "recovery-burn-title", pickingMode = PickingMode.Ignore };
-                    burnTitle.text = "YOUR LANDING BURN — hold to burn, tilt to steer";
+                    burnTitle.text = LandingBurnHud.Title;   // the buttons say hold to burn, tilt to steer
                     burnTitle.style.unityTextAlign = TextAnchor.MiddleCenter;
                     burnTitle.style.unityFontStyleAndWeight = FontStyle.Bold;
                     burnTitle.style.whiteSpace = WhiteSpace.Normal;
                     burnTitle.style.color = new Color(0.95f, 0.85f, 0.55f);
                     burnPanel.Add(burnTitle);
+                    // Playthrough 2026-11-11: the SINK / OFF / TILT instruments ride in the panel, not over the ladder.
+                    var burnLine = new Label { name = "recovery-burn-numbers", pickingMode = PickingMode.Ignore };
+                    burnLine.style.unityTextAlign = TextAnchor.MiddleCenter;
+                    burnLine.style.whiteSpace = WhiteSpace.Normal;
+                    burnLine.style.color = new Color(0.85f, 0.92f, 0.96f);
+                    burnPanel.Add(burnLine);
                     var row = new VisualElement { name = "recovery-burn-row" };
                     row.style.flexDirection = FlexDirection.Row;
                     row.Add(HoldBurn("◀ TILT", held => tiltLeftHeld = held));
@@ -709,6 +724,7 @@ namespace Kestrel.Slice
                     host.Add(burnPanel);
                 }
                 else burnTitle = burnPanel.Q<Label>("recovery-burn-title");
+                burnNumbers = burnPanel.Q<Label>("recovery-burn-numbers");
             }
             PlaceChrome();
         }
@@ -717,8 +733,10 @@ namespace Kestrel.Slice
         Button HoldBurn(string label, Action<bool> held, bool grow = false)
         {
             var button = new Button { text = label };
-            button.style.height = 52f * units;
+            button.style.height = LandingBurnHud.ButtonPt * units;
             button.style.marginRight = 4f * units;
+            button.style.marginTop = 0;
+            button.style.marginBottom = 0;
             button.style.fontSize = 14f * units;
             if (grow) button.style.flexGrow = 1;
             button.RegisterCallback<PointerDownEvent>(e => { held(true); e.StopPropagation(); });
@@ -764,11 +782,22 @@ namespace Kestrel.Slice
             }
             if (burnPanel != null)
             {
-                burnPanel.style.bottom = 18f * u;
-                burnPanel.style.left = 12f * u;
-                burnPanel.style.right = 12f * u;
+                burnPanel.style.top = LandingBurnHud.TopPt * u;
+                burnPanel.style.bottom = StyleKeyword.Auto;
+                burnPanel.style.left = LandingBurnHud.SideInsetPt * u;
+                burnPanel.style.right = LandingBurnHud.SideInsetPt * u;
+                burnPanel.style.height = LandingBurnHud.HeightPt * u;
             }
-            if (burnTitle != null) burnTitle.style.fontSize = 12f * u;
+            foreach (var line in new[] { burnTitle, burnNumbers })
+            {
+                if (line == null) continue;
+                line.style.fontSize = LandingBurnHud.FontPt * u;
+                line.style.height = LandingBurnHud.LinePt * u;
+                line.style.marginTop = 0;
+                line.style.marginBottom = LandingBurnHud.RowGapPt * u;
+                line.style.paddingTop = 0;
+                line.style.paddingBottom = 0;
+            }
         }
 
         void OnDestroy()
