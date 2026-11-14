@@ -1756,7 +1756,7 @@ namespace Kestrel.Game.Shell
         /// <summary>Settings sheet: the gap above Close and the sheet's bottom padding under it.</summary>
         public const float SheetCloseGap = 8f, SheetPadBottom = 8f;
 
-        public const string FullDesignerNote = "Every part and number. For older kids and engineers.";
+        public const string FullDesignerNote = "Every part and number, including Landing (legs and Haven). For older kids and engineers.";
         public const string CornerCharacterLabel = "Show corner character";
         public const string CornerCharacterNote = "A little helper in the corner. Off by default.";
 

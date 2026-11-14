@@ -81,9 +81,9 @@ namespace Kestrel.Slice
         public bool Visible => Root.resolvedStyle.display != DisplayStyle.None && shown;
 
         readonly VisualElement rocketBox, header, sheet;
-        readonly Label title, subtitle, hint, badge, readiness, fuelLess, fuelMore;
+        readonly Label title, subtitle, spend, hint, badge, readiness, fuelLess, fuelMore;
         readonly Button back, reset, launch;
-        readonly Row engine, stages, fuel, boosters;
+        readonly Row build, engine, stages, fuel, boosters;
         readonly VisualElement whyCard, speedTrack, speedFill, speedNeed, tierSwitch;
         readonly StarterGlyph whyIcon;
         readonly Label whyText, speedLabel, speedStatus;
@@ -120,13 +120,16 @@ namespace Kestrel.Slice
             sheet.style.backgroundColor = SheetBg;
             Root.Add(sheet);
 
+            build = MakeRow(UiIds.StarterBuild, "build", StarterScreen.BuildLabel, StarterRocket.BuildOrder.Count, k => UiIds.StarterBuildOption(StarterRocket.BuildOrder[k]), k => Pick(StarterKnob.Build, () => Rocket.BuildGrade = StarterRocket.BuildOrder[k]));
             engine = MakeRow(UiIds.StarterEngine, "engine", StarterScreen.EngineLabel, StarterRocket.EngineOrder.Count, k => UiIds.StarterEngineOption(StarterRocket.EngineOrder[k]), k => Pick(StarterKnob.Engine, () => Rocket.Engine = StarterRocket.EngineOrder[k]));
             stages = MakeRow(UiIds.StarterStages, "stages", StarterScreen.StagesLabel, StarterRocket.StageValues.Count, k => UiIds.StarterStagesOption(StarterRocket.StageValues[k]), k => Pick(StarterKnob.Stages, () => Rocket.Stages = StarterRocket.StageValues[k]));
             fuel = MakeRow(UiIds.StarterFuel, "fuel", StarterScreen.FuelLabel, StarterRocket.FuelNotches, k => UiIds.StarterFuelNotch(k + 1), k => Pick(StarterKnob.FuelNotch, () => Rocket.FuelNotch = k));
             boosters = MakeRow(UiIds.StarterBoosters, "boosters", StarterScreen.BoostersLabel, StarterRocket.BoosterValues.Count, k => UiIds.StarterBoostersOption(StarterRocket.BoosterValues[k]), k => Pick(StarterKnob.Boosters, () => Rocket.Boosters = StarterRocket.BoosterValues[k]));
+            for (int i = 0; i < StarterRocket.BuildOrder.Count; i++) build.Options[i].text = StarterScreen.OptionText(StarterRocket.BuildOrder[i]);
             for (int i = 0; i < StarterRocket.EngineOrder.Count; i++) engine.Options[i].text = StarterScreen.OptionText(StarterRocket.EngineOrder[i]);
             for (int i = 0; i < StarterRocket.StageValues.Count; i++) stages.Options[i].text = StarterRocket.StageValues[i].ToString(System.Globalization.CultureInfo.InvariantCulture);
             for (int i = 0; i < StarterRocket.BoosterValues.Count; i++) boosters.Options[i].text = StarterScreen.BoosterText(StarterRocket.BoosterValues[i]);
+            build.Label.tooltip = StarterScreen.BuildHint;
             engine.Label.tooltip = StarterScreen.EngineHint;
             stages.Label.tooltip = StarterScreen.StagesHint;
             fuel.Label.tooltip = StarterScreen.FuelHint;
@@ -145,8 +148,8 @@ namespace Kestrel.Slice
             fuelMore.style.unityTextAlign = TextAnchor.MiddleRight;
             fuel.Box.Add(fuelLess);
             fuel.Box.Add(fuelMore);
-            engine.Knob = StarterKnob.Engine; stages.Knob = StarterKnob.Stages; fuel.Knob = StarterKnob.FuelNotch; boosters.Knob = StarterKnob.Boosters;
-            foreach (var row in new[] { engine, stages, fuel, boosters })
+            build.Knob = StarterKnob.Build; engine.Knob = StarterKnob.Engine; stages.Knob = StarterKnob.Stages; fuel.Knob = StarterKnob.FuelNotch; boosters.Knob = StarterKnob.Boosters;
+            foreach (var row in new[] { build, engine, stages, fuel, boosters })
             {
                 var r = row;
                 r.Help = new Button(() => ToggleWhy(r.Knob)) { name = UiIds.StarterWhy(r.Knob), text = Copy?.WhyButton ?? "?" };
@@ -181,9 +184,12 @@ namespace Kestrel.Slice
             speedTrack.Add(speedNeed);
             sheet.Add(speedLabel); sheet.Add(speedStatus); sheet.Add(speedTrack);
 
+            spend = Text(UiIds.StarterSpend, 14f, Accent, true, false);
+            spend.tooltip = "Hardware cost in Kc and how likely this rocket is to hold together.";
             hint = Text(UiIds.StarterHint, 13f, Muted, false, true);
             badge = Text(UiIds.StarterBadge, 16f, ReadyGreen, true, false);
             readiness = Text(UiIds.StarterReadiness, 16f, Ink, false, true);
+            sheet.Add(spend);
             sheet.Add(hint);
             sheet.Add(badge);
             sheet.Add(readiness);
@@ -261,6 +267,9 @@ namespace Kestrel.Slice
         public void Refresh()
         {
             var r = Rocket;
+            Select(build, k => r.BuildGrade == StarterRocket.BuildOrder[k], k => r.IsBuildAllowed(StarterRocket.BuildOrder[k]));
+            for (int k = 0; k < build.Options.Length; k++)
+                build.Options[k].tooltip = StarterScreen.BuildHintFor(StarterRocket.BuildOrder[k]);
             Select(engine, k => r.Engine == StarterRocket.EngineOrder[k], k => r.IsEngineAllowed(StarterRocket.EngineOrder[k]));
             Select(stages, k => r.Stages == StarterRocket.StageValues[k], k => r.IsStagesAllowed(StarterRocket.StageValues[k]));
             Select(fuel, k => r.FuelNotch == k, k => r.IsFuelNotchAllowed(k));
@@ -279,16 +288,21 @@ namespace Kestrel.Slice
 
             title.text = StarterScreen.Title(r.Mission);
             subtitle.text = StarterScreen.Subtitle(r.Mission);
+            double budget = r.Mission != null ? r.Mission.BudgetKc : 0;
+            try { spend.text = StarterManufacturing.SpendLine(r.Catalog, r.BuildDesign(), budget); }
+            catch (Exception) { spend.text = ""; }
+            spend.tooltip = StarterScreen.BuildHintFor(r.BuildGrade) + " " + spend.text;
             hint.text = StarterScreen.Hint(r, LastKnob);
             // The existing readout and the launch predictor (Honest Ready) as plain information. Launch is off only on a
             // hard Validate block, whose one plain reason is the line; a rocket the predictor says breaks up shows its
             // cause and still launches (and may explode). An unchecked setting reads "Test-flying it" until TickPrediction lands.
+            // Spend (cost · hold-together) leads the readiness body so manufacturing choices stay visible without a sheet line.
             bool wasReady = LaunchReady;
             LaunchReady = StarterScreen.ReadinessNow(r, out var b, out var rest);
             badge.text = b;
             badge.style.color = b == StarterScreen.ReadyBadge ? ReadyGreen : b == StarterScreen.TightBadge ? TightAmber : ShortRed;
-            readiness.text = rest;
-            readiness.tooltip = StarterScreen.Spoken(b, rest);
+            readiness.text = string.IsNullOrEmpty(spend.text) ? rest : (string.IsNullOrEmpty(rest) ? spend.text : spend.text + " · " + rest);
+            readiness.tooltip = StarterScreen.Spoken(b, readiness.text);
             launch.SetEnabled(LaunchReady);
             launch.style.backgroundColor = LaunchReady ? LaunchRed : LaunchOff;
             launch.tooltip = LaunchReady ? "Launch this rocket." : rest;
@@ -317,7 +331,7 @@ namespace Kestrel.Slice
             if (Xray != null) Xray.Engineer = Tier == ExperienceTier.Engineer;
 
             if (WhyOpen == StarterKnob.Boosters && !r.BoostersVisible) WhyOpen = StarterKnob.None;
-            foreach (var row in new[] { engine, stages, fuel, boosters })
+            foreach (var row in new[] { build, engine, stages, fuel, boosters })
             {
                 bool on = row.Knob == WhyOpen;
                 row.Help.EnableInClassList("starter-on", on);
@@ -423,7 +437,7 @@ namespace Kestrel.Slice
                 Width = wPt, Height = hPt, SafeTop = safeT, SafeBottom = safeB, SafeLeft = safeL, SafeRight = safeR,
                 Wide = wide, ReserveExit = reserveExit, BoostersVisible = r.BoostersVisible,
                 Title = title.text, Subtitle = subtitle.text, Hint = hint.text, Badge = badge.text, Readiness = readiness.text,
-                Engines = Texts(engine), Stages = Texts(stages), Boosters = Texts(boosters),
+                Builds = Texts(build), Engines = Texts(engine), Stages = Texts(stages), Boosters = Texts(boosters),
                 Help = Copy != null && Copy.Why.Count > 0, HelpText = Copy?.WhyButton ?? "?",
                 WhyOpen = WhyOpen, WhyText = whyText.text,
                 Speed = Speed.Visible, SpeedLabel = Speed.Label, SpeedStatus = Speed.Status,
@@ -476,6 +490,7 @@ namespace Kestrel.Slice
             Corner(back, f.Back, f.CornerPt);
             Corner(reset, f.Reset, f.CornerPt);
 
+            PlaceRow(build, f.Build, f.Sheet, f.LabelPt, f.OptionPt);
             PlaceRow(engine, f.Engine, f.Sheet, f.LabelPt, f.OptionPt);
             PlaceRow(stages, f.Stages, f.Sheet, f.LabelPt, f.OptionPt);
             PlaceRow(fuel, f.Fuel, f.Sheet, f.LabelPt, f.OptionPt);
@@ -493,6 +508,7 @@ namespace Kestrel.Slice
             boosters.Box.style.display = f.Boosters != null ? DisplayStyle.Flex : DisplayStyle.None;
             if (f.Boosters != null) PlaceRow(boosters, f.Boosters, f.Sheet, f.LabelPt, f.OptionPt);
 
+            spend.style.display = DisplayStyle.None; // spend leads the readiness line
             hint.style.display = f.Hint.Live ? DisplayStyle.Flex : DisplayStyle.None;
             if (f.Hint.Live) { Pin(hint, f.Hint, f.Sheet); Font(hint, f.HintPt); }
 
@@ -513,9 +529,9 @@ namespace Kestrel.Slice
             }
 
             // "?" buttons, the Why? card, the speed bar, the X-ray button.
-            foreach (var row in new[] { engine, stages, fuel, boosters })
+            foreach (var row in new[] { build, engine, stages, fuel, boosters })
             {
-                var rf = row == engine ? f.Engine : row == stages ? f.Stages : row == fuel ? f.Fuel : f.Boosters;
+                var rf = row == build ? f.Build : row == engine ? f.Engine : row == stages ? f.Stages : row == fuel ? f.Fuel : f.Boosters;
                 bool on = rf != null && rf.Help.Live;
                 row.Help.style.display = on ? DisplayStyle.Flex : DisplayStyle.None;
                 if (!on) continue;

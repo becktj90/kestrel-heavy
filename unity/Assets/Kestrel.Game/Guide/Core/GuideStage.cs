@@ -186,7 +186,14 @@ namespace Kestrel.Game.Guide
                 if (!beat.FromEngine) dropped.Add(beat.Id);
                 return;
             }
-            if (Rank(beat) >= (int)GuidePriority.Decision) DropChatter();
+            // The career CTA is a decision, but it follows the opening lines. It waits instead of replacing them.
+            bool welcomeDecision = OpeningIntroSequence.IsWelcome(beat.Id) && Rank(beat) >= (int)GuidePriority.Decision;
+            if (Rank(beat) >= (int)GuidePriority.Decision && !welcomeDecision) DropChatter();
+            if (welcomeDecision && WelcomeShowing())
+            {
+                Park(beat);
+                return;
+            }
             if (active.Count < BoxCap) { Start(beat); return; }
             int low = Lowest();
             if (Rank(beat) > Rank(active[low].Beat))
@@ -329,6 +336,13 @@ namespace Kestrel.Game.Guide
                 active.RemoveAt(i);
                 if (!beat.FromEngine) dropped.Add(beat.Id);
             }
+        }
+
+        bool WelcomeShowing()
+        {
+            for (int i = 0; i < active.Count; i++)
+                if (OpeningIntroSequence.IsWelcome(active[i].Beat.Id)) return true;
+            return false;
         }
 
         bool Showing(string id)

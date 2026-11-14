@@ -166,5 +166,21 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual(OrbitCoast.MaxStepSeconds, OrbitCoast.Advance(0, 3, 3), 1e-12);
             Assert.AreEqual(0.0, OrbitCoast.Advance(0, double.NaN, -1), 1e-12);
         }
+
+        /// <summary>
+        /// PlayMode GoodRocket_FirstHop: the climax screenshot stalled for several seconds.
+        /// The coast clock caps that hitch at one step, so the report failsafe must too, or
+        /// CoastEnd becomes "watchdog" while Apogee! still has time to play.
+        /// </summary>
+        [Test]
+        public void ACaptureHitchDoesNotSpendTheWholeClimaxWatchdog()
+        {
+            double coast = OrbitCoast.Advance(1.5, 8, 8);
+            double watch = OrbitCoast.Advance(1.5, 8, 8);
+            Assert.AreEqual(1.5 + OrbitCoast.MaxStepSeconds, coast, 1e-12);
+            Assert.AreEqual(coast, watch, 1e-12);
+            Assert.That(watch, Is.LessThan(OrbitCoast.MaxWallSeconds + 2));
+            Assert.That(1.5 + 8, Is.GreaterThan(OrbitCoast.MaxWallSeconds + 2), "the raw clock would have tripped the failsafe");
+        }
     }
 }

@@ -537,6 +537,46 @@ namespace Kestrel.Core.Hangar
         public static Edit SetGridFins(JsonObject d, bool on) => Landing(d, "gridFins", "Grid fins", on);
         public static Edit SetRcs(JsonObject d, bool on) => Landing(d, "rcs", "Steering jets", on);
 
+        /// <summary>Default landing fuel when the player picks Haven or the pad with none held back (13%, board-starter note).</summary>
+        public const double DefaultLandingReserve = 0.13;
+
+        /// <summary>
+        /// Recovery mode: expendable, rtls (pad), or barge (Haven). Picking a landing also arms legs, grid fins,
+        /// and a default landing reserve when the stage had none — one chip is enough to attempt Haven.
+        /// Expendable clears the landing reserve; legs stay so the player can strip them separately.
+        /// </summary>
+        public static Edit SetRecoveryMode(JsonObject d, string mode)
+        {
+            if (d == null) return Edit.None;
+            string next = string.IsNullOrEmpty(mode) ? "expendable" : mode;
+            if (next != "expendable" && next != "rtls" && next != "barge") return Edit.None;
+            string from = d.Str("recoveryMode");
+            if (string.IsNullOrEmpty(from)) from = d.Obj("recovery")?.Str("mode") ?? "expendable";
+            var rec = d.Obj("recovery");
+            bool modeSame = from == next && d.Str("recoveryMode") == next && rec != null && rec.Str("mode") == next;
+            if (modeSame)
+            {
+                if (next == "expendable") return Edit.None;
+                return ArmLandingForRecovery(d) ? new Edit("Recovery", from, next) : Edit.None;
+            }
+            Set(d, "recoveryMode", next);
+            if (rec == null) { rec = new JsonObject(); Set(d, "recovery", rec); }
+            Set(rec, "mode", next);
+            if (next == "expendable") SetLandingReserve(d, 0, 0);
+            else ArmLandingForRecovery(d);
+            return new Edit("Recovery", from, next);
+        }
+
+        /// <summary>Legs, grid fins, and a default reserve when the first stage has none. True when something changed.</summary>
+        static bool ArmLandingForRecovery(JsonObject d)
+        {
+            bool any = SetLegs(d, true).changed | SetGridFins(d, true).changed;
+            var s = HangarParts.Body(d, PartRef.Stage(0));
+            if (s != null && !(s.Num("landingPropMass") > 1) && s.Num("propMass") > 0)
+                any |= SetLandingReserve(d, 0, DefaultLandingReserve).changed;
+            return any;
+        }
+
         public static Edit SetAvionics(JsonObject d, string tier)
         {
             if (Array.IndexOf(AvionicsTiers, tier) < 0) return Edit.None;
