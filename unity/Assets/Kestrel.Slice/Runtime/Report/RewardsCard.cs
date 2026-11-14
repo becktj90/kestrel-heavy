@@ -51,6 +51,8 @@ namespace Kestrel.Slice
             }
             scroll.Add(Line("failure-cause", debriefSafe.CauseTitle, 22, FontStyle.Bold, ReportCardChrome.Cream));
             scroll.Add(Line("failure-numbers", debriefSafe.Numbers, 16, FontStyle.Bold, ReportCardChrome.Sun));
+            if (!string.IsNullOrEmpty(debriefSafe.GapLine))
+                scroll.Add(Line(UiIds.ReportGap, debriefSafe.GapLine, 16, FontStyle.Bold, ReportCardChrome.Teal));
 
             string kid = failure != null && !string.IsNullOrEmpty(failure.kid) ? failure.kid : debriefSafe.Kid;
             string engineer = failure != null && !string.IsNullOrEmpty(failure.engineer) ? failure.engineer : debriefSafe.Engineer;
@@ -63,6 +65,8 @@ namespace Kestrel.Slice
             scroll.Add(Line("report-stars", debriefSafe.StarsLine, 18, FontStyle.Bold, ReportCardChrome.Cream));
             scroll.Add(Line("report-medals", debriefSafe.MedalsLine, 16, FontStyle.Normal, ReportCardChrome.Sun));
             scroll.Add(Line("report-kc", debriefSafe.KcLine, 16, FontStyle.Normal, ReportCardChrome.Teal));
+            if (!string.IsNullOrEmpty(debriefSafe.PbLine))
+                scroll.Add(Line(UiIds.ReportPb, debriefSafe.PbLine, 15, FontStyle.Bold, ReportCardChrome.Sun));
             if (!string.IsNullOrEmpty(debriefSafe.UnlockLine))
                 scroll.Add(Line("report-unlocks", debriefSafe.UnlockLine, 15, FontStyle.Normal, Color.white));
             if (!string.IsNullOrEmpty(debriefSafe.CosmeticLine))

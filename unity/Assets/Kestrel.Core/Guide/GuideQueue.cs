@@ -77,8 +77,10 @@ namespace Kestrel.Core.Guide
             return Face(t);
         }
 
-        /// <summary>Queues a line behind the current face without priority preemption.
-        /// Used by the first-run welcome so the decision CTA cannot wipe the greeting.</summary>
+        /// <summary>
+        /// Queue behind the line that is showing. Does not preempt it and does not drop chatter.
+        /// The first-run CTA is a decision, and it still waits until the welcome in front of it finishes.
+        /// </summary>
         public GuideFace Append(GuideLine line, double t, IReadOnlyDictionary<string, string> tokens, string clip)
         {
             if (line == null || line.Cards.Count == 0) return Face(t);

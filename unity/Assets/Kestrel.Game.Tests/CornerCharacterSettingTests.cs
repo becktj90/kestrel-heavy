@@ -138,6 +138,10 @@ namespace Kestrel.Game.Tests
             ExperienceSettings.SetCornerCharacter(true, PlayerPrefs.SetInt);
             Assert.DoesNotThrow(() => driver.SyncSprite());
             Assert.That(driver.HasSprite, Is.True);
+            // Opening intro keeps a welcome stack until FirstRunDone; settle it so this test only covers the corner setting.
+            var liveOn = driver.Stage != null ? driver.Stage.Engine as LiveGuideEngine : null;
+            if (liveOn != null) liveOn.SkipWelcome();
+            driver.SyncSprite();
             Assert.That(root.Q("guide-overlay"), Is.Not.Null);
             Assert.That(root.Q("guide-pop"), Is.Not.Null);
             Assert.That(root.Q("guide-overlay").pickingMode, Is.EqualTo(PickingMode.Ignore), "the overlay never takes touches or space");
@@ -180,14 +184,15 @@ namespace Kestrel.Game.Tests
             Assert.That(driver.HasSprite, Is.True);
             var live = driver.Stage != null ? driver.Stage.Engine as LiveGuideEngine : null;
             Assume.That(live, Is.Not.Null, "needs the real guide script");
+            live.SkipWelcome();
+            driver.SyncSprite();
             ExperienceSettings.SetCornerCharacter(false, PlayerPrefs.SetInt);
             driver.SyncSprite();
             Assert.That(driver.HasSprite, Is.False);
 
             // Lines offered while off must not wait for the next time it is turned on.
-            // Use a tip (not an opening beat): SyncSprite keeps the first-run welcome queue while it is active.
-            bool offered = live.Offer("guide.brief", "m1", null, "map", false);
-            Assume.That(offered, "the briefing tip is not allowed on this save");
+            bool offered = live.Offer("guide.brief", "m1", null, "home", false);
+            Assume.That(offered, "a briefing tip is allowed after the welcome is settled");
             Assert.That(live.Pending.Count, Is.GreaterThan(0), "the line is queued before the sync");
             driver.SyncSprite();
             Assert.That(live.Pending.Count, Is.EqualTo(0), "off: the queue is emptied");

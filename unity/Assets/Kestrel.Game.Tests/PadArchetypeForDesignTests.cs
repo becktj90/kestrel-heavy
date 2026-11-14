@@ -32,7 +32,12 @@ namespace Kestrel.Game.Tests
                 var pad = TimelinePad.For(cat, d);
                 Assert.That(PadTower.ArchetypeFor(cat, d), Is.EqualTo(PadGenerator.ArchetypeFor(pad.id, pad.strongback)), id);
             }
-            // sounding-solid.json was replaced by sounding-hybrid.json on the web templates bank (#325).
+            // sounding-solid left the web gallery (#325); keep the fixture for the solid path, hybrid for the gallery.
+            var solid = Design.FromJson(MiniJson.ParseObject(File.ReadAllText(Path.Combine(Repo, "tests", "fixtures", "designs", "sounding-solid.json"))));
+            {
+                var pad = TimelinePad.For(cat, solid);
+                Assert.That(PadTower.ArchetypeFor(cat, solid), Is.EqualTo(PadGenerator.ArchetypeFor(pad.id, pad.strongback)), "sounding-solid fixture");
+            }
             foreach (var file in new[] { "sounding-hybrid.json", "medium-kerolox-reusable.json", "hydrogen-upper.json" })
             {
                 var d = Template(file);

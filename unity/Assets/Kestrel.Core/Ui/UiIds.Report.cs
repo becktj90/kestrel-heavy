@@ -30,6 +30,10 @@ namespace Kestrel.Core.Ui
         public const string ReportStarRow = "report-star-row";
         public const string ReportKcHeadline = "report-kc-headline";
         public const string ReportPassClass = "report-pass";
+        /// <summary>H3 gap-to-goal sentence on the report card.</summary>
+        public const string ReportGap = "report-gap";
+        /// <summary>New personal-best line on a pass that improved a metric.</summary>
+        public const string ReportPb = "report-pb";
 
         /// <summary>The six exits that must be on screen, tap targets, without scrolling at every size.</summary>
         public static readonly string[] ReportExits = { ReportFix, ReportNext, ReportRetry, ReportDesigner, ReportMissions, ReportHome };

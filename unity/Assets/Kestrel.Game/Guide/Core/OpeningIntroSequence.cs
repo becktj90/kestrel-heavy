@@ -43,23 +43,11 @@ namespace Kestrel.Game.Guide
             state.FirstRunDone = true;
         }
 
-        public static bool IsBeatId(string id)
-        {
-            if (string.IsNullOrEmpty(id)) return false;
-            for (int i = 0; i < BeatIds.Length; i++)
-                if (BeatIds[i] == id) return true;
-            return false;
-        }
-
-        /// <summary>True only while opening beats are queued. Incomplete first-run state alone is not enough —
-        /// otherwise an Off corner character never drops its portrait before Home offers the welcome.</summary>
         public static bool Active(LiveGuideEngine engine)
         {
             if (engine == null || engine.State.FirstRunDone) return false;
-            var pending = engine.Pending;
-            for (int i = 0; i < pending.Count; i++)
-                if (IsBeatId(pending[i]?.Id)) return true;
-            return false;
+            // Incomplete intro beats, not a later tip. The stack stays up until those beats are seen.
+            return !IsComplete(engine.State);
         }
 
         public static string HostKid(string repoRoot) => HostBeat(Campaign.Load(repoRoot)).Cards[0].Kid;
@@ -103,21 +91,24 @@ namespace Kestrel.Game.Guide
         }
 
         static MissionBoardFacts FactsFor(Campaign campaign)
+            => MissionBoardFacts.Of(First(campaign), MissionBoardAccess.Open, 0, null, 0, 0, true);
+
+        static string PebbleName(Campaign campaign)
         {
-            CampaignMission m1 = null;
-            if (campaign?.Missions != null)
-            {
-                for (int i = 0; i < campaign.Missions.Count; i++)
-                {
-                    var row = campaign.Missions[i];
-                    if (row != null && row.Index == 1) { m1 = row; break; }
-                }
-                if (m1 == null && campaign.Missions.Count > 0) m1 = campaign.Missions[0];
-            }
-            return MissionBoardFacts.Of(m1, MissionBoardAccess.Open, 0, null, 0, 0, true);
+            var m1 = First(campaign);
+            if (m1 != null && !string.IsNullOrEmpty(m1.PayloadName)) return m1.PayloadName;
+            return "Pebble";
         }
 
-        static CampaignMission FirstMission(Campaign campaign)
+        static string ApogeeKm(Campaign campaign)
+        {
+            var m1 = First(campaign);
+            if (m1 != null && m1.ApoKm > 0)
+                return m1.ApoKm.ToString("0", CultureInfo.InvariantCulture);
+            return "10";
+        }
+
+        static CampaignMission First(Campaign campaign)
         {
             if (campaign?.Missions == null || campaign.Missions.Count == 0) return null;
             for (int i = 0; i < campaign.Missions.Count; i++)
@@ -126,21 +117,6 @@ namespace Kestrel.Game.Guide
                 if (row != null && row.Index == 1) return row;
             }
             return campaign.Missions[0];
-        }
-
-        static string PebbleName(Campaign campaign)
-        {
-            var m1 = FirstMission(campaign);
-            if (m1 != null && !string.IsNullOrEmpty(m1.PayloadName)) return m1.PayloadName;
-            return "Pebble";
-        }
-
-        static string ApogeeKm(Campaign campaign)
-        {
-            var m1 = FirstMission(campaign);
-            if (m1 != null && m1.ApoKm > 0)
-                return m1.ApoKm.ToString("0", CultureInfo.InvariantCulture);
-            return "10";
         }
     }
 }
