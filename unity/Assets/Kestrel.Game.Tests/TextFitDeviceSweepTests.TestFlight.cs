@@ -108,7 +108,14 @@ namespace Kestrel.Game.Tests
                         AssertFits(shell, frame.Name + " home with Test Flight");
                         var tile = shell.Q<Button>(UiIds.HomeTestFlight);
                         Assert.That(tile, Is.Not.Null, frame.Name);
-                        Assert.That(tile.resolvedStyle.display, Is.Not.EqualTo(DisplayStyle.None), frame.Name);
+                        // Wide Home hides the tile when Design first and Codex already fill the column
+                        // (WebHomeLayout.Simplify). A hidden tile is that case, not a missing control.
+                        if (tile.resolvedStyle.display == DisplayStyle.None)
+                        {
+                            var show = HomeFeatures.Current();
+                            Assert.That(show.DesignFirst && show.Codex, Is.True, frame.Name + " hides Test Flight only when the column is full");
+                            continue;
+                        }
                         Assert.That(tile.worldBound.height, Is.GreaterThanOrEqualTo(44f), frame.Name + " target");
                         var name = tile.Q<Label>(className: "kh-mm-tile-name");
                         var cap = tile.Q<Label>(className: "kh-mm-tile-caption");
