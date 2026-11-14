@@ -20,8 +20,9 @@ namespace Kestrel.Core.Feel
             switch (name)
             {
                 // Arcade juice: liftoff and max-Q hit hard. KH-3 playtest: "no screen shake, impact,
-                // or juice on liftoff. Rocket just quietly lifts off." These are up from 0.55/0.72.
-                case "liftoff": shake = 1.00; flash = 0.70; haptic = 28; rumble = 0.80; punch = 0.80; break;
+                // or juice on liftoff. Rocket just quietly lifts off." Punch/flash up again once the
+                // cue was retimed to alt > 1 m (FlightPresenter.Lifted) instead of Launch()/Running.
+                case "liftoff": shake = 1.00; flash = 0.85; haptic = 36; rumble = 0.90; punch = 0.95; break;
                 case "maxq": shake = 1.00; flash = 0.25; haptic = 18; rumble = 1.00; punch = 0.45; break;
                 case "stage": shake = 0.40; flash = 0.35; haptic = 14; rumble = 0.50; punch = 0.60; break;
                 case "meco": shake = 0.22; flash = 0.10; haptic = 10; rumble = 0.20; punch = 0.30; break;

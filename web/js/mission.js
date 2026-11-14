@@ -987,6 +987,8 @@ export default class MissionScene extends Phaser.Scene {
         this.setZoomWant(this.flightZoom('ascent'), this.settings.reducedMotion ? 12 : CAM.zoomLiftRate);
       }
     });
+    // Keep shake duration/intensity pinned — Phaser shake samples Math.random each
+    // frame and shares the stream with spawn/pickups; stronger shake breaks D0 goldens.
     if (!this.settings.reducedMotion) this.cameras.main.shake(420, 0.012);
     this.flashPad(0.55);
     AudioApi.play('liftoff', this.settings);
