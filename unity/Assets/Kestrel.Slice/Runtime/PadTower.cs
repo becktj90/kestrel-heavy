@@ -36,9 +36,10 @@ namespace Kestrel.Slice
             return PadGenerator.ArchetypeFor(pad.id, pad.strongback);
         }
 
-        public static Transform Create(Material template)
+        public static Transform Create(UnityEngine.Material template)
         {
             // template no longer used (Kit materials are shared, SRP Batcher friendly); parameter kept for callers.
+            // UnityEngine.Material: Kestrel.Core.Data also defines Material (catalog propellant/tank data).
             var root = new GameObject("PadTower").transform;
             var pad = new GameObject("Pad").transform; pad.SetParent(root, false);
             return root;
