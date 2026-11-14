@@ -4,9 +4,11 @@ using System;
 using System.IO;
 using Kestrel.Core.Data;
 using Kestrel.Core.Designer;
+using Kestrel.Core.Economy;
 using Kestrel.Core.Flight;
 using Kestrel.Core.Hangar;
 using Kestrel.Core.Json;
+using Kestrel.Core.Save;
 using Kestrel.Game.MissionSelect;
 using Kestrel.Game.Layout;
 using UnityEngine;
@@ -103,6 +105,15 @@ namespace Kestrel.Game.Shell
                 MainMenuOverlay.OpenCodex = () => ShowOverlay(shell, CodexScreen.RootName, back => CodexScreen.Build(back));
                 MainMenuOverlay.OpenPatches = () => ShowOverlay(shell, PatchCollectionScreen.RootName, back => PatchCollectionScreen.Build(LoadCampaign(), null, null, back));
                 MissionBoardScreen.OpenPatches = MainMenuOverlay.OpenPatches;
+                MainMenuOverlay.RestartCareer = () =>
+                {
+                    try
+                    {
+                        if (!TryRestartCareer()) Debug.LogWarning("[Kestrel] career restart skipped: no campaign save");
+                    }
+                    catch (Exception e) { Debug.LogWarning("[Kestrel] career restart failed: " + e.Message); }
+                    RefreshHomeCareer(shell);
+                };
                 // Mix overlay: LAUNCH flies the next mission. Design first opens the designer with that load.
                 _view.pickingMode = PickingMode.Ignore;
                 Action launch = () => shell.Flow.HomePressed("launch");
@@ -110,21 +121,7 @@ namespace Kestrel.Game.Shell
                 Action missions = () => shell.Flow.HomePressed("missions");
                 HomeFlagsBoot.Load();
                 _overlay = MainMenuOverlay.Build(shell.Root, _view, launch, design, missions, MainMenuLayout.ReducedMotion());
-                try { MainMenuOverlay.SetMissionLine(_overlay, NextMissionLine()); }
-                catch (Exception e) { Debug.LogWarning("[Kestrel] next mission line skipped: " + e.Message); }
-                try
-                {
-                    var campaign = LoadCampaign();
-                    if (campaign != null) MainMenuOverlay.SetMissionsFlown(_overlay, ClearedCount(), campaign.Missions.Count);
-                }
-                catch (Exception e) { Debug.LogWarning("[Kestrel] missions flown skipped: " + e.Message); }
-                try { MainMenuOverlay.SetRecord(_overlay, HomeRecordLine()); }
-                catch (Exception e) { Debug.LogWarning("[Kestrel] home record skipped: " + e.Message); }
-                try
-                {
-                    HomeResumeBar.Mount(_overlay, ResumeActions.Credits(), ResumeActions.HasContinue(), () => shell.Flow.HomePressed("continue"), ResumeActions.Caption());
-                }
-                catch (Exception e) { Debug.LogWarning("[Kestrel] resume bar skipped: " + e.Message); }
+                RefreshHomeCareer(shell);
                 float placedW = -1f, placedH = -1f, placedTop = -1f;
                 bool placed = false;
                 void Place()
@@ -397,6 +394,64 @@ namespace Kestrel.Game.Shell
                 return snap.Career == null || snap.Career.Cleared < 0 ? 0 : snap.Career.Cleared;
             }
             catch (Exception) { return 0; }
+        }
+
+        /// <summary>
+        /// Settings → Restart career: wipe Cleared back to 0 so LAUNCH opens KH-1 again.
+        /// Designs stay. Credits wallet resets when the play boot attached one.
+        /// </summary>
+        public static bool TryRestartCareer()
+        {
+            var campaign = LoadCampaign();
+            if (campaign == null) return false;
+            string dir = CreditsPlay.SaveDir();
+            Directory.CreateDirectory(dir);
+            long minor = MissionMapCopy.MinorPerKcFallback;
+            try
+            {
+                string root = RepoRoot();
+                if (!string.IsNullOrEmpty(root))
+                {
+                    string path = Path.Combine(root, "data", "campaign.json");
+                    if (File.Exists(path)) minor = MissionMapText.MinorPerKc(File.ReadAllText(path));
+                }
+                else
+                {
+                    var asset = Resources.Load<TextAsset>("KestrelData/campaign");
+                    if (asset != null) minor = MissionMapText.MinorPerKc(asset.text);
+                }
+            }
+            catch (Exception) { minor = MissionMapCopy.MinorPerKcFallback; }
+
+            NativeStore store = CreditsPlay.Store;
+            if (store == null)
+                store = new NativeStore(dir, () => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), () => 0.5);
+            var career = CareerStore.Load(store, campaign, minor < 1 ? MissionMapCopy.MinorPerKcFallback : minor);
+            career.RestartFromFirst();
+            if (CreditsPlay.Current != null) CreditsPlay.Current.ResetToStart();
+            else career.Wallet?.ResetToStart();
+            return true;
+        }
+
+        void RefreshHomeCareer(AppShell shell)
+        {
+            if (_overlay == null) return;
+            try { MainMenuOverlay.SetMissionLine(_overlay, NextMissionLine()); }
+            catch (Exception e) { Debug.LogWarning("[Kestrel] next mission line skipped: " + e.Message); }
+            try
+            {
+                var campaign = LoadCampaign();
+                if (campaign != null) MainMenuOverlay.SetMissionsFlown(_overlay, ClearedCount(), campaign.Missions.Count);
+            }
+            catch (Exception e) { Debug.LogWarning("[Kestrel] missions flown skipped: " + e.Message); }
+            try { MainMenuOverlay.SetRecord(_overlay, HomeRecordLine()); }
+            catch (Exception e) { Debug.LogWarning("[Kestrel] home record skipped: " + e.Message); }
+            try
+            {
+                Action cont = shell != null && shell.Flow != null ? () => shell.Flow.HomePressed("continue") : (Action)null;
+                HomeResumeBar.Mount(_overlay, ResumeActions.Credits(), ResumeActions.HasContinue(), cont, ResumeActions.Caption());
+            }
+            catch (Exception e) { Debug.LogWarning("[Kestrel] resume bar skipped: " + e.Message); }
         }
 
         public static string NextMissionLine()
