@@ -95,6 +95,8 @@ namespace Kestrel.Core.Guide
                 var line = Script.Lines[i];
                 if (line.Trigger == "guide.first") State.MarkSeen(line.Id);
             }
+            State.MarkSeen("first.host");
+            State.MarkSeen("first.cohost");
             State.FirstRunDone = true;
             Queue.DropTrigger("guide.first", 0);
         }

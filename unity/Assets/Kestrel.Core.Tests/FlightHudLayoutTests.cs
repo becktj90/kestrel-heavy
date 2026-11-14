@@ -1187,6 +1187,9 @@ namespace Kestrel.Core.Tests
             foreach (var text in new[]
             {
                 "BREAKUP Air pushed 25 kPa. The walls held 25 kPa.",
+                // Playthrough 2026-11-11: close values print a decimal (FlightDebrief.PairText), up to 1 Pa.
+                "BREAKUP Air pushed 25.1 kPa. The walls held 25.0 kPa.",
+                "BREAKUP Air pushed 100.001 kPa. The walls held 100.000 kPa.",
                 "OVER-G The stack pulled 9.4 g. The airframe is rated for 6 g.",
                 "RUD",
                 "ENGINE OUT Engine 3 of 9 shut down: turbopump overspeed on the climb through max-Q.",
@@ -1211,8 +1214,12 @@ namespace Kestrel.Core.Tests
             }
             // On a phone the whole break-up line fits.
             if (width >= 375f)
+            {
                 Assert.That(FlightHudLayout.CalloutInBand("BREAKUP Air pushed 25 kPa. The walls held 25 kPa.", width, bandTop, bandBottom, bandTop).Cut,
                     Is.False, device + " whole line");
+                Assert.That(FlightHudLayout.CalloutInBand("BREAKUP Air pushed 25.1 kPa. The walls held 25.0 kPa.", width, bandTop, bandBottom, bandTop).Cut,
+                    Is.False, device + " whole line with the close-value decimal");
+            }
         }
 
         // cbb3a18d PlaysTheBreakUp: the one-line seat left out the chip's 3 pt bottom rule, "need 646x107 box 760x84".
