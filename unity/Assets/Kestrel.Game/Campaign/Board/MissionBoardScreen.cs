@@ -33,6 +33,9 @@ namespace Kestrel.Game.MissionSelect
         Func<string, bool> _canLaunch;
 
         MissionMap _map;
+        Campaign _campaign;
+        Career _career;
+        IReadOnlyDictionary<string, MissionRecord> _records;
         ScrollView _path;
         VisualElement _content, _body, _art, _pulse;
         ScrollView _cardScroll;
@@ -111,6 +114,9 @@ namespace Kestrel.Game.MissionSelect
             _sandbox = sandbox;
             // canLaunch is read on selection, not every frame.
             _canLaunch = canLaunch;
+            _campaign = campaign;
+            _career = career;
+            _records = records;
             _map = MissionMapBuilder.From(campaign, career, records, labels);
 
             var sheet = Resources.Load<StyleSheet>(MissionBoardScreen.SheetResource);
@@ -523,14 +529,13 @@ namespace Kestrel.Game.MissionSelect
                 _slots[i].Node.EnableInClassList("mission-node--selected", false);
             _contracts.EnableInClassList("mission-entry--on", true);
             _sandboxButton.EnableInClassList("mission-entry--on", false);
-            int cleared = _map != null && _map.Career != null ? _map.Career.Cleared : 0;
-            Campaign campaign = _map != null && _map.Career != null ? _map.Career.Campaign : null;
-            _daily = DailyChallenge.Pick(campaign, cleared, DateTime.UtcNow);
+            int cleared = _career != null && _career.Cleared > 0 ? _career.Cleared : 0;
+            _daily = DailyChallenge.Pick(_campaign, cleared, DateTime.UtcNow);
             _dailyMissionId = _daily.MissionId;
             bool can = !string.IsNullOrEmpty(_dailyMissionId) && _canLaunch != null && _canLaunch(_dailyMissionId);
             string best = "";
-            if (_map != null && _map.Records != null && !string.IsNullOrEmpty(_dailyMissionId)
-                && _map.Records.TryGetValue(_dailyMissionId, out var rec) && rec != null)
+            if (_records != null && !string.IsNullOrEmpty(_dailyMissionId)
+                && _records.TryGetValue(_dailyMissionId, out var rec) && rec != null)
                 best = MissionBoardFacts.BestLine(rec.BestStars, rec.BestMedals, rec.BestScore, rec.Attempts);
             _card = MissionBoardFacts.Daily(_daily, can, best);
             _payloadWhat = _card.Briefing;
