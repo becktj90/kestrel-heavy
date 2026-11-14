@@ -1,5 +1,5 @@
-// BOOSTER LOST kid lines: factual only. Starter Design has no Recovery tab, so the callout must not
-// send the player to a control that is not there (Trevor playtest: "says Recovery but no way to add legs").
+// BOOSTER LOST kid lines: Starter never names Recovery (it has no such tab). Full designer keeps the
+// Recovery tip — picking Haven there now arms legs and landing fuel (HangarEditor.SetRecoveryMode).
 using Kestrel.Core.Flight;
 using NUnit.Framework;
 
@@ -11,38 +11,41 @@ namespace Kestrel.Core.Tests
             new RecoveryCraft { Mode = "expendable", ReserveKg = reserveKg, Legs = legs, GridFins = fins, DryKg = 25000 };
 
         [Test]
-        public void Why_NoFuelNoLegs_IsFactual_AndDoesNotNameRecovery()
+        public void Why_Starter_NeverNamesRecovery_AndEndsWithStarterLandingFix()
         {
-            BoosterLanding.Why(Craft(0, false), out string kid, out _);
+            BoosterLanding.Why(Craft(0, false), true, out string kid, out _);
             StringAssert.Contains("no landing fuel", kid);
             StringAssert.Contains("no legs", kid);
             StringAssert.Contains("falls into the sea", kid);
             StringAssert.DoesNotContain("Recovery", kid);
+            StringAssert.EndsWith(BoosterLanding.StarterLandingFix, kid);
             Assert.That(TrajectoryWatch.Plain(kid), Is.True, kid);
         }
 
         [Test]
-        public void Why_FuelWithoutLegs_DoesNotNameRecovery()
+        public void Why_FullDesigner_NamesRecovery()
         {
-            BoosterLanding.Why(Craft(5000, false), out string kid, out _);
-            StringAssert.Contains("no landing legs", kid);
-            StringAssert.DoesNotContain("Recovery", kid);
+            BoosterLanding.Why(Craft(0, false), false, out string kid, out _);
+            StringAssert.Contains("in Recovery", kid);
+            StringAssert.Contains("landing fuel and legs", kid);
         }
 
         [Test]
-        public void Why_LegsWithoutFuel_DoesNotNameRecovery()
+        public void Why_Starter_FuelWithoutLegs_DoesNotNameRecovery()
         {
-            BoosterLanding.Why(Craft(0, true), out string kid, out _);
+            BoosterLanding.Why(Craft(5000, false), true, out string kid, out _);
+            StringAssert.Contains("no legs", kid);
+            StringAssert.DoesNotContain("Recovery", kid);
+            StringAssert.EndsWith(BoosterLanding.StarterLandingFix, kid);
+        }
+
+        [Test]
+        public void Why_Starter_LegsWithoutFuel_DoesNotNameRecovery()
+        {
+            BoosterLanding.Why(Craft(0, true), true, out string kid, out _);
             StringAssert.Contains("no landing fuel", kid);
             StringAssert.DoesNotContain("Recovery", kid);
-        }
-
-        [Test]
-        public void Why_FuelAndLegsButExpendable_DoesNotNameRecovery()
-        {
-            BoosterLanding.Why(Craft(5000, true, true), out string kid, out _);
-            StringAssert.Contains("No landing was picked", kid);
-            StringAssert.DoesNotContain("Recovery", kid);
+            StringAssert.EndsWith(BoosterLanding.StarterLandingFix, kid);
         }
     }
 }

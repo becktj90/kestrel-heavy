@@ -369,12 +369,24 @@ namespace Kestrel.Game.Tests
                     var caption = plot.Q<Label>("plot-label");
                     if (caption != null && Shown(caption))
                         Inside(caption.worldBound, plot.worldBound, at + " caption '" + caption.text + "' inside its plot");
+                    // Playthrough 2026-11-11 (KH-7 card): the captions sat on the bars. Nothing drawn starts above the caption's foot.
+                    float captionFoot = caption != null && Shown(caption) ? caption.worldBound.yMax : plot.worldBound.yMin;
                     foreach (var bar in plot.Query<VisualElement>("bar").ToList())
+                    {
                         Inside(bar.worldBound, plot.worldBound, at + " bar inside its plot");
+                        Assert.That(bar.worldBound.yMin, Is.GreaterThanOrEqualTo(captionFoot - 0.5f), at + " " + plot.name + " bar clear of '" + caption?.text + "'");
+                    }
                     foreach (var mark in plot.Query<VisualElement>("marker").ToList())
+                    {
                         Inside(mark.worldBound, plot.worldBound, at + " marker inside its plot");
+                        Assert.That(mark.worldBound.yMin, Is.GreaterThanOrEqualTo(captionFoot - 0.5f), at + " " + plot.name + " marker clear of its caption");
+                    }
                     var failMark = plot.Q<VisualElement>("failure-marker");
-                    if (failMark != null) Inside(failMark.worldBound, plot.worldBound, at + " failure marker inside its plot");
+                    if (failMark != null)
+                    {
+                        Inside(failMark.worldBound, plot.worldBound, at + " failure marker inside its plot");
+                        Assert.That(failMark.worldBound.yMin, Is.GreaterThanOrEqualTo(captionFoot - 0.5f), at + " " + plot.name + " failure marker clear of its caption");
+                    }
                 }
 
                 foreach (var id in ids) Click(card.Q<Button>(id));
