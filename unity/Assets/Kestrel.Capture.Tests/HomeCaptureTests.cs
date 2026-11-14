@@ -168,6 +168,14 @@ namespace Kestrel.Capture.Tests
 
             shell = AppShell.Instance;
             Assert.IsNotNull(shell, name + " shell");
+            // Settled chrome for UiTreeChecks: dismiss the first-run guide so it cannot overlap CONTINUE.
+            var guide = UnityEngine.Object.FindAnyObjectByType<Kestrel.Game.Guide.GuideBoxDriver>();
+            if (guide != null && guide.Stage?.Engine is Kestrel.Game.Guide.LiveGuideEngine live)
+            {
+                live.SkipWelcome();
+                guide.SyncSprite();
+            }
+            for (int i = 0; i < 4; i++) yield return null;
             var root = shell.Root;
             var home = root.Q(UiIds.ScreenHome);
             Assert.IsNotNull(home, name + " " + UiIds.ScreenHome);

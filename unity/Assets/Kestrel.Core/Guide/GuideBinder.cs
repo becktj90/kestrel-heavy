@@ -78,13 +78,9 @@ namespace Kestrel.Core.Guide
 
         public GuideFace Welcome(double t)
         {
-            for (int i = 0; i < Script.Lines.Count; i++)
-            {
-                var line = Script.Lines[i];
-                if (line.Trigger != "guide.first" || !State.Allows(line)) continue;
-                Push(line, t, null);
-            }
-            return Queue.Face(t);
+            // Hangar greeting only. The career CTA is decision-priority and would drop this
+            // chatter if both were dumped here; OpeningIntroSequence offers host/cohost/CTA next.
+            return Offer("guide.first", "1", t, null);
         }
 
         /// <summary>Skip asks nothing. The welcome does not return.</summary>

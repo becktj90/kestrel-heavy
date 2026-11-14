@@ -37,6 +37,9 @@ namespace Kestrel.Game.Shell
         /// <summary>Codex tile opens the reader. Null shows "Coming soon."</summary>
         public static Action OpenCodex;
 
+        /// <summary>Settings → Restart career (after confirm). Host wipes the save and refreshes Home.</summary>
+        public static Action RestartCareer;
+
         /// <summary>Builds the overlay. <paramref name="safe"/> holds the controls (safe-area inset);
         /// <paramref name="full"/> holds the full-bleed bars and grain. Returns the root parented in <paramref name="safe"/>.</summary>
         public static VisualElement Build(VisualElement full, VisualElement safe, Action launch, Action design, Action missions, bool reduceMotion, string missionLine = null)
@@ -1375,6 +1378,20 @@ namespace Kestrel.Game.Shell
             sheet.style.display = DisplayStyle.None;
             sheet.style.flexDirection = FlexDirection.Column;
             sheet.style.overflow = Overflow.Hidden;
+            // Scrim before any click handler that closes the sheet (CS0165 if HideSheet captures it unassigned).
+            var scrim = new VisualElement { name = SettingsScrimName };
+            scrim.style.position = Position.Absolute;
+            scrim.style.left = 0f; scrim.style.right = 0f; scrim.style.top = 0f; scrim.style.bottom = 0f;
+            scrim.style.backgroundColor = new Color(0.02f, 0.03f, 0.07f, 0.62f);
+            scrim.style.display = DisplayStyle.None;
+            void HideSheet()
+            {
+                sheet.style.display = DisplayStyle.None;
+                scrim.style.display = DisplayStyle.None;
+            }
+            scrim.RegisterCallback<ClickEvent>(_ => HideSheet());
+            sheet.RegisterCallback<GeometryChangedEvent>(_ => scrim.style.display = sheet.style.display.value);
+
             var title = new Label("Settings") { name = "settings-title", pickingMode = PickingMode.Ignore };
             title.AddToClassList("kh-mm-sheet-title");
             title.style.fontSize = 16;
@@ -1555,6 +1572,40 @@ namespace Kestrel.Game.Shell
             list.Add(cornerCharacter);
             list.Add(cornerNote);
 
+            // Optional campaign wipe: LAUNCH follows Cleared+1, so without this a mid-career player cannot open KH-1 as next.
+            var restart = SettingButton(UiIds.SettingsRestartCareer, RestartCareerLabel);
+            var restartState = restart.Q(restart.name + "-state");
+            if (restartState != null) restartState.style.display = DisplayStyle.None;
+            restart.style.paddingRight = 10;
+            restart.style.backgroundColor = new Color(0.10f, 0.14f, 0.22f, 1f);
+            restart.style.color = new Color(0.96f, 0.93f, 0.86f, 1f);
+            restart.tooltip = RestartCareerTooltip;
+            bool restartArmed = false;
+            void PaintRestart()
+            {
+                restart.text = restartArmed ? RestartCareerConfirm : RestartCareerLabel;
+                restart.style.backgroundColor = restartArmed
+                    ? new Color(0.42f, 0.18f, 0.14f, 1f)
+                    : new Color(0.10f, 0.14f, 0.22f, 1f);
+                restart.tooltip = restartArmed ? RestartCareerConfirmTooltip : RestartCareerTooltip;
+            }
+            restart.clicked += () =>
+            {
+                if (!restartArmed)
+                {
+                    restartArmed = true;
+                    PaintRestart();
+                    return;
+                }
+                restartArmed = false;
+                PaintRestart();
+                RestartCareer?.Invoke();
+                HideSheet();
+            };
+            PaintRestart();
+            list.Add(restart);
+            list.Add(SettingNote("settings-restart-career-note", RestartCareerNote));
+
             var close = new Button { name = UiIds.SettingsClose, text = "Close" };
             close.AddToClassList("kh-button");
             close.tooltip = "Close settings.";
@@ -1574,25 +1625,11 @@ namespace Kestrel.Game.Shell
             close.style.marginRight = 0;
             close.style.alignSelf = Align.Stretch;
             SettingFont(close, "SpaceGrotesk-Bold");
-            close.clicked += () => { sheet.style.display = DisplayStyle.None; var sc = sheet.parent?.Q(SettingsScrimName); if (sc != null) sc.style.display = DisplayStyle.None; };
+            close.clicked += HideSheet;
 
             sheet.Add(title);
             sheet.Add(list);
             sheet.Add(close);
-
-            // L7: the sheet floated over the LAUNCH card. A dim scrim sits between Home and the sheet; tapping it closes.
-            var scrim = new VisualElement { name = SettingsScrimName };
-            scrim.style.position = Position.Absolute;
-            scrim.style.left = 0f; scrim.style.right = 0f; scrim.style.top = 0f; scrim.style.bottom = 0f;
-            scrim.style.backgroundColor = new Color(0.02f, 0.03f, 0.07f, 0.62f);
-            scrim.style.display = DisplayStyle.None;
-            void HideSheet()
-            {
-                sheet.style.display = DisplayStyle.None;
-                scrim.style.display = DisplayStyle.None;
-            }
-            scrim.RegisterCallback<ClickEvent>(_ => HideSheet());
-            sheet.RegisterCallback<GeometryChangedEvent>(_ => scrim.style.display = sheet.style.display.value);
 
             float fitW = -1f, fitH = -1f, measuredExtra = 0f;
             // After layout: when the rows came out taller than the estimate (wrapped note, theme Label chrome), grow the
@@ -1696,6 +1733,8 @@ namespace Kestrel.Game.Shell
                 PaintMotion();
                 PaintFullDesigner();
                 PaintCornerCharacter();
+                restartArmed = false;
+                PaintRestart();
                 ApplySettingsFeatures(full);
                 sheet.style.display = DisplayStyle.Flex;
                 scrim.style.display = DisplayStyle.Flex;
@@ -1723,6 +1762,11 @@ namespace Kestrel.Game.Shell
         public const string FullDesignerNote = "Every part and number. For older kids and engineers.";
         public const string CornerCharacterLabel = "Show corner character";
         public const string CornerCharacterNote = "A little helper in the corner. Off by default.";
+        public const string RestartCareerLabel = "Restart career";
+        public const string RestartCareerConfirm = "Confirm restart";
+        public const string RestartCareerNote = "Opens KH-1 again. Bank, unlocks, and mission records reset. Your designs stay.";
+        public const string RestartCareerTooltip = "Restart career. Starts again at KH-1.";
+        public const string RestartCareerConfirmTooltip = "Confirm restart. Wipes campaign progress back to KH-1.";
 
         /// <summary>The Settings Codex row stands in for the Codex tile: shown only while home.codexTile is off.</summary>
         static void ApplySettingsFeatures(VisualElement full)

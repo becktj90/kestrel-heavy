@@ -443,7 +443,7 @@ namespace Kestrel.Core.Tests
             var binder = Fresh();
             binder.Queue.Settings.Speed = GuideSpeed.Instant;
             Assert.AreEqual("first.1", binder.Welcome(0).LineId);
-            Assert.Greater(binder.Queue.Pending, 0);
+            Assert.IsTrue(binder.Queue.Busy);
             Assert.IsFalse(binder.State.HasSeen("first.cta"));
             binder.SkipWelcome();
             Assert.IsTrue(binder.State.FirstRunDone);

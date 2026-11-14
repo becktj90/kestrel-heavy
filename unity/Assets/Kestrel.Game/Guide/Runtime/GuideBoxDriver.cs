@@ -141,15 +141,11 @@ namespace Kestrel.Game.Guide
             {
                 if (pop == null) Ensure();
                 if (welcome) EnsureWelcomeStack();
+                else TearDownWelcomeStack();
                 return;
             }
-            if (welcome)
-            {
-                EnsureWelcomeStack();
-                return;
-            }
+            // Off: drop portrait and welcome stack, and empty the queue so lines do not backlog.
             DropSprite();
-            // Off: nothing consumes the engine's queue, so keep it empty. Turning the character on later starts clean.
             if (live != null) live.DropQueued();
         }
 

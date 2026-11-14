@@ -5,6 +5,7 @@
 using System;
 using System.Collections;
 using System.IO;
+using Kestrel.Core.Economy;
 using Kestrel.Core.Flight;
 using Kestrel.Core.Json;
 using Kestrel.Core.Ui;
@@ -335,6 +336,11 @@ namespace Kestrel.Capture.Tests
             Assert.IsTrue(PadHandoff.TryTake(out var draft, out _), "DesignFirst armed the KH-3 rocket");
             Assert.Greater(draft.Arr("stages")?.Count ?? 0, 0, "the fixture is a real rocket");
             new Kestrel.Core.Hangar.DesignLibrary(store).SaveDraft(draft, "Hopper", "m3");
+            // Soft-linear CONTINUE remaps a draft past Cleared+1 to the next open mission.
+            // A mid-campaign KH-3 draft needs Cleared=2 on disk, matching DesignFirst above.
+            var career = CareerStore.Load(store, campaign, 100000);
+            career.Career.Cleared = 2;
+            career.Save();
             GameSession.Clear();
             PadHandoff.Clear();
             yield return Boot();

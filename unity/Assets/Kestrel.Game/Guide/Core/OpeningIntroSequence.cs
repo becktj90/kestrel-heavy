@@ -91,32 +91,31 @@ namespace Kestrel.Game.Guide
         }
 
         static MissionBoardFacts FactsFor(Campaign campaign)
+            => MissionBoardFacts.Of(FirstHop(campaign), MissionBoardAccess.Open, 0, null, 0, 0, true);
+
+        static CampaignMission FirstHop(Campaign campaign)
         {
-            CampaignMission m1 = null;
-            if (campaign?.Missions != null)
+            if (campaign?.Missions == null) return null;
+            for (int i = 0; i < campaign.Missions.Count; i++)
             {
-                for (int i = 0; i < campaign.Missions.Count; i++)
-                {
-                    var row = campaign.Missions[i];
-                    if (row != null && row.Index == 1) { m1 = row; break; }
-                }
-                if (m1 == null && campaign.Missions.Count > 0) m1 = campaign.Missions[0];
+                var row = campaign.Missions[i];
+                if (row != null && row.Index == 1) return row;
             }
-            return MissionBoardFacts.Of(m1, MissionBoardAccess.Open, 0, null, 0, 0, true);
+            return campaign.Missions.Count > 0 ? campaign.Missions[0] : null;
         }
 
         static string PebbleName(Campaign campaign)
         {
-            var m1 = campaign?.Missions != null && campaign.Missions.Count > 0 ? campaign.Missions[0] : null;
-            if (m1?.Briefing != null && !string.IsNullOrEmpty(m1.Briefing.PayloadName)) return m1.Briefing.PayloadName;
+            var m1 = FirstHop(campaign);
+            if (!string.IsNullOrEmpty(m1?.PayloadName)) return m1.PayloadName;
             return "Pebble";
         }
 
         static string ApogeeKm(Campaign campaign)
         {
-            var m1 = campaign?.Missions != null && campaign.Missions.Count > 0 ? campaign.Missions[0] : null;
-            if (m1?.Target != null && m1.Target.ApoKm > 0)
-                return m1.Target.ApoKm.ToString("0", CultureInfo.InvariantCulture);
+            var m1 = FirstHop(campaign);
+            if (m1 != null && m1.ApoKm > 0)
+                return m1.ApoKm.ToString("0", CultureInfo.InvariantCulture);
             return "10";
         }
     }
