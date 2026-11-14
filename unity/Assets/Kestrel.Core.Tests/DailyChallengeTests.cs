@@ -1,4 +1,5 @@
 using System;
+using Kestrel.Core.Economy;
 using Kestrel.Core.Flight;
 using NUnit.Framework;
 
@@ -49,6 +50,26 @@ namespace Kestrel.Core.Tests
             Assert.IsNull(DailyChallenge.PeekSeed(pick.MissionId));
             Assert.IsNull(DailyChallenge.TakeSeed(pick.MissionId));
             Assert.IsNull(DailyChallenge.TakeSeed("other"));
+        }
+
+        [Test]
+        public void SeedFor_StaysInsideTheCareerStoreRange()
+        {
+            // 2026-11-30's raw FNV hash is 8681904728260016564, above CareerStore.SafeInteger.
+            // RecordAttempt rejects that and the report card used to be thrown away with it.
+            ulong named = DailyChallenge.SeedFor(new DateTime(2026, 11, 30, 12, 0, 0, DateTimeKind.Utc));
+            Assert.Greater(named, 0UL);
+            Assert.LessOrEqual(named, (ulong)CareerStore.SafeInteger);
+            var day = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var end = new DateTime(2032, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            while (day < end)
+            {
+                ulong seed = DailyChallenge.SeedFor(day);
+                Assert.Greater(seed, 0UL, day.ToString("yyyy-MM-dd"));
+                Assert.LessOrEqual(seed, (ulong)CareerStore.SafeInteger, day.ToString("yyyy-MM-dd"));
+                Assert.AreEqual(seed, DailyChallenge.SeedFor(day.AddHours(18)));
+                day = day.AddDays(1);
+            }
         }
     }
 }

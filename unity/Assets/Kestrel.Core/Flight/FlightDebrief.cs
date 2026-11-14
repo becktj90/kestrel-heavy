@@ -429,7 +429,9 @@ namespace Kestrel.Core.Flight
 
             if (write && store != null && !free && !string.IsNullOrEmpty(debrief.MissionId))
             {
-                long? seed = debrief.Seed <= (ulong)long.MaxValue ? (long?)debrief.Seed : null;
+                // Seeds above 2^53-1 are not exact JSON numbers. Dropping the seed keeps the
+                // attempt and the personal bests; throwing here used to discard the whole card.
+                long? seed = debrief.Seed <= (ulong)CareerStore.SafeInteger ? (long?)debrief.Seed : null;
                 var pb = new PbSnapshot(debrief.CostKc, facts.MassKg, facts.Margin, facts.LandingOffsetM, passed);
                 var before = store.Mission(debrief.MissionId);
                 var metricsBefore = before != null ? CloneMetrics(before.Metrics) : new MissionMetrics();

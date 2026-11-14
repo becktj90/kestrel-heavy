@@ -78,7 +78,9 @@ namespace Kestrel.Core.Flight
                 // Mix with a fixed tag so the seed is never a bare date int.
                 h ^= 0x4B48UL; // "KH"
                 h *= 1099511628211UL;
-                return h == 0 ? 1UL : h;
+                // Career saves the seed as a JSON number, exact only through 2^53-1.
+                // A wider hash (2026-11-30 is one) throws in RecordAttempt and drops the report.
+                return FlightSeed.Fit(h);
             }
         }
 
