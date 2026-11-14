@@ -12,7 +12,7 @@ namespace Kestrel.Core.Tests
     public class GuideTests
     {
         static readonly string[] Ids = {
-            "first.1", "first.2", "first.3", "first.4", "first.5",
+            "first.1", "first.cta",
             "brief.kh1", "brief.kh3", "brief.kh6", "brief.kh8", "brief.kh9",
             "brief.kh2", "brief.kh4", "brief.kh5", "brief.kh7", "brief.kh10",
             "brief.kh11", "brief.kh12", "brief.kh13", "brief.kh14", "brief.kh15",
@@ -74,7 +74,7 @@ namespace Kestrel.Core.Tests
             }
             Assert.IsNull(script.ById("missing"));
             Assert.IsTrue(script.ById("first.1").Cards[0].Kid.Contains("I am Thrum"));
-            Assert.IsTrue(script.ById("first.2").Cards[0].Kid.Contains("Dolores"));
+            Assert.IsTrue(script.ById("first.cta").Cards[0].Kid.Contains("KH-1"));
             Assert.IsTrue(script.ById("step.2").Cards[0].Eng.Contains("9.80665"));
             Assert.IsTrue(script.ById("step.2").Cards[0].Eng.Contains("1.30"));
             Assert.IsTrue(script.ById("brief.kh3").Cards[0].Eng.Contains("7.8"));
@@ -217,12 +217,12 @@ namespace Kestrel.Core.Tests
         {
             var binder = Fresh();
             binder.Queue.Settings.Speed = GuideSpeed.Instant;
-            binder.Offer("guide.first", "2", 0, null);
-            binder.Offer("guide.first", "3", 0, null);
-            Assert.AreEqual("first.2", binder.Queue.CurrentId);
+            binder.Offer("guide.brief", "m1", 0, null);
+            binder.Offer("guide.brief", "m3", 0, null);
+            Assert.AreEqual("brief.kh1", binder.Queue.CurrentId);
             Assert.AreEqual(0, binder.Queue.Face(0).CardIndex);
             Assert.Greater(binder.Queue.Face(0).CardCount, 1);
-            Assert.AreEqual("first.3", binder.Skip(0).LineId);
+            Assert.AreEqual("brief.kh3", binder.Skip(0).LineId);
         }
 
         [Test]
@@ -444,10 +444,10 @@ namespace Kestrel.Core.Tests
             binder.Queue.Settings.Speed = GuideSpeed.Instant;
             Assert.AreEqual("first.1", binder.Welcome(0).LineId);
             Assert.Greater(binder.Queue.Pending, 0);
-            Assert.IsFalse(binder.State.HasSeen("first.5"));
+            Assert.IsFalse(binder.State.HasSeen("first.cta"));
             binder.SkipWelcome();
             Assert.IsTrue(binder.State.FirstRunDone);
-            Assert.IsTrue(binder.State.HasSeen("first.5"));
+            Assert.IsTrue(binder.State.HasSeen("first.cta"));
             Assert.IsNull(binder.Queue.CurrentId);
             Assert.IsNull(binder.Welcome(1));
         }
