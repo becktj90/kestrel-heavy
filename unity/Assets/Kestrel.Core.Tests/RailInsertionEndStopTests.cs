@@ -374,6 +374,7 @@ namespace Kestrel.Core.Tests
             string ready = src.Substring(src.IndexOf("public void EnsureReportReady(", StringComparison.Ordinal));
             StringAssert.Contains("if (Coasting) return;", ready);
             StringAssert.Contains("OrbitCoast.Advance(", ready);
+            StringAssert.Contains("CaptureClock", ready);
             StringAssert.Contains("OrbitCoast.MaxWallSeconds + 2", ready);
             string slice = File.ReadAllText(Path.Combine(Golden.Root, "unity", "Assets", "Kestrel.Slice", "Runtime", "SliceApp.cs"));
             StringAssert.Contains("hold = on && !(flight != null && flight.Coasting)", slice);

@@ -279,7 +279,21 @@ namespace Kestrel.Slice
 
         /// <summary>When true, <see cref="Update"/> does not tick — capture tests pump
         /// <see cref="Advance"/> at a fixed step so a slow CI player cannot stall the sim on wall-clock.</summary>
-        public bool CaptureClock { get; set; }
+        bool captureClock;
+        public bool CaptureClock
+        {
+            get => captureClock;
+            set
+            {
+                if (captureClock && !value)
+                {
+                    coastArmedAt = double.NaN;
+                    coastWatchAt = double.NaN;
+                    coastWatch = 0;
+                }
+                captureClock = value;
+            }
+        }
 
         double coastArmedAt = double.NaN;
         // Watchdog budget, stepped with OrbitCoast.Advance so a capture hitch is one step.
@@ -523,6 +537,13 @@ namespace Kestrel.Slice
         {
             if (Coasting)
             {
+                // Pumped PlayMode (CaptureClock) advances CoastWall in Advance(); wall clock does not track it.
+                if (CaptureClock)
+                {
+                    if (Coast != null && Coast.Finished(CoastWall))
+                        EndCoast("played");
+                    if (Coasting) return;
+                }
                 if (double.IsNaN(coastArmedAt))
                 {
                     coastArmedAt = unscaledTime;
