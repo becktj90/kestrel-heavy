@@ -46,6 +46,7 @@ namespace Kestrel.Game.Guide
         public static bool Active(LiveGuideEngine engine)
         {
             if (engine == null || engine.State.FirstRunDone) return false;
+            // Incomplete intro beats, not a later tip. The stack stays up until those beats are seen.
             return !IsComplete(engine.State);
         }
 
