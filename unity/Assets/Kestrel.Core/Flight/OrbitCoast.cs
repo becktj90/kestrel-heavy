@@ -130,6 +130,25 @@ namespace Kestrel.Core.Flight
             return wall + Math.Min(Math.Max(a, b), MaxStepSeconds);
         }
 
+        /// <summary>
+        /// How much of a stall the climax watchdog may count between two <c>Time.unscaledTime</c> samples.
+        /// Same cap as <see cref="Advance"/>: a hitch longer than <see cref="MaxStepSeconds"/> must not spend the
+        /// whole <see cref="MaxWallSeconds"/> + 2 budget in one callback. That ended a live coast
+        /// (<c>CoastEnd=watchdog</c>) while <c>CoastWall</c> was still under 1.5 s (PlayMode
+        /// GoodRocket_FirstHop_CoastsToApogee_BeforeTheReport, runs 43043315690 and 43047628485).
+        /// The first sample only arms the clock. A repeated sample at the same timestamp counts nothing, so
+        /// FailureHost and SliceApp can both call in one frame.
+        /// </summary>
+        public static double WatchdogCredit(double markedAt, double unscaledTime, out double newMark)
+        {
+            if (double.IsNaN(unscaledTime)) { newMark = markedAt; return 0; }
+            newMark = unscaledTime;
+            if (double.IsNaN(markedAt)) return 0;
+            double gap = unscaledTime - markedAt;
+            if (!(gap > 0)) return 0;
+            return gap > MaxStepSeconds ? MaxStepSeconds : gap;
+        }
+
         /// <summary>State at <paramref name="wall"/> seconds into the coast: sim time and the planar inertial state, interpolated
         /// (Hermite on position, linear on velocity) between propagated samples.</summary>
         public CoastState At(double wall)
