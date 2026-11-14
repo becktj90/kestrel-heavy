@@ -289,6 +289,88 @@ namespace Kestrel.Game.Tests
             }
         }
 
+        /// <summary>Playthrough 2026-11-11 (repro-designer-back-build-saved 0b): the top stats row printed "49.3 kPa / 83.6"
+        /// into "7.9k Kc". With a flown reference (Max-Q filled in), every strip label and value's glyph box stays inside
+        /// its own cell and clear of its neighbours, at 335 pt, the playthrough's 476 px phone, and the web landscape.</summary>
+        [Test]
+        public void StatsStrip_WithMaxQFilledIn_NeverOverlaps_At335AndWeb()
+        {
+            float[] widths = { 335f, 375f, 476f, 1280f };
+            float[] heights = { 700f, 667f, 1024f, 720f };
+            ReferenceAscent.Reset();
+            try
+            {
+                for (int i = 0; i < widths.Length; i++)
+                foreach (bool engineer in new[] { false, true })
+                {
+                    using (var surface = DeviceSurface.Open(widths[i], heights[i]))
+                    {
+                        var design = Template("workhorse");
+                        JsonMut.Set(design, "missionId", "m3");
+                        var session = new HangarSession(catalog, data, design);
+                        var flown = Readout.Reference(catalog, session.Design);
+                        Assert.IsTrue(flown != null && flown.maxQ_kPa.HasValue, "reference ascent filled Max-Q");
+                        var panel = new DesignerV3Panel(session, new VisualElement(), 1f);
+                        try
+                        {
+                            panel.SetEngineer(engineer);
+                            panel.Show(DesignerV3Tab.Engines);
+                            var root = panel.Root;
+                            root.style.width = widths[i];
+                            root.style.height = heights[i];
+                            surface.Stage.Add(root);
+                            panel.SetContentMax(40f);
+                            surface.Pump(8);
+                            string at = widths[i] + "x" + heights[i] + (engineer ? " engineer" : " simple");
+                            var q = root.Q<Label>("strip-value-q");
+                            if (q == null) continue;   // the landscape gauges strip has no Max-Q cell
+                            Assert.IsTrue(q.text.EndsWith(" kPa"), at + " Max-Q reads q / limit kPa: " + q.text);
+                            var boxes = new List<(string name, Rect r, VisualElement cell)>();
+                            foreach (var cell in panel.StripForTests.Children())
+                            {
+                                if (cell.resolvedStyle.display == DisplayStyle.None) continue;
+                                foreach (var t in cell.Query<TextElement>().ToList())
+                                {
+                                    if (string.IsNullOrEmpty(t.text)) continue;
+                                    var size = t.MeasureTextSize(t.text, 0f, VisualElement.MeasureMode.Undefined, 0f, VisualElement.MeasureMode.Undefined);
+                                    var wb = t.worldBound;
+                                    var glyph = new Rect(wb.center.x - size.x / 2f, wb.yMin, size.x, Mathf.Max(1f, wb.height));
+                                    if (t.resolvedStyle.unityTextAlign == TextAnchor.MiddleLeft || t.resolvedStyle.unityTextAlign == TextAnchor.UpperLeft)
+                                        glyph.x = wb.xMin;
+                                    Assert.That(glyph.xMin, Is.GreaterThanOrEqualTo(cell.worldBound.xMin - 1f), at + " '" + t.text + "' inside its cell (left)");
+                                    Assert.That(glyph.xMax, Is.LessThanOrEqualTo(cell.worldBound.xMax + 1f), at + " '" + t.text + "' inside its cell (right)");
+                                    boxes.Add((t.text, glyph, cell));
+                                }
+                            }
+                            for (int a = 0; a < boxes.Count; a++)
+                                for (int b = a + 1; b < boxes.Count; b++)
+                                {
+                                    if (boxes[a].cell == boxes[b].cell) continue;
+                                    var ra = boxes[a].r; var rb = boxes[b].r;
+                                    bool overlap = ra.xMin < rb.xMax - 0.5f && rb.xMin < ra.xMax - 0.5f && ra.yMin < rb.yMax - 0.5f && rb.yMin < ra.yMax - 0.5f;
+                                    Assert.IsFalse(overlap, at + " '" + boxes[a].name + "' runs into '" + boxes[b].name + "'");
+                                }
+                        }
+                        finally { panel.Detach(); }
+                    }
+                }
+            }
+            finally { ReferenceAscent.Reset(); }
+        }
+
+        [Test]
+        public void StatsStrip_MaxQ_IsWholeKpaWithOneUnit_AndADecimalOnlyWhenClose()
+        {
+            var r = new Kestrel.Core.Designer.QuickReadout { maxQ_kPa = 49.3, qLim_kPa = 83.6, maxQStale = false };
+            Assert.AreEqual("49 / 84 kPa", DesignerV3Strip.Cells(r, true).Find(c => c.id == "q").value);
+            // PairText keeps whole kPa when they already differ (83.4 / 83.6 → 83 / 84). A decimal only when
+            // whole numbers would read equal (83.4 vs 83.1 both round to 83).
+            r.maxQ_kPa = 83.4; r.qLim_kPa = 83.6;
+            Assert.AreEqual("83 / 84 kPa", DesignerV3Strip.Cells(r, false).Find(c => c.id == "q").value);
+            r.maxQ_kPa = 83.4; r.qLim_kPa = 83.1;
+            Assert.AreEqual("83.4 / 83.1 kPa", DesignerV3Strip.Cells(r, false).Find(c => c.id == "q").value);
+        }
+
         [Test]
         public void NarrowPortraitAndLandscape_KeepWordsGlyphsAndAContentArea()
         {

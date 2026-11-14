@@ -616,7 +616,7 @@ namespace Kestrel.Slice.DesignerV3
             if (strip == null) return;
             float w = strip.resolvedStyle.width;
             if (float.IsNaN(w) || w < 8f) w = root.resolvedStyle.width;
-            bool narrow = !(w > 420f);
+            bool narrow = !(w > 420f) || !StripFitsOneRow(w);
             strip.style.flexWrap = narrow ? Wrap.Wrap : Wrap.NoWrap;
             strip.style.overflow = Overflow.Visible;
             foreach (var child in strip.Children())
@@ -630,6 +630,27 @@ namespace Kestrel.Slice.DesignerV3
                 child.style.overflow = Overflow.Visible;
             }
         }
+
+        /// <summary>Playthrough 2026-11-11: "49.3 kPa / 83.6" ran into "7.9k Kc" on one row. The strip keeps one row only
+        /// when every cell's label and value fit its share of the width; else it wraps to two per row.</summary>
+        bool StripFitsOneRow(float w)
+        {
+            int n = strip.childCount;
+            if (n == 0) return true;
+            float share = w / n - 6f;
+            foreach (var cell in strip.Children())
+                foreach (var t in cell.Query<TextElement>().ToList())
+                {
+                    if (string.IsNullOrEmpty(t.text)) continue;
+                    float need = t.MeasureTextSize(t.text, 0f, VisualElement.MeasureMode.Undefined, 0f, VisualElement.MeasureMode.Undefined).x;
+                    if (float.IsNaN(need)) continue;
+                    if (need > share) return false;
+                }
+            return true;
+        }
+
+        /// <summary>The strip cells' rects (tests: nothing overlaps at any width).</summary>
+        public VisualElement StripForTests => strip;
 
         void BuildBudget()
         {
