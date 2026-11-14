@@ -109,7 +109,8 @@ namespace Kestrel.Game.Tests
                         var tile = shell.Q<Button>(UiIds.HomeTestFlight);
                         Assert.That(tile, Is.Not.Null, frame.Name);
                         // Wide Home hides the tile when Design first and Codex already fill the column
-                        // (WebHomeLayout.Simplify). A hidden tile is that case, not a missing control.
+                        // (WebHomeLayout.Simplify). 390 landscape is that case: the column fits without
+                        // scrolling, so the tile stays off. A hidden tile is that case, not a missing control.
                         if (tile.resolvedStyle.display == DisplayStyle.None)
                         {
                             var show = HomeFeatures.Current();
