@@ -21,8 +21,11 @@ namespace Kestrel.Core.Designer
     /// <summary>Fuel for the first stage (and any middle stage). A hydrogen upper stage keeps hydrogen.</summary>
     public enum StarterEngine { Kerosene = 0, Methane = 1 }
 
+    /// <summary>Where the booster ends up when the mission cares about landing.</summary>
+    public enum StarterLanding { Expend = 0, Haven = 1, Pad = 2 }
+
     /// <summary>Which control the player just moved (for the hint line).</summary>
-    public enum StarterKnob { None, Engine, Stages, FuelNotch, Boosters }
+    public enum StarterKnob { None, Engine, Stages, FuelNotch, Landing, Boosters }
 
     /// <summary>One setting of the four controls. FuelNotch is an index 0..4 into <see cref="StarterRocket.FuelPercents"/>.</summary>
     public readonly struct StarterChoice : IEquatable<StarterChoice>
@@ -31,24 +34,33 @@ namespace Kestrel.Core.Designer
         public readonly int Stages;
         public readonly int FuelNotch;
         public readonly int Boosters;
+        public readonly StarterLanding Landing;
 
-        public StarterChoice(StarterEngine engine, int stages, int fuelNotch, int boosters)
+        public StarterChoice(StarterEngine engine, int stages, int fuelNotch, int boosters, StarterLanding landing = StarterLanding.Expend)
         {
-            Engine = engine; Stages = stages; FuelNotch = fuelNotch; Boosters = boosters;
+            Engine = engine; Stages = stages; FuelNotch = fuelNotch; Boosters = boosters; Landing = landing;
         }
 
         public int FuelPercent => StarterRocket.FuelPercentOf(FuelNotch);
         public StarterChoice WithEngine(StarterEngine v) => new StarterChoice(v, Stages, FuelNotch, Boosters);
         public StarterChoice WithStages(int v) => new StarterChoice(Engine, v, FuelNotch, Boosters);
         public StarterChoice WithFuelNotch(int v) => new StarterChoice(Engine, Stages, v, Boosters);
-        public StarterChoice WithBoosters(int v) => new StarterChoice(Engine, Stages, FuelNotch, v);
+        public StarterChoice WithBoosters(int v) => new StarterChoice(Engine, Stages, FuelNotch, v, Landing);
+        public StarterChoice WithLanding(StarterLanding v) => new StarterChoice(Engine, Stages, FuelNotch, Boosters, v);
 
-        /// <summary>Stable id, e.g. "kerosene-2-f2-b0".</summary>
-        public string Key => StarterRocket.EngineId(Engine) + "-" + Stages + "-f" + FuelNotch + "-b" + Boosters;
+        /// <summary>Stable id, e.g. "kerosene-2-f2-b0", with "-lN" when the mission offers landing.</summary>
+        public string Key
+        {
+            get
+            {
+                string core = StarterRocket.EngineId(Engine) + "-" + Stages + "-f" + FuelNotch + "-b" + Boosters;
+                return Landing == StarterLanding.Expend ? core : core + "-l" + ((int)Landing).ToString(System.Globalization.CultureInfo.InvariantCulture);
+            }
+        }
 
-        public bool Equals(StarterChoice o) => Engine == o.Engine && Stages == o.Stages && FuelNotch == o.FuelNotch && Boosters == o.Boosters;
+        public bool Equals(StarterChoice o) => Engine == o.Engine && Stages == o.Stages && FuelNotch == o.FuelNotch && Boosters == o.Boosters && Landing == o.Landing;
         public override bool Equals(object obj) => obj is StarterChoice o && Equals(o);
-        public override int GetHashCode() => ((((int)Engine * 8 + Stages) * 8 + FuelNotch) * 8) + Boosters;
+        public override int GetHashCode() => ((((((int)Engine * 8 + Stages) * 8 + FuelNotch) * 8) + Boosters) * 8) + (int)Landing;
         public override string ToString() => Key;
     }
 
@@ -105,7 +117,8 @@ namespace Kestrel.Core.Designer
     {
         public const int FuelNotches = 5;
         public const int DefaultFuelNotch = 2;
-        public const int SaveVersion = 2;
+        public const int SaveVersion = 3;
+        public static readonly IReadOnlyList<StarterLanding> LandingOrder = new[] { StarterLanding.Expend, StarterLanding.Haven, StarterLanding.Pad };
         /// <summary>Fuel size per notch, in percent of the base rocket's propellant.</summary>
         public static readonly IReadOnlyList<int> FuelPercents = new[] { -20, -10, 0, 10, 20 };
         public static readonly IReadOnlyList<StarterEngine> EngineOrder = new[] { StarterEngine.Kerosene, StarterEngine.Methane };
@@ -150,6 +163,8 @@ namespace Kestrel.Core.Designer
         public int FuelNotch { get => choice.FuelNotch; set => Set(choice.WithFuelNotch(value)); }
         /// <summary>0, 2 or 4.</summary>
         public int Boosters { get => choice.Boosters; set => Set(choice.WithBoosters(value)); }
+        /// <summary>Throw away, Haven, or pad return (missions that need landing only).</summary>
+        public StarterLanding Landing { get => choice.Landing; set => Set(choice.WithLanding(value)); }
         public int FuelPercent => choice.FuelPercent;
 
         // ---- what each control offers on this mission ----
@@ -163,8 +178,12 @@ namespace Kestrel.Core.Designer
             return v == Default.Boosters;
         }
 
+        public bool IsLandingAllowed(StarterLanding v) => LandingVisible && v >= StarterLanding.Expend && v <= StarterLanding.Pad;
+
         /// <summary>Show the boosters control only where the mission has strap-ons.</summary>
         public bool BoostersVisible => Mission != null && (Mission.StrapOnsAllowed || Mission.LandBoosters);
+        /// <summary>The landing row when the mission grades booster recovery.</summary>
+        public bool LandingVisible => Mission != null && (Mission.LandingRequired || Mission.LandBoosters);
         /// <summary>KH-10 and KH-19: shown, fixed to the landing pair.</summary>
         public bool BoostersLocked => BoostersVisible && !(Mission.StrapOnsAllowed && !Mission.LandBoosters);
         /// <summary>Informational: the upper stage burns hydrogen and is not a control.</summary>
@@ -274,6 +293,11 @@ namespace Kestrel.Core.Designer
             yield return c.WithStages(c.Stages - 1);
             yield return c.WithBoosters(c.Boosters + 2);
             yield return c.WithBoosters(c.Boosters - 2);
+            if (LandingVisible)
+            {
+                if (c.Landing > StarterLanding.Expend) yield return c.WithLanding(c.Landing - 1);
+                if (c.Landing < StarterLanding.Pad) yield return c.WithLanding(c.Landing + 1);
+            }
         }
 
         bool NextToPredict(out StarterChoice next)
@@ -310,6 +334,12 @@ namespace Kestrel.Core.Designer
                 case "boosters-": return IsBoostersAllowed(c.Boosters - 2);
                 case "boosters+": return IsBoostersAllowed(c.Boosters + 2);
                 case "engine": return true;
+                case "landing":
+                    if (!LandingVisible || c.Landing >= StarterLanding.Pad) return false;
+                    return true;
+                case "landing-":
+                    if (!LandingVisible || c.Landing <= StarterLanding.Expend) return false;
+                    return true;
                 default: return false;
             }
         }
@@ -387,6 +417,10 @@ namespace Kestrel.Core.Designer
             if (!free) b = baseChoice.Boosters;
             int have = (int)(d.Obj("strapOns")?.Num("count") ?? 0);
             if (b != have && HangarEditor.SetBoosterCount(c, d, b).changed && b > 0) EnsureFit(c, d, PartRef.Boosters);
+
+            // 5) landing (one tap arms legs, grid fins, and the default reserve through HangarEditor)
+            if (mission != null && (mission.LandingRequired || mission.LandBoosters))
+                HangarEditor.SetRecoveryMode(d, RecoveryModeOf(want.Landing));
 
             // The mission stamp Home and the board use (payload type and mass, orbit, budget, missionId).
             if (mission != null) HomeAutoBuild.ApplyMission(c, d, mission);
@@ -522,6 +556,7 @@ namespace Kestrel.Core.Designer
             o.Add("stages", (double)choice.Stages);
             o.Add("fuelNotch", (double)choice.FuelNotch);
             o.Add("boosters", (double)choice.Boosters);
+            o.Add("landing", LandingId(choice.Landing));
             return o;
         }
 
@@ -533,7 +568,8 @@ namespace Kestrel.Core.Designer
             int v = (int)saved.Num("v");
             if (v != SaveVersion && v != 1) return false;
             if (!TryEngine(saved.Str("engine"), out var e)) return false;
-            Apply(Clamp(new StarterChoice(e, (int)saved.Num("stages"), (int)saved.Num("fuelNotch"), (int)saved.Num("boosters"))));
+            StarterLanding land = v >= SaveVersion ? LandingOf(saved.Str("landing")) : StarterLanding.Expend;
+            Apply(Clamp(new StarterChoice(e, (int)saved.Num("stages"), (int)saved.Num("fuelNotch"), (int)saved.Num("boosters"), land)));
             return true;
         }
 
@@ -546,8 +582,48 @@ namespace Kestrel.Core.Designer
             var engine = first?.Str("propellant") == "methalox" ? StarterEngine.Methane : StarterEngine.Kerosene;
             int boosters = (int)(design?.Obj("strapOns")?.Num("count") ?? 0);
             if (boosters != 0 && boosters != 2 && boosters != 4) boosters = 0;
-            return new StarterChoice(engine, count, DefaultFuelNotch, boosters);
+            string mode = design?.Str("recoveryMode");
+            if (string.IsNullOrEmpty(mode)) mode = design?.Obj("recovery")?.Str("mode");
+            var landing = LandingOfMode(mode);
+            if (m != null && (m.LandingRequired || m.LandBoosters) && landing == StarterLanding.Expend && !string.IsNullOrEmpty(m.LandingMode))
+                landing = LandingOfMode(m.LandingMode);
+            return new StarterChoice(engine, count, DefaultFuelNotch, boosters, landing);
         }
+
+        public static string LandingLabel(StarterLanding l) => l switch
+        {
+            StarterLanding.Haven => StarterScreen.LandingHaven,
+            StarterLanding.Pad => StarterScreen.LandingPad,
+            _ => StarterScreen.LandingExpend,
+        };
+
+        public static string LandingId(StarterLanding l) => l switch
+        {
+            StarterLanding.Haven => "haven",
+            StarterLanding.Pad => "pad",
+            _ => "expend",
+        };
+
+        public static StarterLanding LandingOf(string id) => id switch
+        {
+            "haven" => StarterLanding.Haven,
+            "pad" => StarterLanding.Pad,
+            _ => StarterLanding.Expend,
+        };
+
+        static StarterLanding LandingOfMode(string mode) => mode switch
+        {
+            "rtls" => StarterLanding.Pad,
+            "barge" => StarterLanding.Haven,
+            _ => StarterLanding.Expend,
+        };
+
+        static string RecoveryModeOf(StarterLanding l) => l switch
+        {
+            StarterLanding.Pad => "rtls",
+            StarterLanding.Haven => "barge",
+            _ => "expendable",
+        };
 
         // ---- internals ----
         StarterChoice Clamp(StarterChoice want)
@@ -556,7 +632,8 @@ namespace Kestrel.Core.Designer
             int s = IsStagesAllowed(want.Stages) ? want.Stages : choice.Stages;
             int f = IsFuelNotchAllowed(want.FuelNotch) ? want.FuelNotch : choice.FuelNotch;
             int b = IsBoostersAllowed(want.Boosters) ? want.Boosters : (IsBoostersAllowed(choice.Boosters) ? choice.Boosters : Default.Boosters);
-            return new StarterChoice(e, s, f, b);
+            var land = LandingVisible && IsLandingAllowed(want.Landing) ? want.Landing : (LandingVisible ? Default.Landing : StarterLanding.Expend);
+            return new StarterChoice(e, s, f, b, land);
         }
 
         void Set(StarterChoice want) => Apply(Clamp(want));

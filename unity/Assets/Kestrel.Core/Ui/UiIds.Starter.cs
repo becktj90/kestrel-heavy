@@ -31,6 +31,10 @@ namespace Kestrel.Core.Ui
         public const string StarterBoosters0 = "starter-boosters-0";
         public const string StarterBoosters2 = "starter-boosters-2";
         public const string StarterBoosters4 = "starter-boosters-4";
+        public const string StarterLanding = "starter-landing";
+        public const string StarterLandingExpend = "starter-landing-expend";
+        public const string StarterLandingHaven = "starter-landing-haven";
+        public const string StarterLandingPad = "starter-landing-pad";
 
         // ---- Starter read-only elements (not tappable) -------------------------------------------
         public const string StarterRocket = "starter-rocket";
@@ -46,6 +50,7 @@ namespace Kestrel.Core.Ui
         /// <summary>Notch 1..5 (the fuel slider reads "Fuel, 3 of 5").</summary>
         public static string StarterFuelNotch(int notch1To5) => StarterFuel + "-" + notch1To5.ToString(CultureInfo.InvariantCulture);
         public static string StarterBoostersOption(int count) => StarterBoosters + "-" + count.ToString(CultureInfo.InvariantCulture);
+        public static string StarterLandingOption(StarterLanding landing) => StarterLanding + "-" + StarterRocket.LandingId(landing);
 
         /// <summary>Every interactive Starter control, in reading order. Booster options exist on every
         /// mission but are hidden where the mission has no strap-ons.</summary>
@@ -56,6 +61,7 @@ namespace Kestrel.Core.Ui
             StarterStages1, StarterStages2, StarterStages3,
             StarterFuel + "-1", StarterFuel + "-2", StarterFuel + "-3", StarterFuel + "-4", StarterFuel + "-5",
             StarterBoosters0, StarterBoosters2, StarterBoosters4,
+            StarterLandingExpend, StarterLandingHaven, StarterLandingPad,
             StarterLaunch,
         };
 

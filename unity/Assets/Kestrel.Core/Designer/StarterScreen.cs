@@ -45,13 +45,15 @@ namespace Kestrel.Core.Designer
 
         // ---- copy (Kestrel UX, STARTER_COPY.md §b) ----
 
-        public const string EngineLabel = "Engine fuel", StagesLabel = "Stages", FuelLabel = "Fuel", BoostersLabel = "Boosters";
+        public const string EngineLabel = "Engine fuel", StagesLabel = "Stages", FuelLabel = "Fuel", LandingLabel = "Landing", BoostersLabel = "Boosters";
         public const string Kerosene = "Kerosene", Methane = "Methane", NoBoosters = "None";
+        public const string LandingExpend = "Throw away", LandingHaven = "Haven", LandingPad = "Pad";
         public const string FuelLess = "Less", FuelMore = "More";
         public const string EngineHint = "Kerosene is punchy. Methane burns cleaner.";
         public const string StagesHint = "More stages drop weight on the way up.";
         public const string FuelHint = "More fuel goes farther but weighs more.";
         public const string BoostersHint = "Side boosters add push at liftoff.";
+        public const string LandingHint = "Haven or Pad brings the booster home with legs and landing fuel.";
         public const string HydrogenHint = "Top stage uses hydrogen on this mission.";
         public const string BoostersLockedHint = "This mission flies 2 boosters that land.";
         public const string ResetText = "Reset", ResetHint = "Back to the mission's rocket.";
@@ -82,6 +84,7 @@ namespace Kestrel.Core.Designer
                 case StarterKnob.Stages: return HydrogenAuto(r) ? HydrogenHint : StagesHint;
                 case StarterKnob.FuelNotch: return FuelHint;
                 case StarterKnob.Boosters: return r.BoostersLocked ? BoostersLockedHint : BoostersHint;
+                case StarterKnob.Landing: return LandingHint;
             }
             if (r.BoostersVisible && r.BoostersLocked) return BoostersLockedHint;
             if (HydrogenAuto(r)) return HydrogenHint;
