@@ -229,6 +229,8 @@ namespace Kestrel.Game.Shell
         {
             public Action Continue;
             public string MissionLine;
+            /// <summary>What CONTINUE opens (ResumeActions.Caption); its sub-line instead of the next mission.</summary>
+            public string ContinueLine;
         }
 
         /// <summary>Shows or hides the flagged extras. Display none, so a hidden block takes no column height and
@@ -252,7 +254,10 @@ namespace Kestrel.Game.Shell
 
         /// <summary>CONTINUE on the one CTA (null puts LAUNCH back). False when <paramref name="root"/> holds no Home
         /// LAUNCH key, so the caller keeps its own button.</summary>
-        public static bool UseContinue(VisualElement root, Action onContinue)
+        public static bool UseContinue(VisualElement root, Action onContinue) => UseContinue(root, onContinue, null);
+
+        /// <summary>As above, with CONTINUE's sub-line naming what it opens (<paramref name="caption"/>).</summary>
+        public static bool UseContinue(VisualElement root, Action onContinue, string caption)
         {
             var mm = root == null ? null : root.name == RootName ? root : root.Q(RootName);
             var key = mm != null ? mm.Q<Button>("home-primary") : null;
@@ -260,6 +265,7 @@ namespace Kestrel.Game.Shell
             var state = key.userData as CtaState ?? new CtaState();
             key.userData = state;
             state.Continue = onContinue;
+            state.ContinueLine = onContinue != null ? caption : null;
             key.EnableInClassList(CtaContinueClass, onContinue != null);
             WriteCtaShort(mm);
             return true;
@@ -276,7 +282,19 @@ namespace Kestrel.Game.Shell
         static string MissionLineOf(VisualElement root)
         {
             var key = root != null ? root.Q<Button>("home-primary") : null;
-            return key != null ? (key.userData as CtaState)?.MissionLine : null;
+            var state = key != null ? key.userData as CtaState : null;
+            if (state == null) return null;
+            // Playthrough 2026-11-11: CONTINUE's sub-line names the rocket it opens, not the next mission.
+            if (state.Continue != null && !string.IsNullOrEmpty(state.ContinueLine)) return state.ContinueLine;
+            return state.MissionLine;
+        }
+
+        /// <summary>The CTA's sub-line as written (tests).</summary>
+        public static string CtaCaptionText(VisualElement root)
+        {
+            var key = root != null ? root.Q<Button>("home-primary") : null;
+            var c = key != null ? key.Q<Label>("mm-launch-caption") : null;
+            return c != null ? c.text : null;
         }
 
         /// <summary>The words before a layout pass has measured the column: the short form, which fits everywhere.</summary>
@@ -301,7 +319,7 @@ namespace Kestrel.Game.Shell
                 c.style.display = text.Length > 0 ? DisplayStyle.Flex : DisplayStyle.None;
             }
             string spoken = CtaIsContinue(root)
-                ? ResumeOffer.ContinueSpoken
+                ? ResumeOffer.Spoken(caption)
                 : (label + (string.IsNullOrEmpty(caption) ? "" : " " + caption) + ".").Replace(" \u00B7 ", ", ");
             key.tooltip = spoken;
         }
