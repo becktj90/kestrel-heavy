@@ -44,9 +44,16 @@ namespace Kestrel.Core.Tests
             var r = StarterFixture.Rocket(missionId);
             if (key != null)
             {
-                var p = key.Split('-');
+                string core = key;
+                string land = null;
+                int li = key.LastIndexOf("-l", StringComparison.Ordinal);
+                if (li >= 0) { land = key.Substring(li + 2); core = key.Substring(0, li); }
+                var p = core.Split('-');
                 StarterRocket.TryEngine(p[0], out var e);
-                r.Engine = e; r.Stages = int.Parse(p[1]); r.FuelNotch = int.Parse(p[2].Substring(1)); r.Boosters = int.Parse(p[3].Substring(1));
+                r.Engine = e; r.Stages = int.Parse(p[1], CultureInfo.InvariantCulture);
+                r.FuelNotch = int.Parse(p[2].Substring(1), CultureInfo.InvariantCulture);
+                r.Boosters = int.Parse(p[3].Substring(1), CultureInfo.InvariantCulture);
+                if (land != null) r.Landing = (StarterLanding)int.Parse(land, CultureInfo.InvariantCulture);
                 Assert.AreEqual(key, r.Choice.Key, missionId + " setting");
             }
             return r;

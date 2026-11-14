@@ -172,7 +172,8 @@ namespace Kestrel.Core.Tests
             var r = R("m19");
             r.Engine = StarterEngine.Methane; r.Stages = 2; r.FuelNotch = 4;
             var saved = MiniJson.ParseObject(HangarSession.Snapshot(r.ToSave()));
-            Assert.AreEqual(2, (int)saved.Num("v"));
+            Assert.AreEqual(3, (int)saved.Num("v"));
+            Assert.AreEqual(StarterRocket.LandingId(r.Landing), saved.Str("landing"));
             var back = R("m19");
             Assert.IsTrue(back.ApplySave(saved));
             Assert.AreEqual(r.Choice, back.Choice);

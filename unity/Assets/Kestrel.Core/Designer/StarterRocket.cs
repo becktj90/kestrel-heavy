@@ -420,7 +420,12 @@ namespace Kestrel.Core.Designer
 
             // 5) landing (one tap arms legs, grid fins, and the default reserve through HangarEditor)
             if (mission != null && (mission.LandingRequired || mission.LandBoosters))
-                HangarEditor.SetRecoveryMode(d, RecoveryModeOf(want.Landing));
+            {
+                string target = RecoveryModeOf(want.Landing);
+                string cur = d.Str("recoveryMode");
+                if (string.IsNullOrEmpty(cur)) cur = d.Obj("recovery")?.Str("mode") ?? "expendable";
+                if (target != cur) HangarEditor.SetRecoveryMode(d, target);
+            }
 
             // The mission stamp Home and the board use (payload type and mass, orbit, budget, missionId).
             if (mission != null) HomeAutoBuild.ApplyMission(c, d, mission);

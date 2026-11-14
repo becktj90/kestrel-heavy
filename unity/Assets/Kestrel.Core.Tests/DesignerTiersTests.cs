@@ -147,7 +147,7 @@ namespace Kestrel.Core.Tests
         {
             var t = Text;
             var codex = CodexBook.Load(Golden.Root);
-            var rows = new[] { StarterKnob.Engine, StarterKnob.Stages, StarterKnob.FuelNotch, StarterKnob.Boosters };
+            var rows = new[] { StarterKnob.Engine, StarterKnob.Stages, StarterKnob.FuelNotch, StarterKnob.Landing, StarterKnob.Boosters };
             Assert.AreEqual(rows.Length, t.Why.Count, "one card per Starter row, no extras");
             foreach (var k in rows)
             {
@@ -163,7 +163,7 @@ namespace Kestrel.Core.Tests
                     Assert.IsFalse(text.Contains("\u2014") || text.Contains("\u2013"), k + " no dashes");
                 }
                 Assert.That(codex.ById(w.Codex), Is.Not.Null, k + " links a real Codex lesson: " + w.Codex);
-                Assert.IsTrue(Array.IndexOf(new[] { "flame", "stages", "fuel", "boosters" }, w.Icon) >= 0, k + " pictogram " + w.Icon);
+                Assert.IsTrue(Array.IndexOf(new[] { "flame", "stages", "fuel", "landing", "boosters" }, w.Icon) >= 0, k + " pictogram " + w.Icon);
                 Assert.AreEqual(k, DesignerTierText.KnobOf(DesignerTierText.RowOf(k)));
             }
             Assert.AreEqual("An empty tank is dead weight. Two stages drop the big one halfway up, so the top part gets lighter and faster.",
