@@ -14,6 +14,7 @@ using System.Linq;
 using Kestrel.Core.Features;
 using Kestrel.Core.Guide;
 using Kestrel.Core.Ui;
+using Kestrel.Game.Guide;
 using Kestrel.Game.Shell;
 using Kestrel.Kit;
 using Kestrel.UiChecks;
@@ -151,7 +152,7 @@ namespace Kestrel.Capture.Tests
                 yield return null;
             }
             CaptureCamera.Clear();
-            Kestrel.Game.Guide.GuideSession.Bind(null);
+            GuideSession.Bind(null);
             string saves = Path.Combine(Application.persistentDataPath, "saves");
             Directory.CreateDirectory(saves);
             var guide = GuideState.Fresh(false, false);
