@@ -335,6 +335,13 @@ namespace Kestrel.Capture.Tests
             Assert.IsTrue(PadHandoff.TryTake(out var draft, out _), "DesignFirst armed the KH-3 rocket");
             Assert.Greater(draft.Arr("stages")?.Count ?? 0, 0, "the fixture is a real rocket");
             new Kestrel.Core.Hangar.DesignLibrary(store).SaveDraft(draft, "Hopper", "m3");
+            // The draft is the KH-3 rocket from two clears. Persist that career too, or CONTINUE
+            // treats KH-3 as locked and opens KH-1.
+            // 100000 minor per Kc is MissionMapCopy.MinorPerKcFallback. This assembly cannot see that type.
+            var career = Kestrel.Core.Economy.CareerStore.Load(store, campaign, 100000L);
+            Assert.IsTrue(career.Career.Settle(1, true, 0, 0, null).passed, "KH-1 cleared");
+            Assert.IsTrue(career.Career.Settle(2, true, 0, 0, null).passed, "KH-2 cleared");
+            career.Save();
             GameSession.Clear();
             PadHandoff.Clear();
             yield return Boot();

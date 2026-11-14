@@ -22,6 +22,10 @@ namespace Kestrel.Game.Guide
         /// <summary>Home sets this while it is up: true keeps the corner pop off the menu (Starter Home, home.thrum off).</summary>
         public static System.Func<bool> HideOnMenu;
 
+        /// <summary>Home sets this to the panel pixels from the screen bottom up to the top of the Home key,
+        /// so the welcome box sits above LAUNCH instead of on it. 0 keeps the plain footer.</summary>
+        public static System.Func<float> MenuFooterPanel;
+
         bool Hidden()
         {
             if (Place != GuidePlace.Menu || HideOnMenu == null) return false;
@@ -262,6 +266,8 @@ namespace Kestrel.Game.Guide
             if (welcome)
             {
                 EnsureWelcomeStack();
+                welcomeStack.Screen = screen;
+                welcomeStack.PanelPerPoint = panelPerPoint;
                 welcomeStack.Tick(Time.unscaledDeltaTime);
                 if (pop != null) pop.Hide();
                 if (!WelcomePlaying(liveEngine)) TearDownWelcomeStack();
@@ -376,6 +382,13 @@ namespace Kestrel.Game.Guide
             float widthPt = Screen.width / dpr;
             float panelW = overlay != null && overlay.resolvedStyle.width > 1f ? overlay.resolvedStyle.width : widthPt;
             panelPerPoint = widthPt > 1f ? panelW / widthPt : 1f;
+            if (Place == GuidePlace.Menu && MenuFooterPanel != null && panelPerPoint > 0f)
+            {
+                float px = 0f;
+                try { px = MenuFooterPanel(); }
+                catch (System.Exception) { px = 0f; }
+                if (px > 1f) screen = screen.WithFooter(px / panelPerPoint + GuidePacing.StackGapPt);
+            }
         }
 
         static string RepoRoot()

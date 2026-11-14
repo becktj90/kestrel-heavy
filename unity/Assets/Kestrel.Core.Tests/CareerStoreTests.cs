@@ -473,6 +473,50 @@ namespace Kestrel.Core.Tests
             }
         }
 
+        [Test]
+        public void RestartFromFirst_OpensKh1_AndWipesProgress_KeepingDesignFilesAlone()
+        {
+            using (var fx = new Fixture())
+            {
+                fx.Store.PutDesign(Obj(("name", "Keep")), "one", "Keep");
+                fx.Store.PutProgress(Obj(("orbitsCompleted", 2d), ("engineerEnabled", true)));
+                string designBefore = File.ReadAllText(fx.File(NativeStore.DesignPrefix + "one"));
+                string progressBefore = File.ReadAllText(fx.File(NativeStore.ProgressKey));
+
+                var store = fx.Load();
+                Assert.IsTrue(store.Career.Settle(1, true, 100, 50, "core").passed);
+                Assert.IsTrue(store.Career.Settle(2, true, 100, 0, null).passed);
+                store.ContractsCleared = 4;
+                store.LoanUsed = true;
+                store.RecordAttempt("m1", 3, 900, new[] { "gold" }, 1, "d1");
+                store.RecordAttempt("m2", 2, 500, new[] { "silver" }, 2, "d2");
+                Assert.AreEqual(2, store.Career.Cleared);
+                Assert.IsTrue(store.Career.HasUnlock("stage-2"));
+                Assert.IsFalse(store.Career.MissionOpen(1));
+
+                store.RestartFromFirst();
+                Assert.AreEqual(0, store.Career.Cleared);
+                Assert.IsTrue(store.Career.MissionOpen(1));
+                Assert.IsFalse(store.Career.MissionOpen(2));
+                Assert.IsFalse(store.Career.HasUnlock("fins"));
+                Assert.IsFalse(store.Career.HasUnlock("stage-2"));
+                Assert.IsTrue(store.Career.HasUnlock("core-stage"));
+                Assert.AreEqual(0, store.Career.ArticleFlights.Count);
+                Assert.AreEqual(0, store.ContractsCleared);
+                Assert.IsFalse(store.LoanUsed);
+                Assert.AreEqual(0, store.Missions.Count);
+                Assert.IsNull(store.Mission("m1"));
+                AssertSameCareer(fx.Campaign, store.Career);
+
+                var again = fx.Load();
+                Assert.AreEqual(0, again.Career.Cleared);
+                Assert.IsTrue(again.Career.MissionOpen(1));
+                Assert.AreEqual(0, again.Missions.Count);
+                Assert.AreEqual(designBefore, File.ReadAllText(fx.File(NativeStore.DesignPrefix + "one")));
+                Assert.AreEqual(progressBefore, File.ReadAllText(fx.File(NativeStore.ProgressKey)));
+            }
+        }
+
         static string RunSequence()
         {
             using (var fx = new Fixture())

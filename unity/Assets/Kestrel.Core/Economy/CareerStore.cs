@@ -166,6 +166,24 @@ namespace Kestrel.Core.Economy
             store.PutRecord(MissionsKey, "missions", WriteMissions());
         }
 
+        /// <summary>
+        /// Optional wipe back to a fresh campaign: KH-1 open, starter bank and unlocks, no mission bests.
+        /// Designs and settings stay. Both career and missions keys are rewritten.
+        /// </summary>
+        public void RestartFromFirst()
+        {
+            var fresh = Career.Start(campaign, minorPerKc);
+            Career.BankMinor = fresh.BankMinor;
+            Career.Cleared = 0;
+            Career.Unlocks.Clear();
+            foreach (var id in fresh.Unlocks) Career.Unlocks.Add(id);
+            Career.ArticleFlights.Clear();
+            ContractsCleared = 0;
+            LoanUsed = false;
+            missions.Clear();
+            Save();
+        }
+
         enum Slot { Missing, Ok, Corrupt }
 
         void Read()
