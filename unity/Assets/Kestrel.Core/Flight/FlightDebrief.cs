@@ -165,9 +165,12 @@ namespace Kestrel.Core.Flight
         public bool TriedSettle;
         public bool WroteCareer;
         public long RewardMinor, CostMinor, RefundMinor, DeltaMinor, BankMinor;
+        /// <summary>Poly Bridge / DECISIONS #100: unspent-budget bonus (budget − cost) on a pass. Part of DeltaMinor.</summary>
+        public long UnspentBonusMinor;
         /// <summary>DECISIONS #87: what the range covered so the bank stays at the campaign floor. Part of DeltaMinor.</summary>
         public long RangeCreditMinor;
         public double RangeCreditKc;
+        public double UnspentBonusKc;
         public double RewardKc, CostKc, RefundKc, DeltaKc, BankKc;
         /// <summary>Credits this flight paid. Zero on a miss, a free build, or when no wallet is attached.</summary>
         public long CreditsEarned;
@@ -401,6 +404,7 @@ namespace Kestrel.Core.Flight
                 var settled = store.Career.Settle(row.Index, passed, costMinor, passed ? facts.RecoveredHardwareMinor : 0, facts.ArticleKey);
                 debrief.EconomySettled = settled.accepted;
                 debrief.RewardMinor = settled.rewardMinor;
+                debrief.UnspentBonusMinor = settled.unspentBonusMinor;
                 debrief.RefundMinor = settled.refundMinor;
                 debrief.RangeCreditMinor = settled.rangeCreditMinor;
                 debrief.DeltaMinor = settled.deltaMinor;
@@ -433,6 +437,7 @@ namespace Kestrel.Core.Flight
             }
 
             debrief.RewardKc = debrief.RewardMinor / (double)minorPerKc;
+            debrief.UnspentBonusKc = debrief.UnspentBonusMinor / (double)minorPerKc;
             debrief.RefundKc = debrief.RefundMinor / (double)minorPerKc;
             debrief.RangeCreditKc = debrief.RangeCreditMinor / (double)minorPerKc;
             debrief.DeltaKc = debrief.DeltaMinor / (double)minorPerKc;
@@ -714,7 +719,10 @@ namespace Kestrel.Core.Flight
             // DECISIONS #87: when the range covered part of the bill, the card says so in the same plain words.
             string range = d.RangeCreditMinor > 0 ? " Range credit " + Kc(d.RangeCreditKc) + "." : "";
             if (d.EconomySettled && d.Passed)
-                return "Reward " + Kc(d.RewardKc) + ". Hardware " + Kc(d.CostKc) + ". Recovery " + Kc(d.RefundKc) + "." + range + " Bank " + Kc(d.BankKc) + ".";
+            {
+                string bonus = d.UnspentBonusMinor > 0 ? " Unspent bonus " + Kc(d.UnspentBonusKc) + "." : "";
+                return "Reward " + Kc(d.RewardKc) + "." + bonus + " Hardware " + Kc(d.CostKc) + ". Recovery " + Kc(d.RefundKc) + "." + range + " Bank " + Kc(d.BankKc) + ".";
+            }
             if (d.EconomySettled)
                 return "No reward. Hardware " + Kc(d.CostKc) + "." + range + " Bank " + Kc(d.BankKc) + ".";
             if (d.TriedSettle)

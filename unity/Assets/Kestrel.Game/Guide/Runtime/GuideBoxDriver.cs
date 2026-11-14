@@ -159,6 +159,23 @@ namespace Kestrel.Game.Guide
             DropPortrait();
             if (welcome)
             {
+                // Welcome keeps its own stack without the corner pop; drop any pop left from an earlier On.
+                if (pop != null)
+                {
+                    Silence();
+                    if (stage != null) stage.Blip -= OnBlip;
+                    pop.Pop?.RemoveFromHierarchy();
+                    pop = null;
+                    if (blipSource != null)
+                    {
+                        if (Application.isPlaying) Destroy(blipSource);
+                        else DestroyImmediate(blipSource);
+                        blipSource = null;
+                    }
+                    blipClip = null;
+                    blipUntil = 0f;
+                    shownKey = "";
+                }
                 EnsureWelcomeStack();
                 return;
             }

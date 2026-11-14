@@ -46,7 +46,6 @@ namespace Kestrel.Game.Guide
         public static bool Active(LiveGuideEngine engine)
         {
             if (engine == null || engine.State.FirstRunDone) return false;
-            if (engine.Pending.Count > 0) return true;
             return !IsComplete(engine.State);
         }
 
@@ -107,13 +106,8 @@ namespace Kestrel.Game.Guide
 
         static string PebbleName(Campaign campaign)
         {
-            // briefing.payloadName is not stored on CampaignMission. KH-1's control line starts with it.
             var m1 = FirstMission(campaign);
-            if (m1 != null && !string.IsNullOrEmpty(m1.Control))
-            {
-                int sp = m1.Control.IndexOf(' ');
-                if (sp > 0) return m1.Control.Substring(0, sp);
-            }
+            if (m1 != null && !string.IsNullOrEmpty(m1.PayloadName)) return m1.PayloadName;
             return "Pebble";
         }
 

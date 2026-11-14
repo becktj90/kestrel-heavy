@@ -141,6 +141,10 @@ namespace Kestrel.Game.Tests
             ExperienceSettings.SetCornerCharacter(true, PlayerPrefs.SetInt);
             Assert.DoesNotThrow(() => driver.SyncSprite());
             Assert.That(driver.HasSprite, Is.True);
+            // Opening intro keeps a welcome stack until FirstRunDone; settle it so this test only covers the corner setting.
+            var liveOn = driver.Stage != null ? driver.Stage.Engine as LiveGuideEngine : null;
+            if (liveOn != null) liveOn.SkipWelcome();
+            driver.SyncSprite();
             Assert.That(root.Q("guide-overlay"), Is.Not.Null);
             Assert.That(root.Q("guide-pop"), Is.Not.Null);
             Assert.That(root.Q("guide-overlay").pickingMode, Is.EqualTo(PickingMode.Ignore), "the overlay never takes touches or space");
@@ -186,20 +190,18 @@ namespace Kestrel.Game.Tests
             Assert.That(driver.HasSprite, Is.True);
             var live = driver.Stage != null ? driver.Stage.Engine as LiveGuideEngine : null;
             Assume.That(live, Is.Not.Null, "needs the real guide script");
+            live.SkipWelcome();
+            driver.SyncSprite();
             ExperienceSettings.SetCornerCharacter(false, PlayerPrefs.SetInt);
             driver.SyncSprite();
             Assert.That(driver.HasSprite, Is.False);
 
-            // The opening sheet keeps its own queue while the portrait is off. With no opening,
-            // a line offered while off must not wait for the next time the portrait is turned on.
-            if (!OpeningIntroSequence.Active(live))
-            {
-                bool offered = live.Offer("guide.first", "1", null, "home", false);
-                Assume.That(offered, "the first-run line is not allowed on this save");
-                Assert.That(live.Pending.Count, Is.GreaterThan(0), "the line is queued before the sync");
-                driver.SyncSprite();
-                Assert.That(live.Pending.Count, Is.EqualTo(0), "off: the queue is emptied");
-            }
+            // Lines offered while off must not wait for the next time it is turned on.
+            bool offered = live.Offer("guide.brief", "m1", null, "home", false);
+            Assume.That(offered, "a briefing tip is allowed after the welcome is settled");
+            Assert.That(live.Pending.Count, Is.GreaterThan(0), "the line is queued before the sync");
+            driver.SyncSprite();
+            Assert.That(live.Pending.Count, Is.EqualTo(0), "off: the queue is emptied");
             LogAssert.NoUnexpectedReceived();
         }
 
