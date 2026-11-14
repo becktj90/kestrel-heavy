@@ -45,15 +45,21 @@ namespace Kestrel.Core.Designer
 
         // ---- copy (Kestrel UX, STARTER_COPY.md §b) ----
 
-        public const string EngineLabel = "Engine fuel", StagesLabel = "Stages", FuelLabel = "Fuel", BoostersLabel = "Boosters";
+        public const string BuildLabel = "Build", EngineLabel = "Engine fuel", StagesLabel = "Stages", FuelLabel = "Fuel", BoostersLabel = "Boosters";
+        // Short labels so three options fit a 335-wide phone with the "?" column ("Standard" overflowed).
+        public const string ShopBuild = "Shop", StandardBuild = "Base", FlightBuild = "Safe";
         public const string Kerosene = "Kerosene", Methane = "Methane", NoBoosters = "None";
         public const string FuelLess = "Less", FuelMore = "More";
+        public const string BuildHint = "Shop is cheap and risky. Flight costs more and holds together.";
         public const string EngineHint = "Kerosene is punchy. Methane burns cleaner.";
         public const string StagesHint = "More stages drop weight on the way up.";
         public const string FuelHint = "More fuel goes farther but weighs more.";
         public const string BoostersHint = "Side boosters add push at liftoff.";
         public const string HydrogenHint = "Top stage uses hydrogen on this mission.";
         public const string BoostersLockedHint = "This mission flies 2 boosters that land.";
+        public const string ShopHint = "Workshop scrap: cheaper, more likely to blow up.";
+        public const string StandardHint = "Built like the mission's flown rocket.";
+        public const string FlightHint = "Flight hardware: costs more, less likely to blow up.";
         public const string ResetText = "Reset", ResetHint = "Back to the mission's rocket.";
         public const string BackText = "◀ Back", BackHint = "Back to the briefing. Your rocket stays.";
         public const string LaunchText = "LAUNCH";
@@ -66,7 +72,10 @@ namespace Kestrel.Core.Designer
         public const double TightMargin = 0.10;
 
         public static string OptionText(StarterEngine e) => e == StarterEngine.Methane ? Methane : Kerosene;
+        public static string OptionText(StarterBuild b) => StarterManufacturing.Label(b);
         public static string BoosterText(int n) => n <= 0 ? NoBoosters : n.ToString(CultureInfo.InvariantCulture);
+        public static string BuildHintFor(StarterBuild b) =>
+            b == StarterBuild.Shop ? ShopHint : b == StarterBuild.Flight ? FlightHint : StandardHint;
 
         /// <summary>The upper stage burns hydrogen. Told when the built rocket has one.</summary>
         public static bool HydrogenAuto(StarterRocket r) => r != null && r.HydrogenUpper;
@@ -78,6 +87,7 @@ namespace Kestrel.Core.Designer
             if (r == null) return EngineHint;
             switch (last)
             {
+                case StarterKnob.Build: return BuildHintFor(r.BuildGrade);
                 case StarterKnob.Engine: return EngineHint;
                 case StarterKnob.Stages: return HydrogenAuto(r) ? HydrogenHint : StagesHint;
                 case StarterKnob.FuelNotch: return FuelHint;
@@ -91,9 +101,9 @@ namespace Kestrel.Core.Designer
         /// <summary>
         /// The readiness line from the existing readout (Validate.Engineering + Readout.Quick) and the launch predictor
         /// (Honest Ready, audit B-10) on the rocket the controls built: a short badge and the rest in body colour.
-        /// Returns false (Launch off) only on a hard schema block, with its one plain reason. A rocket the predictor
-        /// says breaks up, cannot land or does not fit never reads Ready or Tight; it gets its cause's badge and one
-        /// plain sentence from data/starter-readiness.json, and still launches. No numbers: no line, Launch stays on.
+        /// Returns false (Launch off) only on a hard block (schema or over budget), with its one plain reason. A rocket
+        /// the predictor says breaks up or cannot land never reads Ready or Tight; it gets its cause's badge and one
+        /// plain sentence from data/starter-readiness.json, and still launches. Over budget names how far over and stays locked.
         /// Blocking: flies the predictor for this setting when it is not cached (tests and one-off callers).
         /// </summary>
         public static bool Readiness(StarterRocket r, out string badge, out string rest)

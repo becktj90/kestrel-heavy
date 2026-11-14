@@ -27,6 +27,9 @@ namespace Kestrel.Game.Audio
         NarrationFacts facts;
         ColorDirector color;
         CallTriggers triggers;
+        // B01 mission-status calls (board verdict, engine-out.ok, booster landing callouts): raised when true, offered via triggers.
+        readonly StatusCalls status = new StatusCalls();
+        readonly List<StatusCue> statusDue = new List<StatusCue>();
         readonly List<string> countBeats = new List<string>();
         bool guideTalking;
         bool strapOns;
@@ -75,6 +78,7 @@ namespace Kestrel.Game.Audio
             // The flight's own triggers: whatever the count had due is gone at liftoff.
             triggers = new CallTriggers(calls, launch != null ? launch.Stages : 0, strapOns, recovery);
             triggers.Liftoff();
+            status.Reset();
             guideTalking = false;
         }
 
@@ -90,20 +94,22 @@ namespace Kestrel.Game.Audio
             schedule.Reset();
             StopVoice();
             countBeats.Clear();
+            status.Reset();
             triggers = launch != null ? new CallTriggers(calls, launch.Stages, strapOns) : null;
         }
 
         /// <summary>
         /// The count's clock (negative seconds) and the ids of the beats it has fired so far.
         /// <paramref name="guideSpeaking"/>: the guide has a line up; a pre-launch call waits for it.
+        /// <paramref name="countHeld"/>: the count clock is held; entering a hold raises hold_start.
         /// </summary>
-        public void CountTick(double countSeconds, IReadOnlyList<Kestrel.Core.Timeline.LaunchBeat> fired, bool guideSpeaking = false)
+        public void CountTick(double countSeconds, IReadOnlyList<Kestrel.Core.Timeline.LaunchBeat> fired, bool guideSpeaking = false, bool countHeld = false)
         {
             guideTalking = guideSpeaking;
             if (triggers == null) return;
             countBeats.Clear();
             if (fired != null) for (int i = 0; i < fired.Count; i++) countBeats.Add(fired[i] != null ? fired[i].Id : null);
-            triggers.CountTick(countSeconds, countBeats, (double)Time.unscaledTime);
+            triggers.CountTick(countSeconds, countBeats, (double)Time.unscaledTime, countHeld);
         }
 
         /// <summary>The count closed without a flight (back to the hangar). Its calls stop.</summary>
@@ -118,6 +124,39 @@ namespace Kestrel.Game.Audio
             simTime = seconds;
             altitude = altM;
             triggers?.OnAltitude(altM, (double)Time.unscaledTime);
+            status.OnFlight(seconds, altM);
+            RaiseStatus();
+        }
+
+        /// <summary>
+        /// The live board's verdict this frame, while the ascent flies (not the count, the climax coast or a lost
+        /// vehicle). <paramref name="spareOk"/>: the live spare is not negative; null when there is none to read.
+        /// </summary>
+        public void OnVerdict(string verdict, double qPa, bool thrusting, bool? spareOk)
+        {
+            status.OnVerdict(verdict, qPa, thrusting, spareOk, simTime);
+            RaiseStatus();
+        }
+
+        /// <summary>
+        /// One live step of the booster. <paramref name="planned"/>: it is flying the landing the player picked
+        /// (BoosterLanding.ShowsLanding); <paramref name="landingBurn"/>: it is in its landing burn; <paramref name="altM"/>:
+        /// height above the landing surface; <paramref name="legs01"/>: leg deployment; <paramref name="t"/>: its clock.
+        /// </summary>
+        public void OnBooster(bool planned, bool landingBurn, double altM, double legs01, double t)
+        {
+            status.OnBooster(planned, landingBurn, altM, legs01, t);
+            RaiseStatus();
+        }
+
+        void RaiseStatus()
+        {
+            statusDue.Clear();
+            status.Drain(statusDue);
+            if (triggers == null || facts == null) return;
+            double now = (double)Time.unscaledTime;
+            for (int i = 0; i < statusDue.Count; i++)
+                triggers.Raise(statusDue[i].EventId, statusDue[i].LitStage, now, statusDue[i].DropIfBusy);
         }
 
         public void OnStagedEvent(string type, int stage)
@@ -133,6 +172,8 @@ namespace Kestrel.Game.Audio
             triggers?.OnSimEvent(type, stage, (double)Time.unscaledTime);
             // Facts unknown (no launch gave them) means only the neutral takes can play.
             var cue = NarrationRoute.Route(type, stage, strapOns, facts != null ? facts.Stages : 0);
+            status.OnSimEvent(type, cue.EventId == StatusCalls.EngineOut ? cue.LitStage : 0, simTime);
+            RaiseStatus();
             if (cue.Silent) return;
             int lit = cue.LitStage > 0 ? cue.LitStage : NarrationRoute.DefaultLit(cue.EventId, facts != null ? facts.Stages : 0);
             Apply(schedule.Offer(catalog, cue.EventId, facts, lit, AudioPrefs.CommentaryMode, (double)Time.unscaledTime));

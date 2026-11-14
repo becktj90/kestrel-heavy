@@ -175,6 +175,10 @@ namespace Kestrel.Slice
             // touchdown) as the batch flight already does; Conclude never settles an open player burn.
             landing.Conclude(flight.Result != null && !flight.Running, flight.Lost, flight.CinematicSink);
             var sample = landing.Step(dt, Stick(), flight.CinematicSink);
+            // B01 landing callouts: height above the landing surface during the burn, and the legs, only on a planned landing.
+            var voice = flight.GetComponent<Kestrel.Game.Audio.NarrationPlayer>();
+            if (voice != null)
+                voice.OnBooster(landing.ShowsLanding, sample.Phase == RecoveryPhase.Landing, sample.Alt, sample.Legs01, sample.T);
             string cause = RecoveryLog.Current != null && RecoveryLog.Current.Attempted ? RecoveryLog.Current.Cause : null;
             var pic = RecoveryViews.Of(sample, landing.TrimMarks(), cause, craft.VLeg, sample.Phase == RecoveryPhase.Down);
             // One booster outcome (BoosterLanding.ShowsLanding): a lost stage is never followed, inset or shown touching down.

@@ -13,6 +13,7 @@ using System.IO;
 using System.Linq;
 using Kestrel.Core.Features;
 using Kestrel.Core.Ui;
+using Kestrel.Game.Guide;
 using Kestrel.Game.Shell;
 using Kestrel.Kit;
 using Kestrel.UiChecks;
@@ -171,6 +172,14 @@ namespace Kestrel.Capture.Tests
             var root = shell.Root;
             var home = root.Q(UiIds.ScreenHome);
             Assert.IsNotNull(home, name + " " + UiIds.ScreenHome);
+            // Captures are the settled Home, not the first-run welcome stack over the CTAs.
+            var guide = GuideSession.Engine as LiveGuideEngine;
+            if (guide != null)
+            {
+                guide.SkipWelcome();
+                foreach (var driver in UnityEngine.Object.FindObjectsByType<GuideBoxDriver>(FindObjectsSortMode.None))
+                    driver.SyncSprite();
+            }
             // Save present or not, whatever this runner's disk holds: the same call ScreenStub makes after reading the save.
             HomeResumeBar.Mount(home, 72, save, () => { });   // the same root ScreenStub mounts on
             for (int i = 0; i < 8; i++) yield return null;

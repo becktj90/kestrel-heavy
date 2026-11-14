@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "note": "Hangar launch budgets in fictional Kc (CostModel.FormatKc units), per destination orbit. Over budget is a warning, never a block: kids can always launch. A design may carry its own budgetKc (a mission sets it); otherwise the orbit row, then defaultKc. nearFraction starts the 'getting close' note.",
+  "note": "Hangar launch budgets in fictional Kc (CostModel.FormatKc units), per destination orbit. Over budget is a hard launch block (Poly Bridge / DECISIONS #100): the pad names how far over and Launch stays off until the quote fits. A design may carry its own budgetKc (a mission sets it); otherwise the orbit row, then defaultKc. nearFraction starts the 'getting close' note.",
   "defaultKc": 40000,
   "nearFraction": 0.9,
   "byOrbit": {

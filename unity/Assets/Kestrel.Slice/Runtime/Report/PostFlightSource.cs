@@ -87,7 +87,16 @@ namespace Kestrel.Slice
                 EngineCount = Engines(design),
                 BudgetKc = mission != null ? mission.BudgetKc : 0,
                 GoalKm = mission != null && mission.Target != null ? mission.Target.ApoKm : 0,
+                // Same filter as BoosterLanding.ReportGrade: only a graded, non-expendable attempt counts.
+                LandingOffsetM = rec != null && rec.Attempted && !rec.Expendable
+                    ? Math.Abs(rec.MissM)
+                    : double.NaN,
             };
+            if (catalog != null && design != null)
+            {
+                try { facts.MassKg = Mass.Of(catalog, design).liftoffMass; }
+                catch (Exception) { facts.MassKg = double.NaN; }
+            }
             if (result != null)
             {
                 facts.PeakG = result.maxG;

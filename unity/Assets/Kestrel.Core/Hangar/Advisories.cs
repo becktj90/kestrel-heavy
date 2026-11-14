@@ -53,7 +53,7 @@ namespace Kestrel.Core.Hangar
             ["unstable"] = "Your rocket would wobble or flip. Add fins, or put heavy parts higher up.",
             ["overstable"] = "Very steady, maybe too steady to steer well. Try smaller fins.",
             ["maxq-high"] = "The air pushes really hard on this rocket. Try a pointy nose or less push low down.",
-            ["over-budget"] = "This rocket costs more than your budget. Try fewer engines or a smaller rocket.",
+            ["over-budget"] = "This rocket costs more than your budget. Cheapen it to launch.",
             ["near-budget"] = "Nearly at your budget. Keep an eye on the cost.",
         };
 
@@ -84,31 +84,41 @@ namespace Kestrel.Core.Hangar
 
     public static class Advisories
     {
-        /// <summary>Blocks first, then warnings, then notes. Over budget is a warning, near budget a note.</summary>
+        /// <summary>Blocks first, then warnings, then notes. Over budget is a block (Poly Bridge); near budget a note.</summary>
         public static List<Advisory> From(EngineeringReport report, DataSheet sheet, JsonObject design)
             => From(report, sheet, design?.Arr("stages")?.Count ?? 0, design);
 
         public static List<Advisory> From(EngineeringReport report, DataSheet sheet, int stageCount, JsonObject design = null)
         {
             var o = new List<Advisory>();
+            bool budgetBlocked = false;
             if (report != null)
             {
-                foreach (var b in report.blocks) o.Add(Make(b, AdvisorySeverity.Block, stageCount, design));
+                foreach (var b in report.blocks)
+                {
+                    if (b.code == "over-budget") budgetBlocked = true;
+                    o.Add(Make(b, AdvisorySeverity.Block, stageCount, design));
+                }
                 foreach (var w in report.warnings) o.Add(Make(w, AdvisorySeverity.Warn, stageCount, design));
             }
             if (sheet != null && sheet.budget_Kc > 0 && (sheet.overBudget || sheet.nearBudget))
             {
-                string code = sheet.overBudget ? "over-budget" : "near-budget";
-                double over = sheet.cost_Kc - sheet.budget_Kc;
-                o.Add(new Advisory
+                // Validate already emitted the mission-budget block; hangar orbit budgets still come from the sheet.
+                if (sheet.overBudget && budgetBlocked) { /* already a block */ }
+                else
                 {
-                    code = code, tab = "stages", severity = sheet.overBudget ? AdvisorySeverity.Warn : AdvisorySeverity.Note,
-                    headline = KidWords.Headline(code), kid = KidWords.Table[code],
-                    engineer = sheet.overBudget
-                        ? $"Recurring cost {Kc(sheet.cost_Kc)} Kc is {Kc(over)} Kc ({Pct(over / sheet.budget_Kc)}) over the {Kc(sheet.budget_Kc)} Kc budget for {sheet.orbitLabel}."
-                        : $"Recurring cost {Kc(sheet.cost_Kc)} Kc is {Pct(sheet.cost_Kc / sheet.budget_Kc)} of the {Kc(sheet.budget_Kc)} Kc budget for {sheet.orbitLabel}.",
-                    part = PartRef.Stage(0),
-                });
+                    string code = sheet.overBudget ? "over-budget" : "near-budget";
+                    double over = sheet.cost_Kc - sheet.budget_Kc;
+                    o.Add(new Advisory
+                    {
+                        code = code, tab = "stages", severity = sheet.overBudget ? AdvisorySeverity.Block : AdvisorySeverity.Note,
+                        headline = KidWords.Headline(code), kid = KidWords.Table[code],
+                        engineer = sheet.overBudget
+                            ? $"Recurring cost {Kc(sheet.cost_Kc)} Kc is {Kc(over)} Kc ({Pct(over / sheet.budget_Kc)}) over the {Kc(sheet.budget_Kc)} Kc budget for {sheet.orbitLabel}. Launch stays locked until it fits."
+                            : $"Recurring cost {Kc(sheet.cost_Kc)} Kc is {Pct(sheet.cost_Kc / sheet.budget_Kc)} of the {Kc(sheet.budget_Kc)} Kc budget for {sheet.orbitLabel}.",
+                        part = PartRef.Stage(0),
+                    });
+                }
             }
             o.Sort((a, b) => a.severity.CompareTo(b.severity));
             return o;

@@ -1,6 +1,7 @@
 // Touchdown speed, tilt and distance from the Haven centre.
 // Grades use the same margins as data/landing.json. v_leg is the leg limit from RecoveryModel.
 // A miss, a fast hit, a tilt, or an empty tank is a named cause for the report and the medal.
+// Engineer lines use GapToGoal (H3) so the debrief quotes honest shortfalls and one fix.
 using System;
 using System.Globalization;
 using Kestrel.Core.Json;
@@ -61,15 +62,18 @@ namespace Kestrel.Core.Flight
         {
             var ev = new FailureEvent { t = end.T, kind = cause, stage = 1 };
             var inv = CultureInfo.InvariantCulture;
+            bool tipped = end.TiltDeg > RecoverySim.TiltLimitDeg || end.Legs01 < 0.92;
+            // A planned recovery that misses the deck is still graded against deck limits: GapToGoal's
+            // "water" branch is for ungraded splashdowns and would drop the offset shortfall / fix.
+            var gap = GapToGoal.Landing("deck", end.Sink, Math.Abs(end.MissM), vLeg, RecoverySim.DeckRadiusM, tipped);
             if (cause == Fuel)
             {
                 ev.cause = "out-of-fuel";
                 ev.value = end.Sink;
                 ev.limit = vLeg;
                 ev.kid = "The landing fuel ran out at " + end.Sink.ToString("0.0", inv) + " m/s, " + Math.Abs(end.MissM).ToString("0", inv) + " m from Haven.";
-                ev.engineer = "Reserve empty at T+" + end.T.ToString("0.0", inv) + " s. Sink " + end.Sink.ToString("0.00", inv)
-                    + " m/s, miss " + end.MissM.ToString("0.0", inv) + " m, v_leg " + vLeg.ToString("0.00", inv) + " m/s.";
-                ev.fixHint = "Hold more landing fuel, or pick expendable.";
+                ev.engineer = gap.Text;
+                ev.fixHint = FallbackFix(gap.Fix, "Hold more landing fuel, or pick expendable.");
             }
             else if (cause == Fast)
             {
@@ -77,9 +81,8 @@ namespace Kestrel.Core.Flight
                 ev.value = end.Sink;
                 ev.limit = vLeg;
                 ev.kid = "Touchdown was " + end.Sink.ToString("0.0", inv) + " m/s. The legs hold " + vLeg.ToString("0.0", inv) + " m/s.";
-                ev.engineer = "Sink " + end.Sink.ToString("0.00", inv) + " m/s > v_leg " + vLeg.ToString("0.00", inv)
-                    + " m/s. Legs " + (end.Legs01 * 100).ToString("0", inv) + "% out. Tilt " + end.TiltDeg.ToString("0.0", inv) + "°.";
-                ev.fixHint = "Heavier legs, or more fuel for the landing burn.";
+                ev.engineer = gap.Text;
+                ev.fixHint = FallbackFix(gap.Fix, "Heavier legs, or more fuel for the landing burn.");
             }
             else if (cause == Tilt)
             {
@@ -87,9 +90,8 @@ namespace Kestrel.Core.Flight
                 ev.value = end.TiltDeg;
                 ev.limit = RecoverySim.TiltLimitDeg;
                 ev.kid = "It hit tilted " + end.TiltDeg.ToString("0.0", inv) + "°. Straight up is within " + RecoverySim.TiltLimitDeg.ToString("0", inv) + "°.";
-                ev.engineer = "Tilt " + end.TiltDeg.ToString("0.00", inv) + "° > " + RecoverySim.TiltLimitDeg.ToString("0", inv)
-                    + "°. Sink " + end.Sink.ToString("0.00", inv) + " m/s, miss " + end.MissM.ToString("0.0", inv) + " m.";
-                ev.fixHint = "Start the landing burn earlier so the booster is upright.";
+                ev.engineer = gap.Text;
+                ev.fixHint = FallbackFix(gap.Fix, "Start the landing burn earlier so the booster is upright.");
             }
             else
             {
@@ -97,11 +99,17 @@ namespace Kestrel.Core.Flight
                 ev.value = end.MissM;
                 ev.limit = RecoverySim.DeckRadiusM;
                 ev.kid = "It came down " + Math.Abs(end.MissM).ToString("0", inv) + " m from the Haven centre. The deck reaches " + RecoverySim.DeckRadiusM.ToString("0", inv) + " m.";
-                ev.engineer = "Miss " + end.MissM.ToString("0.0", inv) + " m. Deck radius " + RecoverySim.DeckRadiusM.ToString("0", inv)
-                    + " m. Sink " + end.Sink.ToString("0.00", inv) + " m/s at T+" + end.T.ToString("0.0", inv) + " s.";
-                ev.fixHint = "More boostback fuel, or aim the entry at the barge.";
+                ev.engineer = gap.Text;
+                ev.fixHint = FallbackFix(gap.Fix, "More boostback fuel, or aim the entry at the barge.");
             }
             return ev;
+        }
+
+        static string FallbackFix(string gapFix, string fallback)
+        {
+            if (string.IsNullOrEmpty(gapFix)) return fallback;
+            if (gapFix.Length == 1) return char.ToUpperInvariant(gapFix[0]) + ".";
+            return char.ToUpperInvariant(gapFix[0]) + gapFix.Substring(1) + ".";
         }
     }
 }

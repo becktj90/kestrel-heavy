@@ -145,11 +145,28 @@ namespace Kestrel.Game.Guide
             }
             if (welcome)
             {
+                // Welcome keeps its own stack without the corner pop; drop any pop left from an earlier On.
+                // Lines that are not the welcome are still dropped below once the intro is finished.
+                if (pop != null)
+                {
+                    Silence();
+                    if (stage != null) stage.Blip -= OnBlip;
+                    pop.Pop?.RemoveFromHierarchy();
+                    pop = null;
+                    if (blipSource != null)
+                    {
+                        if (Application.isPlaying) Destroy(blipSource);
+                        else DestroyImmediate(blipSource);
+                        blipSource = null;
+                    }
+                    blipClip = null;
+                    blipUntil = 0f;
+                    shownKey = "";
+                }
                 EnsureWelcomeStack();
                 return;
             }
             DropSprite();
-            // Off: nothing consumes the engine's queue, so keep it empty. Turning the character on later starts clean.
             if (live != null) live.DropQueued();
         }
 

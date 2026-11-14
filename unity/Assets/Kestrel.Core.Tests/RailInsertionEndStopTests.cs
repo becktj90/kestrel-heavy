@@ -369,10 +369,11 @@ namespace Kestrel.Core.Tests
             int held = advance.IndexOf("if (Held) return;", StringComparison.Ordinal);
             Assert.That(step, Is.GreaterThan(coast), "Coasting branch calls StepCoast");
             Assert.That(held, Is.GreaterThan(step), "Held return comes after Coasting StepCoast");
-            // A live climax must not be ended by the report failsafe on the frame it starts
-            // (PlayMode: CoastEnd=watchdog, First Hop / tap-to-skip).
+            // A live climax must not be ended by the report failsafe on the frame it starts,
+            // nor by one slow capture frame (PlayMode: CoastEnd=watchdog, First Hop).
             string ready = src.Substring(src.IndexOf("public void EnsureReportReady(", StringComparison.Ordinal));
             StringAssert.Contains("if (Coasting) return;", ready);
+            StringAssert.Contains("OrbitCoast.Advance(", ready);
             StringAssert.Contains("OrbitCoast.MaxWallSeconds + 2", ready);
             string slice = File.ReadAllText(Path.Combine(Golden.Root, "unity", "Assets", "Kestrel.Slice", "Runtime", "SliceApp.cs"));
             StringAssert.Contains("hold = on && !(flight != null && flight.Coasting)", slice);

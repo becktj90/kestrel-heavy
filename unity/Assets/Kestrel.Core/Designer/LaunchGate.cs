@@ -45,13 +45,15 @@ namespace Kestrel.Core.Designer
 
         public static LaunchGateResult Evaluate(EngineeringReport report, QuickReadout readout)
         {
-            if (report == null || !report.ok)
-                return Hard(Blocked(First(report), "schema", "stages"));
-            if (report.blocks != null && report.blocks.Count > 0)
+            // Any hard block (schema, over-budget, …) disables Launch. Prefer the first block's own code/tab
+            // so Poly Bridge over-budget is not mislabeled as "schema" when report.ok is false.
+            if (report != null && report.blocks != null && report.blocks.Count > 0)
             {
                 var b = report.blocks[0];
                 return Hard(Blocked(Plain(b.kid, b.msg), b.code, b.tab));
             }
+            if (report == null || !report.ok)
+                return Hard(Blocked(First(report), "schema", "stages"));
             var r = readout ?? report.readout;
             if (r == null) return new LaunchGateResult { state = LaunchGateState.Checking };
             if (r.fairingFits == false) return Blocked(NoFit, "payload-doesnt-fit", "payload");

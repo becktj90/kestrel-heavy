@@ -24,9 +24,13 @@ namespace Kestrel.Core.Tests
             {
                 if (k.StartsWith("home."))
                 {
-                    // PR 6 (home-simple): the file ships the Starter Home. The built-in stays on, so a missing
-                    // file falls back to the full Home rather than hiding things.
-                    Assert.IsFalse(f.IsOn(k), k + " is off in the Starter Home");
+                    // PR 6 (home-simple): the file ships the Starter Home. Credits chip is on so spend is visible;
+                    // the other home.* extras stay off. The built-in stays on, so a missing file falls back to the
+                    // full Home rather than hiding things.
+                    if (k == FeatureKeys.HomeCreditsChip)
+                        Assert.IsTrue(f.IsOn(k), k + " is on so the wallet shows");
+                    else
+                        Assert.IsFalse(f.IsOn(k), k + " is off in the Starter Home");
                     continue;
                 }
                 // PR 5 (designer-starter): the file opens the Starter screen. The built-in stays on, so a missing

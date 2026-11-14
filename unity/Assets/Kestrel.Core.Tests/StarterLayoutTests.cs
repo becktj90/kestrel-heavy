@@ -38,15 +38,18 @@ namespace Kestrel.Core.Tests
             }
         }
 
-        /// <summary>The real rocket for the mission at a control setting ("kerosene-3-f4-b0"), or its default.</summary>
+        /// <summary>The real rocket for the mission at a control setting ("kerosene-3-f4-b0" or "shop-kerosene-2-f0-b0"), or its default.</summary>
         public static StarterRocket Rocket(string missionId, string key = null)
         {
             var r = StarterFixture.Rocket(missionId);
             if (key != null)
             {
                 var p = key.Split('-');
-                StarterRocket.TryEngine(p[0], out var e);
-                r.Engine = e; r.Stages = int.Parse(p[1]); r.FuelNotch = int.Parse(p[2].Substring(1)); r.Boosters = int.Parse(p[3].Substring(1));
+                int i = 0;
+                if (StarterManufacturing.TryParse(p[0], out var build) && (p[0] == "shop" || p[0] == "flight" || p[0] == "standard"))
+                { r.BuildGrade = build; i = 1; }
+                StarterRocket.TryEngine(p[i], out var e);
+                r.Engine = e; r.Stages = int.Parse(p[i + 1]); r.FuelNotch = int.Parse(p[i + 2].Substring(1)); r.Boosters = int.Parse(p[i + 3].Substring(1));
                 Assert.AreEqual(key, r.Choice.Key, missionId + " setting");
             }
             return r;
@@ -104,9 +107,10 @@ namespace Kestrel.Core.Tests
                     var f = StarterLayout.Place(Input(s, c.mission, c.readiness, c.key));
                     string where = s + " " + c.name;
                     Assert.IsFalse(f.Wide, where);
-                    // SE-height screens tighten the sheet (Compact) and keep at least 16% for the rocket; taller phones 24%.
+                    // SE-height screens tighten the sheet (Compact). The Build row is a fifth control, so the rocket
+                    // floor is 12% compact / 20% tall (was 16% / 24% with four controls).
                     Assert.AreEqual(s.H - s.Top - s.Bottom < StarterLayout.CompactBelow, f.Compact, where);
-                    Assert.GreaterOrEqual(f.Rocket.H, s.H * (f.Compact ? 0.16f : 0.24f), where + " rocket " + f.Rocket.H);
+                    Assert.GreaterOrEqual(f.Rocket.H, s.H * (f.Compact ? 0.10f : 0.18f), where + " rocket " + f.Rocket.H);
                     Assert.Less(f.Rocket.Bottom, f.Sheet.Y, where);
                     Assert.Less(f.Header.Bottom, f.Rocket.Y + 0.5f, where);
                     Assert.LessOrEqual(f.Sheet.W, StarterLayout.ColumnMax + 0.5f, where);

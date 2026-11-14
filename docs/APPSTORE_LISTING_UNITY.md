@@ -32,11 +32,11 @@ Source of truth: the default branch `main` at b2bd87b3, read with `gh` (read-onl
 | Day, sunset and night launches | PRs #271, #272, #275; `Kestrel.Game/Environment/Runtime/TimeOfDayRig.cs` |
 | Detailed procedural pad: lattice service tower, stairs, planked decks, yellow crown, base plates, pad circle, flame trench, umbilicals | PRs #105, #135, #152, #154, #361, #363, #368 |
 | First stage turns around and tries a landing on Haven on recovery missions | PRs #249, #290, #331; `Kestrel.Core/Flight/BoosterLanding.cs`, `Kestrel.Slice/Runtime/RecoveryShow.cs` (see caution C3: only "tries") |
-| Mission control and webcast narration, AI-generated voices | PRs #185, #218, #350; `Resources/Narration` (116 mission-control, 19 host, 12 co-host clips, 147 mp3 files); `docs/NARRATION_LICENSE.md` (ElevenLabs, Trevor's paid Creator plan) |
+| Mission control and webcast narration, AI-generated voices | PRs #185, #218, #350, #493, #494, #547; `Resources/Narration` (207 mission-control, 142 host, 100 co-host clips, 449 mp3 files / 63 events) plus 78 guide clips; `docs/NARRATION_LICENSE.md` (ElevenLabs, Trevor's paid Creator plan) |
 | Music in the hangar, title and flight | PRs #211, #224, #238; `MUSIC_LICENSES.md` |
 | Codex: 8 short lessons (delta-v, thrust-to-weight, Isp, staging, max-Q, center of mass/pressure, orbits, booster landing) | `data/codex.json`; `Kestrel.Game/Shell/CodexScreen.cs`; `ScreenStub.cs` wiring; Settings Codex row (`UiIds.SettingsCodex`) |
 | Progress saves on device; CONTINUE on Home; credits wallet and draft autosave | PR #292; `Kestrel.Game/Shell/HomeResumeBar.cs`; `docs/ECONOMY.md` |
-| Settings: music, sound, voice, subtitles, Reduce Motion | `Kestrel.Core/Ui/UiIds.cs` (`SettingsMusic … SettingsReduceMotion`) |
+| Settings: music, sound, voice, subtitles, Reduce Motion, Reduce flashing, Haptics | `Kestrel.Core/Ui/UiIds.cs` (`SettingsMusic … SettingsHaptics`) |
 | No ads, no IAP, no accounts, no analytics | DECISIONS #25, #34; `ProjectSettings/UnityConnectSettings.asset` (every `m_Enabled: 0`); `Packages/manifest.json` has no ads/analytics/IAP package; only `UnityWebRequest` use is reading bundled audio clips |
 | Unity CI on the PRs behind the claims | #368 head: EditMode, PlayMode, PlayModeDevice, iOS export compile-check, Debug and Release iOS builds all pass. #367 (latest merge): EditMode, PlayMode, compile-check and both iOS builds pass, but its PlayModeDevice job still showed pending when checked, so #367 does not count as green (Unity CI does not run on pushes to main, only on PRs) |
 

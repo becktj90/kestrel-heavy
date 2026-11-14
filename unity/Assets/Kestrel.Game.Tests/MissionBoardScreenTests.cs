@@ -73,7 +73,7 @@ namespace Kestrel.Game.Tests
             Assert.AreEqual("Design first", board.Q<Button>("mission-primary").text);
             Assert.That(board.Q<Label>("mission-act").text, Does.Contain("Regulars"));
             board.SelectContracts();
-            Assert.AreEqual("Not posted", board.Q<Button>("mission-primary").text);
+            Assert.AreEqual("Fly daily", board.Q<Button>("mission-primary").text);
 
             Sweep(board);
         }

@@ -10,6 +10,14 @@ namespace Kestrel.Game.Guide
     {
         public static readonly string[] BeatIds = { "first.1", "first.host", "first.cohost", "first.cta" };
 
+        public static bool IsWelcome(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return false;
+            for (int i = 0; i < BeatIds.Length; i++)
+                if (BeatIds[i] == id) return true;
+            return false;
+        }
+
         /// <summary>Optional narration manifest ids when read-aloud is added later. Subtitles do not depend on them.</summary>
         public const string HostClipId = "host/color.pad.m1.t1";
         public const string CohostClipId = "cohost/color.pad.m2.t1";
@@ -46,7 +54,7 @@ namespace Kestrel.Game.Guide
         public static bool Active(LiveGuideEngine engine)
         {
             if (engine == null || engine.State.FirstRunDone) return false;
-            if (engine.Pending.Count > 0) return true;
+            // Incomplete intro beats, not a later tip. The stack stays up until those beats are seen.
             return !IsComplete(engine.State);
         }
 
@@ -91,37 +99,25 @@ namespace Kestrel.Game.Guide
         }
 
         static MissionBoardFacts FactsFor(Campaign campaign)
-        {
-            CampaignMission m1 = null;
-            if (campaign?.Missions != null)
-            {
-                for (int i = 0; i < campaign.Missions.Count; i++)
-                {
-                    var row = campaign.Missions[i];
-                    if (row != null && row.Index == 1) { m1 = row; break; }
-                }
-                if (m1 == null && campaign.Missions.Count > 0) m1 = campaign.Missions[0];
-            }
-            return MissionBoardFacts.Of(m1, MissionBoardAccess.Open, 0, null, 0, 0, true);
-        }
+            => MissionBoardFacts.Of(First(campaign), MissionBoardAccess.Open, 0, null, 0, 0, true);
 
         static string PebbleName(Campaign campaign)
         {
-            var m1 = Kh1(campaign);
+            var m1 = First(campaign);
             if (m1 != null && !string.IsNullOrEmpty(m1.PayloadName)) return m1.PayloadName;
             return "Pebble";
         }
 
         static string ApogeeKm(Campaign campaign)
         {
-            var m1 = Kh1(campaign);
+            var m1 = First(campaign);
             if (m1 != null && m1.ApoKm > 0)
                 return m1.ApoKm.ToString("0", CultureInfo.InvariantCulture);
             return "10";
         }
 
-        /// <summary>KH-1 when the board has it, else the first row. Apo and the payload name live on the mission, not a nested target.</summary>
-        static CampaignMission Kh1(Campaign campaign)
+        /// <summary>KH-1, the first campaign row. Falls back to the first row when the index is missing.</summary>
+        static CampaignMission First(Campaign campaign)
         {
             if (campaign?.Missions == null || campaign.Missions.Count == 0) return null;
             for (int i = 0; i < campaign.Missions.Count; i++)

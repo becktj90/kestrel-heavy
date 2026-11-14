@@ -158,7 +158,7 @@ namespace Kestrel.Core.Tests
             var r = R("m19");
             r.Engine = StarterEngine.Methane; r.Stages = 2; r.FuelNotch = 4;
             var saved = MiniJson.ParseObject(HangarSession.Snapshot(r.ToSave()));
-            Assert.AreEqual(2, (int)saved.Num("v"));
+            Assert.AreEqual(3, (int)saved.Num("v"));
             var back = R("m19");
             Assert.IsTrue(back.ApplySave(saved));
             Assert.AreEqual(r.Choice, back.Choice);
@@ -179,24 +179,26 @@ namespace Kestrel.Core.Tests
             foreach (var m in StarterFixture.Campaign.Missions)
             {
                 var r = R(m.Id);
+                foreach (var build in StarterRocket.BuildOrder)
                 foreach (var e in StarterRocket.EngineOrder)
                     foreach (int s in StarterRocket.StageValues)
                         for (int f = 0; f < StarterRocket.FuelNotches; f++)
                             foreach (int b in StarterRocket.BoosterValues)
                             {
                                 if (!r.IsBoostersAllowed(b)) continue;
-                                var d = r.BuildDesign(new StarterChoice(e, s, f, b));
+                                var choice = new StarterChoice(build, e, s, f, b);
+                                var d = r.BuildDesign(choice);
                                 combos++;
                                 Assert.AreEqual(s, Stages(d).Count, m.Id);
                                 Assert.AreEqual(m.MassKg, d.Obj("payload").Num("mass"), m.Id + " payload locked to the mission");
                                 var c = StarterRocket.CheckDesign(StarterFixture.Catalog, d, m);
                                 if (!c.Blocked) continue;
                                 if (c.BlockCode == "twr-low") { heavy++; continue; }
-                                bad.Add(m.Id + " " + new StarterChoice(e, s, f, b).Key + ": " + c.BlockCode + " " + c.BlockReason);
+                                bad.Add(m.Id + " " + choice.Key + ": " + c.BlockCode + " " + c.BlockReason);
                             }
             }
             Assert.IsEmpty(bad, string.Join("\n", bad));
-            Assert.AreEqual(720, combos, "20 missions x 2 x 3 x 5 x their booster choices");
+            Assert.AreEqual(2160, combos, "20 missions x 3 builds x 2 x 3 x 5 x their booster choices");
             Assert.Less(heavy, combos / 20, "too heavy is rare");
         }
     }

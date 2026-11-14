@@ -113,7 +113,7 @@ namespace Kestrel.Core.Tests
             StringAssert.Contains("PresentRecoveryIfAscentOver()", app);
             string driver = File.ReadAllText(Path.Combine(root, "unity", "Assets", "Kestrel.Slice", "Runtime", "FlightDriver.cs"));
             StringAssert.Contains("public void EnsureReportReady(double unscaledTime)", driver);
-            StringAssert.Contains("OrbitCoast.WatchdogCredit", driver);
+            StringAssert.Contains("OrbitCoast.Advance(", driver);
         }
     }
 }

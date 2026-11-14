@@ -88,6 +88,10 @@ namespace Kestrel.Core.Flight
             ReachedDirectly = MissionScore.TargetMet(row.TargetKind, row.ApoKm, row.PeriKm, row.C3Km2PerS2, apoMeters, periMeters, c3, false, out _);
         }
         public double RequiredMps;
+        /// <summary>Liftoff wet mass (kg) when known; NaN otherwise. Feeds per-metric PBs.</summary>
+        public double MassKg = double.NaN;
+        /// <summary>Landing miss distance (m) when a booster was graded; NaN otherwise.</summary>
+        public double LandingOffsetM = double.NaN;
         /// <summary>F4: why an intact flight missed (<see cref="MissReason.Explain"/>). Null on a pass or a failure event.</summary>
         public MissExplanation Miss;
 
@@ -153,15 +157,22 @@ namespace Kestrel.Core.Flight
         public string KcHeadline = "";
         public string CosmeticLine = "";
         public string UnlockLine = "";
+        /// <summary>H3 gap-to-goal sentence shown on the report (ascent or landing).</summary>
+        public string GapLine = "";
+        /// <summary>New personal-best line when a metric improved on a pass.</summary>
+        public string PbLine = "";
         public bool Passed;
         public bool FreeBuild;
         public bool EconomySettled;
         public bool TriedSettle;
         public bool WroteCareer;
         public long RewardMinor, CostMinor, RefundMinor, DeltaMinor, BankMinor;
+        /// <summary>Poly Bridge / DECISIONS #100: unspent-budget bonus (budget − cost) on a pass. Part of DeltaMinor.</summary>
+        public long UnspentBonusMinor;
         /// <summary>DECISIONS #87: what the range covered so the bank stays at the campaign floor. Part of DeltaMinor.</summary>
         public long RangeCreditMinor;
         public double RangeCreditKc;
+        public double UnspentBonusKc;
         public double RewardKc, CostKc, RefundKc, DeltaKc, BankKc;
         /// <summary>Credits this flight paid. Zero on a miss, a free build, or when no wallet is attached.</summary>
         public long CreditsEarned;
@@ -334,6 +345,7 @@ namespace Kestrel.Core.Flight
                 debrief.MissCode = miss.Code;
                 debrief.MissAdvice = miss.Advice;
             }
+            debrief.GapLine = GapLineOf(ev, miss, facts, passed);
             bool perfectLanding = MissionScore.IsPerfect(facts.LandingGrade);
             double costKc = facts.CostKc;
             if (costKc == 0 && facts.CostMinor > 0) costKc = facts.CostMinor / (double)minorPerKc;
@@ -391,6 +403,7 @@ namespace Kestrel.Core.Flight
                 var settled = store.Career.Settle(row.Index, passed, costMinor, passed ? facts.RecoveredHardwareMinor : 0, facts.ArticleKey);
                 debrief.EconomySettled = settled.accepted;
                 debrief.RewardMinor = settled.rewardMinor;
+                debrief.UnspentBonusMinor = settled.unspentBonusMinor;
                 debrief.RefundMinor = settled.refundMinor;
                 debrief.RangeCreditMinor = settled.rangeCreditMinor;
                 debrief.DeltaMinor = settled.deltaMinor;
@@ -416,13 +429,25 @@ namespace Kestrel.Core.Flight
 
             if (write && store != null && !free && !string.IsNullOrEmpty(debrief.MissionId))
             {
-                long? seed = debrief.Seed <= (ulong)long.MaxValue ? (long?)debrief.Seed : null;
-                store.RecordAttempt(debrief.MissionId, debrief.Stars, debrief.Score, debrief.Medals, seed, facts.DesignId);
+                // Seeds above 2^53-1 are not exact JSON numbers. Dropping the seed keeps the
+                // attempt and the personal bests; throwing here used to discard the whole card.
+                long? seed = debrief.Seed <= (ulong)CareerStore.SafeInteger ? (long?)debrief.Seed : null;
+                var pb = new PbSnapshot(debrief.CostKc, facts.MassKg, facts.Margin, facts.LandingOffsetM, passed);
+                var before = store.Mission(debrief.MissionId);
+                var metricsBefore = before != null ? CloneMetrics(before.Metrics) : new MissionMetrics();
+                store.RecordAttempt(debrief.MissionId, debrief.Stars, debrief.Score, debrief.Medals, seed, facts.DesignId, pb);
+                var after = store.Mission(debrief.MissionId);
+                if (after != null)
+                {
+                    var delta = DiffMetrics(metricsBefore, after.Metrics);
+                    if (delta.Any) debrief.PbLine = delta.Line;
+                }
                 debrief.WroteCareer = true;
                 debrief.BankMinor = store.Career.BankMinor;
             }
 
             debrief.RewardKc = debrief.RewardMinor / (double)minorPerKc;
+            debrief.UnspentBonusKc = debrief.UnspentBonusMinor / (double)minorPerKc;
             debrief.RefundKc = debrief.RefundMinor / (double)minorPerKc;
             debrief.RangeCreditKc = debrief.RangeCreditMinor / (double)minorPerKc;
             debrief.DeltaKc = debrief.DeltaMinor / (double)minorPerKc;
@@ -470,6 +495,49 @@ namespace Kestrel.Core.Flight
         /// <summary>Air load against the wall, in kPa, as <see cref="PairText"/> prints the pair.</summary>
         public static void KpaPair(double valuePa, double limitPa, out string q, out string qlim) =>
             PairText(valuePa / 1000.0, limitPa / 1000.0, out q, out qlim);
+
+        /// <summary>H3 gap-to-goal: landing uses GapToGoal.Landing; ascent uses Δv or apogee shortfall.</summary>
+        public static string GapLineOf(FailureEvent ev, MissExplanation miss, FlightFacts facts, bool passed)
+        {
+            if (passed) return "";
+            if (ev != null && ev.kind != null && ev.kind.StartsWith("recovery-", StringComparison.Ordinal)
+                && !string.IsNullOrEmpty(ev.engineer))
+                return ev.engineer;
+            if (miss != null)
+            {
+                if (miss.Code == "margin" && facts != null && facts.RequiredMps > 0 && facts.Margin < 0)
+                    return GapToGoal.DeltaV(facts.RequiredMps * (1 + facts.Margin), facts.RequiredMps).Text;
+                if ((miss.Code == "altitude-low" || miss.Code == "suborbital-short" || miss.Code == "orbit-low")
+                    && facts != null && facts.GoalKm > 0 && facts.ApoKm < facts.GoalKm)
+                    return GapToGoal.Apoapsis(facts.ApoKm, facts.GoalKm).Text;
+                if (!string.IsNullOrEmpty(miss.Line)) return miss.Line;
+            }
+            if (facts != null && facts.RequiredMps > 0 && facts.Margin < 0)
+                return GapToGoal.DeltaV(facts.RequiredMps * (1 + facts.Margin), facts.RequiredMps).Text;
+            if (facts != null && facts.GoalKm > 0 && facts.ApoKm < facts.GoalKm)
+                return GapToGoal.Apoapsis(facts.ApoKm, facts.GoalKm).Text;
+            return "";
+        }
+
+        static MissionMetrics CloneMetrics(MissionMetrics src)
+        {
+            var m = new MissionMetrics();
+            if (src == null) return m;
+            m.BestCostKc = src.BestCostKc;
+            m.BestMassKg = src.BestMassKg;
+            m.BestMargin = src.BestMargin;
+            m.BestLandingOffsetM = src.BestLandingOffsetM;
+            return m;
+        }
+
+        static PbDelta DiffMetrics(MissionMetrics before, MissionMetrics after)
+        {
+            if (after == null) return new PbDelta(false, false, false, false, "");
+            // Re-run Apply against a clone of the pre-flight metrics so the line matches PersonalBests.
+            var probe = CloneMetrics(before);
+            return PersonalBests.Apply(probe, new PbSnapshot(
+                after.BestCostKc, after.BestMassKg, after.BestMargin, after.BestLandingOffsetM, true));
+        }
 
         public static string NumberLine(FailureEvent ev, FlightFacts facts, bool passed)
         {
@@ -698,7 +766,10 @@ namespace Kestrel.Core.Flight
             // DECISIONS #87: when the range covered part of the bill, the card says so in the same plain words.
             string range = d.RangeCreditMinor > 0 ? " Range credit " + Kc(d.RangeCreditKc) + "." : "";
             if (d.EconomySettled && d.Passed)
-                return "Reward " + Kc(d.RewardKc) + ". Hardware " + Kc(d.CostKc) + ". Recovery " + Kc(d.RefundKc) + "." + range + " Bank " + Kc(d.BankKc) + ".";
+            {
+                string bonus = d.UnspentBonusMinor > 0 ? " Unspent bonus " + Kc(d.UnspentBonusKc) + "." : "";
+                return "Reward " + Kc(d.RewardKc) + "." + bonus + " Hardware " + Kc(d.CostKc) + ". Recovery " + Kc(d.RefundKc) + "." + range + " Bank " + Kc(d.BankKc) + ".";
+            }
             if (d.EconomySettled)
                 return "No reward. Hardware " + Kc(d.CostKc) + "." + range + " Bank " + Kc(d.BankKc) + ".";
             if (d.TriedSettle)

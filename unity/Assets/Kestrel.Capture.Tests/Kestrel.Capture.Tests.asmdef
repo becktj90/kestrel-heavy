@@ -7,6 +7,8 @@
         "Kestrel.Slice",
         "Kestrel.Game.Shell",
         "Kestrel.Game.Audio",
+        "Kestrel.Game.Guide",
+        "Kestrel.Game.Guide.Core",
         "UnityEngine.TestRunner",
         "Kestrel.Vehicle",
         "Kestrel.UiChecks",

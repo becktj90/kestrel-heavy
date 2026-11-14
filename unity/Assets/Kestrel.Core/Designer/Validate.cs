@@ -2,7 +2,9 @@
 // Operates on the raw JSON tree: Design.FromJson truncates engineCount and hides schema errors.
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Kestrel.Core.Data;
+using Kestrel.Core.Economy;
 using Kestrel.Core.Json;
 using Kestrel.Core.Physics;
 using Kestrel.Core.Vehicle;
@@ -91,9 +93,38 @@ namespace Kestrel.Core.Designer
                 // Version 2 stability and max-Q wording lives in DesignRules. Emitting both would double the issues.
                 if ((int)design.Num("version") < 2)
                     AeroNotes(c, design, r, blocks, warnings);
+                // Poly Bridge / DECISIONS #100: over the mission budget is a hard pad block (not a post-flight miss).
+                if (design != null) AppendBudgetBlock(c, r, blocks, design.Num("budgetKc"));
             }
             if (r != null) DesignRules.Append(c, design, blocks, warnings, r);
             return new EngineeringReport { ok = blocks.Count == 0, blocks = blocks, warnings = warnings, readout = r };
+        }
+
+        /// <summary>
+        /// When <paramref name="budgetKc"/> is set (mission stamp or hangar orbit/default), cost above it blocks
+        /// launch and names how far over. Idempotent if an over-budget block is already present.
+        /// </summary>
+        public static void AppendBudgetBlock(Catalog c, QuickReadout r, List<Issue> blocks, double budgetKc)
+        {
+            if (r == null || blocks == null || !(budgetKc > 0)) return;
+            for (int i = 0; i < blocks.Count; i++) if (blocks[i] != null && blocks[i].code == "over-budget") return;
+            long per = CostModel.MinorPerKc(c);
+            if (per <= 0) per = CostModel.DefaultMinorPerKc;
+            double costKc = r.cost / (double)per;
+            if (!(costKc > budgetKc)) return;
+            double over = costKc - budgetKc;
+            blocks.Add(Iss("over-budget", "stages",
+                "Over budget by " + CompactKc(over) + " Kc. Cheapen the rocket to launch."));
+        }
+
+        /// <summary>Kid-short Kc for the over-budget pad line (4.8k, 1.2M, or whole Kc).</summary>
+        public static string CompactKc(double kc)
+        {
+            double a = Math.Abs(kc);
+            var ci = CultureInfo.InvariantCulture;
+            if (a >= 1e6) return (kc / 1e6).ToString("0.#", ci) + "M";
+            if (a >= 1e3) return (kc / 1e3).ToString("0.#", ci) + "k";
+            return kc.ToString("0", ci);
         }
 
         /// <summary>

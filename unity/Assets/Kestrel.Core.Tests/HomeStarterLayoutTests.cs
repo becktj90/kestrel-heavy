@@ -42,7 +42,11 @@ namespace Kestrel.Core.Tests
             try
             {
                 FeatureFlags.Active = FeatureFlags.Load(RepoRoot());
-                Assert.That(HomeFeatures.Current().ToString(), Is.EqualTo(HomeShow.None.ToString()), "data/features.json ships the Starter Home");
+                Assert.That(HomeFeatures.Current().Credits, Is.True, "credits chip is on so spend shows");
+                Assert.That(HomeFeatures.Current().DesignFirst, Is.False);
+                Assert.That(HomeFeatures.Current().Codex, Is.False);
+                Assert.That(HomeFeatures.Current().Thrum, Is.False);
+                Assert.That(HomeFeatures.Current().Stats, Is.False);
                 int changed = 0;
                 FeatureFlags.Active.Changed += _ => changed++;
                 FeatureFlags.Active.SetOverride(FeatureKeys.HomeThrum, true);

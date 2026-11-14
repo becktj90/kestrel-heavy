@@ -41,6 +41,7 @@ namespace Kestrel.Slice
                 case "stages": Stages(p, w, h); break;
                 case "fuel": Fuel(p, w, h); break;
                 case "boosters": Boosters(p, w, h); break;
+                case "wrench": Wrench(p, w, h); break;
                 default: Dot(p, w, h); break;
             }
         }
@@ -101,6 +102,24 @@ namespace Kestrel.Slice
             p.Fill();
             Rect(p, w * 0.7f, h * 0.4f, w * 0.86f, h * 0.92f);
             p.Fill();
+        }
+
+        static void Wrench(Painter2D p, float w, float h)
+        {
+            // Open-jaw wrench tilted: handle diagonal, head with a C mouth.
+            p.BeginPath();
+            p.MoveTo(new Vector2(w * 0.22f, h * 0.72f));
+            p.LineTo(new Vector2(w * 0.58f, h * 0.36f));
+            p.Stroke();
+            p.BeginPath();
+            p.MoveTo(new Vector2(w * 0.52f, h * 0.22f));
+            p.LineTo(new Vector2(w * 0.72f, h * 0.18f));
+            p.LineTo(new Vector2(w * 0.78f, h * 0.32f));
+            p.LineTo(new Vector2(w * 0.62f, h * 0.42f));
+            p.Stroke();
+            p.BeginPath();
+            p.Arc(new Vector2(w * 0.66f, h * 0.28f), Mathf.Min(w, h) * 0.12f, 200f, 40f);
+            p.Stroke();
         }
 
         static void Dot(Painter2D p, float w, float h)

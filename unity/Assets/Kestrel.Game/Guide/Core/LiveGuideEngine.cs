@@ -158,19 +158,7 @@ namespace Kestrel.Game.Guide
         public void SkipWelcome()
         {
             OpeningIntroSequence.MarkSkipped(state);
-            for (int i = queued.Count - 1; i >= 0; i--)
-            {
-                var beat = queued[i];
-                if (beat != null && OpeningBeat(beat.Id)) queued.RemoveAt(i);
-            }
-        }
-
-        static bool OpeningBeat(string id)
-        {
-            if (string.IsNullOrEmpty(id)) return false;
-            for (int i = 0; i < OpeningIntroSequence.BeatIds.Length; i++)
-                if (OpeningIntroSequence.BeatIds[i] == id) return true;
-            return false;
+            DropQueued();
         }
 
         public void Complete(string beatId) => Finish(beatId, true);

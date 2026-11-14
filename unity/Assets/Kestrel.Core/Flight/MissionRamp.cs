@@ -119,8 +119,6 @@ namespace Kestrel.Core.Flight
     {
         public int Index;
         public string Id, Name, PayloadId;
-        /// <summary>Player name from briefing.payloadName (Pebble). Empty when the row has no briefing name.</summary>
-        public string PayloadName;
         /// <summary>Catalog orbit id. Home stamps this on payload.orbit. Legacy builds used kh- plus the mission id.</summary>
         public string OrbitId;
         public double MassKg, VolumeM3, DiameterM;
@@ -131,7 +129,8 @@ namespace Kestrel.Core.Flight
         public double CoastHours, MaxG = double.NaN, ReliabilityMin = double.NaN;
         public bool MarginNonNegative, StrapOnsAllowed, NoRedRisks, RandomFailures, LandBoosters;
         public string LandingMode, LandingGrade, LandingSite;
-        public string Customer, Control, Goal, WhatItIs, WhatItDoes, Why, Form, CodexId, Band;
+        /// <summary>PayloadName is briefing.payloadName (KH-1 is Pebble). Empty when the briefing omits it.</summary>
+        public string PayloadName, Customer, Control, Goal, WhatItIs, WhatItDoes, Why, Form, CodexId, Band;
         public readonly List<string> Unlocks = new List<string>();
 
         public bool HasInclination => TargetKind == "circular" || TargetKind == "ellipse" || TargetKind == "c3";

@@ -45,17 +45,21 @@ namespace Kestrel.Core.Guide
         {
             if (line == null || line.Cards.Count == 0) return Face(t);
             int rank = GuidePriority.Rank(line.Priority);
-            // A scripted run (the welcome: chatter, then its decision) stays in file order.
-            // A decision from another trigger still drops chatter and jumps the queue.
-            bool scripted = SharesTrigger(line.Trigger);
-            if (current != null && rank == GuidePriority.Rank(GuidePriority.Chatter) && GuidePriority.Rank(current.Line.Priority) >= GuidePriority.Rank(GuidePriority.Decision) && !scripted)
+            if (current != null && rank == GuidePriority.Rank(GuidePriority.Chatter) && GuidePriority.Rank(current.Line.Priority) >= GuidePriority.Rank(GuidePriority.Decision))
                 return Face(t);
-            if (rank >= GuidePriority.Rank(GuidePriority.Decision) && !scripted)
+            if (rank >= GuidePriority.Rank(GuidePriority.Decision))
             {
+                // The opening CTA is a decision on the same guide.first trigger as the first card.
+                // It waits behind that card. Any other decision still drops chatter.
                 for (int i = pending.Count - 1; i >= 0; i--)
-                    if (GuidePriority.Rank(pending[i].Line.Priority) == GuidePriority.Rank(GuidePriority.Chatter))
-                        pending.RemoveAt(i);
-                if (current != null && GuidePriority.Rank(current.Line.Priority) == GuidePriority.Rank(GuidePriority.Chatter))
+                {
+                    if (GuidePriority.Rank(pending[i].Line.Priority) != GuidePriority.Rank(GuidePriority.Chatter)) continue;
+                    if (OpeningTogether(pending[i].Line, line)) continue;
+                    pending.RemoveAt(i);
+                }
+                if (current != null
+                    && GuidePriority.Rank(current.Line.Priority) == GuidePriority.Rank(GuidePriority.Chatter)
+                    && !OpeningTogether(current.Line, line))
                     current = null;
             }
             var slot = new Slot
@@ -70,7 +74,7 @@ namespace Kestrel.Core.Guide
             pending.Sort(Order);
             if (current == null)
                 StartHead(t);
-            else if (!scripted && rank > GuidePriority.Rank(current.Line.Priority))
+            else if (rank > GuidePriority.Rank(current.Line.Priority) && !OpeningTogether(current.Line, line))
             {
                 pending.Add(current);
                 current = null;
@@ -80,13 +84,23 @@ namespace Kestrel.Core.Guide
             return Face(t);
         }
 
-        bool SharesTrigger(string trigger)
+        /// <summary>
+        /// Queue behind the line that is showing. Does not preempt it and does not drop chatter.
+        /// The first-run CTA is a decision, and it still waits until the welcome in front of it finishes.
+        /// </summary>
+        public GuideFace Append(GuideLine line, double t, IReadOnlyDictionary<string, string> tokens, string clip)
         {
-            if (string.IsNullOrEmpty(trigger)) return false;
-            if (current != null && current.Line.Trigger == trigger) return true;
-            for (int i = 0; i < pending.Count; i++)
-                if (pending[i].Line.Trigger == trigger) return true;
-            return false;
+            if (line == null || line.Cards.Count == 0) return Face(t);
+            pending.Add(new Slot
+            {
+                Line = line,
+                Tokens = Copy(tokens),
+                Clip = clip,
+                Seq = ++seq,
+                StartT = t,
+            });
+            if (current == null) StartHead(t);
+            return Face(t);
         }
 
         public GuideFace Tick(double t)
@@ -228,6 +242,11 @@ namespace Kestrel.Core.Guide
 
         static bool Critical(Slot slot)
             => slot.Line.Priority == GuidePriority.Safety || slot.Line.Priority == GuidePriority.Decision;
+
+        /// <summary>The first-run lines share trigger guide.first. The CTA must not erase the card in front of it.</summary>
+        static bool OpeningTogether(GuideLine queued, GuideLine incoming)
+            => queued != null && incoming != null
+                && queued.Trigger == "guide.first" && incoming.Trigger == "guide.first";
 
         static int Order(Slot a, Slot b)
         {
