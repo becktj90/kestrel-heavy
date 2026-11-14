@@ -86,6 +86,7 @@ namespace Kestrel.Core.Designer
         {
             switch (row)
             {
+                case "build": return StarterKnob.Build;
                 case "engine": return StarterKnob.Engine;
                 case "stages": return StarterKnob.Stages;
                 case "fuel": return StarterKnob.FuelNotch;
@@ -99,6 +100,7 @@ namespace Kestrel.Core.Designer
         {
             switch (k)
             {
+                case StarterKnob.Build: return "build";
                 case StarterKnob.Engine: return "engine";
                 case StarterKnob.Stages: return "stages";
                 case StarterKnob.FuelNotch: return "fuel";

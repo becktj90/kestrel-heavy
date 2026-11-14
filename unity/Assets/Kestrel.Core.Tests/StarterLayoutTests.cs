@@ -38,21 +38,25 @@ namespace Kestrel.Core.Tests
             }
         }
 
-        /// <summary>The real rocket for the mission at a control setting ("kerosene-3-f4-b0"), or its default.</summary>
+        /// <summary>The real rocket for the mission at a control setting ("kerosene-3-f4-b0" or "shop-kerosene-2-f0-b0"), or its default.</summary>
         public static StarterRocket Rocket(string missionId, string key = null)
         {
             var r = StarterFixture.Rocket(missionId);
             if (key != null)
             {
-                string core = key;
+                var full = key;
                 string land = null;
-                int li = key.LastIndexOf("-l", StringComparison.Ordinal);
-                if (li >= 0) { land = key.Substring(li + 2); core = key.Substring(0, li); }
-                var p = core.Split('-');
-                StarterRocket.TryEngine(p[0], out var e);
-                r.Engine = e; r.Stages = int.Parse(p[1], CultureInfo.InvariantCulture);
-                r.FuelNotch = int.Parse(p[2].Substring(1), CultureInfo.InvariantCulture);
-                r.Boosters = int.Parse(p[3].Substring(1), CultureInfo.InvariantCulture);
+                int li = full.LastIndexOf("-l", StringComparison.Ordinal);
+                if (li >= 0) { land = full.Substring(li + 2); full = full.Substring(0, li); }
+                var p = full.Split('-');
+                int i = 0;
+                if (StarterManufacturing.TryParse(p[0], out var build) && (p[0] == "shop" || p[0] == "flight" || p[0] == "standard"))
+                { r.BuildGrade = build; i = 1; }
+                StarterRocket.TryEngine(p[i], out var e);
+                r.Engine = e;
+                r.Stages = int.Parse(p[i + 1], CultureInfo.InvariantCulture);
+                r.FuelNotch = int.Parse(p[i + 2].Substring(1), CultureInfo.InvariantCulture);
+                r.Boosters = int.Parse(p[i + 3].Substring(1), CultureInfo.InvariantCulture);
                 if (land != null) r.Landing = (StarterLanding)int.Parse(land, CultureInfo.InvariantCulture);
                 Assert.AreEqual(key, r.Choice.Key, missionId + " setting");
             }
@@ -112,11 +116,11 @@ namespace Kestrel.Core.Tests
                     var f = StarterLayout.Place(input);
                     string where = s + " " + c.name;
                     Assert.IsFalse(f.Wide, where);
+                    // SE-height screens tighten the sheet (Compact). Build + optional Landing rows lower the rocket floor.
+                    Assert.AreEqual(s.H - s.Top - s.Bottom < StarterLayout.CompactBelow, f.Compact, where);
                     float avail = s.H - s.Top - s.Bottom;
-                    // SE-height screens tighten the sheet (Compact) and keep at least 16% for the rocket; taller phones 24%.
-                    // The Landing row trades a slice of preview height on missions that show it.
-                    Assert.AreEqual(avail < StarterLayout.CompactBelow, f.Compact, where);
-                    float minFrac = f.Compact ? (input.LandingVisible ? 0.147f : 0.16f) : (input.LandingVisible ? 0.22f : 0.24f);
+                    float minFrac = f.Compact ? 0.10f : 0.18f;
+                    if (input.LandingVisible) minFrac -= f.Compact ? 0.01f : 0.02f;
                     Assert.GreaterOrEqual(f.Rocket.H, avail * minFrac, where + " rocket " + f.Rocket.H);
                     Assert.Less(f.Rocket.Bottom, f.Sheet.Y, where);
                     Assert.Less(f.Header.Bottom, f.Rocket.Y + 0.5f, where);

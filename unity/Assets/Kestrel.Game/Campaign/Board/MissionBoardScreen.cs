@@ -16,7 +16,7 @@ using UnityEngine.UIElements;
 
 namespace Kestrel.Game.MissionSelect
 {
-    public enum MissionBoardMode { Mission, Contracts, Sandbox }
+    public enum MissionBoardMode { Mission, Contracts, Sandbox, Daily }
 
     /// <summary>The live mission-select tree. Positions come from <see cref="MissionBoardLayout"/>.</summary>
     public sealed class MissionBoardView : VisualElement
@@ -33,6 +33,9 @@ namespace Kestrel.Game.MissionSelect
         Func<string, bool> _canLaunch;
 
         MissionMap _map;
+        Campaign _campaign;
+        Career _career;
+        IReadOnlyDictionary<string, MissionRecord> _records;
         ScrollView _path;
         VisualElement _content, _body, _art, _pulse;
         ScrollView _cardScroll;
@@ -49,6 +52,8 @@ namespace Kestrel.Game.MissionSelect
         Slot _selected;
         MissionBoardFacts _card;
         MissionBoardMode _mode = MissionBoardMode.Mission;
+        DailyPick _daily;
+        string _dailyMissionId;
         string _actId;
         int _goldThrough;
         float _shown = 1f;
@@ -109,6 +114,9 @@ namespace Kestrel.Game.MissionSelect
             _sandbox = sandbox;
             // canLaunch is read on selection, not every frame.
             _canLaunch = canLaunch;
+            _campaign = campaign;
+            _career = career;
+            _records = records;
             _map = MissionMapBuilder.From(campaign, career, records, labels);
 
             var sheet = Resources.Load<StyleSheet>(MissionBoardScreen.SheetResource);
@@ -318,7 +326,7 @@ namespace Kestrel.Game.MissionSelect
             _note.Add(noteClose);
             card.Add(_note);
 
-            _contracts = new Button(SelectContracts) { name = "mission-contracts", text = "Contracts", tooltip = MissionMapCopy.ContractsBody };
+            _contracts = new Button(SelectDaily) { name = "mission-contracts", text = "Daily", tooltip = "Today's shared challenge. Same for everyone. No streak and no expiry." };
             _contracts.AddToClassList("mission-entry");
             BoardType.Set(_contracts, BoardType.Grotesk);
             _contracts.style.unityTextAlign = TextAnchor.MiddleCenter;
@@ -487,6 +495,7 @@ namespace Kestrel.Game.MissionSelect
                 if (_slots[i].Entry.MissionId == missionId) { slot = _slots[i]; break; }
             }
             if (slot == null) return;
+            DailyChallenge.ClearArm();
             _mode = MissionBoardMode.Mission;
             _selected = slot;
             _actId = slot.Entry.ActId;
@@ -510,15 +519,25 @@ namespace Kestrel.Game.MissionSelect
             QueueScroll(slot.Node);
         }
 
-        public void SelectContracts()
+        public void SelectContracts() => SelectDaily();
+
+        public void SelectDaily()
         {
-            _mode = MissionBoardMode.Contracts;
+            _mode = MissionBoardMode.Daily;
             _selected = null;
             for (int i = 0; i < _slots.Count; i++)
                 _slots[i].Node.EnableInClassList("mission-node--selected", false);
             _contracts.EnableInClassList("mission-entry--on", true);
             _sandboxButton.EnableInClassList("mission-entry--on", false);
-            _card = MissionBoardFacts.Contracts(_map != null && _map.ShowOpenContracts, MissionMapCopy.ContractsBody, MissionMapCopy.ContractsAfterCleared);
+            int cleared = _career != null && _career.Cleared > 0 ? _career.Cleared : 0;
+            _daily = DailyChallenge.Pick(_campaign, cleared, DateTime.UtcNow);
+            _dailyMissionId = _daily.MissionId;
+            bool can = !string.IsNullOrEmpty(_dailyMissionId) && _canLaunch != null && _canLaunch(_dailyMissionId);
+            string best = "";
+            if (_records != null && !string.IsNullOrEmpty(_dailyMissionId)
+                && _records.TryGetValue(_dailyMissionId, out var rec) && rec != null)
+                best = MissionBoardFacts.BestLine(rec.BestStars, rec.BestMedals, rec.BestScore, rec.Attempts);
+            _card = MissionBoardFacts.Daily(_daily, can, best);
             _payloadWhat = _card.Briefing;
             _payloadDoes = _card.Orbit;
             HidePayloadNote();
@@ -539,6 +558,7 @@ namespace Kestrel.Game.MissionSelect
 
         public void SelectSandbox()
         {
+            DailyChallenge.ClearArm();
             _mode = MissionBoardMode.Sandbox;
             _selected = null;
             for (int i = 0; i < _slots.Count; i++)
@@ -560,6 +580,17 @@ namespace Kestrel.Game.MissionSelect
             if (_mode == MissionBoardMode.Sandbox)
             {
                 _sandbox?.Invoke();
+                return;
+            }
+            if (_mode == MissionBoardMode.Daily)
+            {
+                string dailyId = _dailyMissionId;
+                if (string.IsNullOrEmpty(dailyId)) return;
+                DailyChallenge.Arm(_daily);
+                if (!string.IsNullOrEmpty(_card.Primary) && _card.Primary.StartsWith("Fly ", StringComparison.Ordinal))
+                    _launch?.Invoke(dailyId);
+                else
+                    _design?.Invoke(dailyId);
                 return;
             }
             if (_mode != MissionBoardMode.Mission || _selected == null || _selected.Mission == null) return;

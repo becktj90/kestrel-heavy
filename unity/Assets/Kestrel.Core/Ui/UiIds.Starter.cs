@@ -1,6 +1,6 @@
 // Starter designer screen ids (feat(designer-starter), PR 5) for the navigation harness. The root is
 // UiIds.ScreenStarter ("screen-starter", in UiIds.cs). Option ids carry the option's value, not its index:
-// starter-engine-kerosene, starter-stages-2, starter-fuel-3 (notch 3 of 5), starter-boosters-4.
+// starter-build-shop, starter-engine-kerosene, starter-stages-2, starter-fuel-3 (notch 3 of 5), starter-boosters-4.
 using System.Collections.Generic;
 using System.Globalization;
 
@@ -17,6 +17,10 @@ namespace Kestrel.Core.Ui
         public const string StarterReset = "starter-reset";
 
         // ---- Starter controls --------------------------------------------------------------------
+        public const string StarterBuild = "starter-build";
+        public const string StarterBuildShop = "starter-build-shop";
+        public const string StarterBuildStandard = "starter-build-standard";
+        public const string StarterBuildFlight = "starter-build-flight";
         public const string StarterEngine = "starter-engine";
         public const string StarterEngineKerosene = "starter-engine-kerosene";
         public const string StarterEngineMethane = "starter-engine-methane";
@@ -40,11 +44,14 @@ namespace Kestrel.Core.Ui
         public const string StarterRocket = "starter-rocket";
         public const string StarterTitle = "starter-title";
         public const string StarterSubtitle = "starter-subtitle";
+        public const string StarterSpend = "starter-spend";
         public const string StarterHint = "starter-hint";
         public const string StarterBadge = "starter-badge";
         public const string StarterReadiness = "starter-readiness";
         public const string StarterSheet = "starter-sheet";
 
+        public static string StarterBuildOption(global::Kestrel.Core.Designer.StarterBuild b) =>
+            StarterBuild + "-" + global::Kestrel.Core.Designer.StarterManufacturing.Id(b);
         public static string StarterEngineOption(global::Kestrel.Core.Designer.StarterEngine e) => StarterEngine + "-" + global::Kestrel.Core.Designer.StarterRocket.EngineId(e);
         public static string StarterStagesOption(int stages) => StarterStages + "-" + stages.ToString(CultureInfo.InvariantCulture);
         /// <summary>Notch 1..5 (the fuel slider reads "Fuel, 3 of 5").</summary>
@@ -58,6 +65,7 @@ namespace Kestrel.Core.Ui
         public static readonly string[] StarterControls =
         {
             StarterBack, StarterReset,
+            StarterBuildShop, StarterBuildStandard, StarterBuildFlight,
             StarterEngineKerosene, StarterEngineMethane,
             StarterStages1, StarterStages2, StarterStages3,
             StarterFuel + "-1", StarterFuel + "-2", StarterFuel + "-3", StarterFuel + "-4", StarterFuel + "-5",

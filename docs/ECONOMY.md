@@ -61,7 +61,9 @@ Starter paint, starter decals, and every livery quote 0.
 
 ## Where it shows
 
-Home has a credits chip. When a draft, a saved design, or a cleared mission exists, Home also shows CONTINUE. The designer cost readout is still the Kc strip.
+Home has a credits chip (`home.creditsChip` on). When a draft, a saved design, or a cleared mission exists, Home also shows CONTINUE. The designer cost readout is still the Kc strip.
+
+On the Starter screen a **Build** row (Shop / Base / Safe) picks the manufacturing grade: Shop is cheaper and more likely to blow up; Safe costs more Kc and holds together better. Base is the mission winner. Hardware cost vs the mission budget and a hold-together percent (`Reliability.Of`) lead the readiness line.
 
 ## Saves
 
@@ -96,7 +98,7 @@ Numbers live in `data/campaign.json` (`economy: 2`). Each mission's reward equal
 | KH-19 Keel Reuse | 48,517 | 420,000 | 11.6% | 83,220 |
 | KH-20 Far Hold | 26,506 | 230,000 | 11.5% | 42,672 |
 
-Every Starter setting (fuel, stages, boosters) stays under the budget, so Starter always launches. The full designer can still assemble an over-budget stack; Launch stays locked until the quote fits.
+Every Starter setting (manufacturing grade, fuel, stages, boosters) stays under the budget, so Starter always launches. The full designer can still assemble an over-budget stack; Launch stays locked until the quote fits.
 
 Open contracts after KH-20 follow the same rule: a cell's budget (and reward) in `data/golden/contracts-viable.json` is ten times its cheapest flown design, rounded up to 5,000 Kc (about 10%).
 
