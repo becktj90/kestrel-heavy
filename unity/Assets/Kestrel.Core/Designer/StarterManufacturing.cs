@@ -64,7 +64,9 @@ namespace Kestrel.Core.Designer
 
             string material = build == StarterBuild.Shop ? ShopMaterial : FlightMaterial;
             string avionics = build == StarterBuild.Shop ? ShopAvionics : FlightAvionics;
-            double sf = build == StarterBuild.Shop ? ShopSafety : FlightSafety;
+            // Safe must never weaken a winner that already flies above FlightSafety (m5 is 1.7; several are 1.8–1.9).
+            double existing = d.ContainsKey("safetyFactor") ? d.Num("safetyFactor", 1.4) : 1.4;
+            double sf = build == StarterBuild.Shop ? ShopSafety : Math.Max(FlightSafety, existing);
 
             HangarEditor.SetAvionics(d, avionics);
             HangarEditor.SetSafetyFactor(d, sf);

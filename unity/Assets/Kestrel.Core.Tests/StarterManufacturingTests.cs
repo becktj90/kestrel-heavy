@@ -31,7 +31,7 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual("basic", shop.Obj("avionics").Str("tier"));
             Assert.AreEqual("redundant", flight.Obj("avionics").Str("tier"));
             Assert.AreEqual(StarterManufacturing.ShopSafety, shop.Num("safetyFactor"), 1e-9);
-            Assert.AreEqual(StarterManufacturing.FlightSafety, flight.Num("safetyFactor"), 1e-9);
+            Assert.GreaterOrEqual(flight.Num("safetyFactor"), StarterManufacturing.FlightSafety);
 
             double shopCost = StarterManufacturing.CostKc(r.Catalog, shop);
             double flightCost = StarterManufacturing.CostKc(r.Catalog, flight);
@@ -41,6 +41,28 @@ namespace Kestrel.Core.Tests
             Assert.Less(shopHold, flightHold, "Shop must hold together worse than Flight");
             Assert.That(StarterManufacturing.SpendLine(r.Catalog, shop, r.Mission.BudgetKc), Does.Contain("Holds"));
             Assert.That(StarterManufacturing.SpendLine(r.Catalog, shop, r.Mission.BudgetKc), Does.Contain("Kc"));
+        }
+
+        [Test]
+        public void Flight_DoesNotLowerWinnerSafety()
+        {
+            // m5 winner is already 1.7 with titanium + redundant; Safe must keep or raise that floor.
+            var r = StarterFixture.Rocket("m5");
+            double baseSf = r.BuildDesign().Num("safetyFactor");
+            Assert.Greater(baseSf, StarterManufacturing.FlightSafety);
+            var flight = r.BuildDesign(r.Choice.WithBuild(StarterBuild.Flight));
+            Assert.AreEqual(baseSf, flight.Num("safetyFactor"), 1e-9);
+        }
+
+        [Test]
+        public void Shop_HoldTogether_IncludesEnginePenalty()
+        {
+            var r = StarterFixture.Rocket("m5");
+            var shop = r.BuildDesign(r.Choice.WithBuild(StarterBuild.Shop));
+            double withScale = StarterManufacturing.HoldTogether(r.Catalog, shop);
+            shop["manufacturing"] = "standard";
+            double withoutScale = StarterManufacturing.HoldTogether(r.Catalog, shop);
+            Assert.Less(withScale, withoutScale, "Shop Holds % must reflect the 0.92 engine scale");
         }
 
         [Test]
