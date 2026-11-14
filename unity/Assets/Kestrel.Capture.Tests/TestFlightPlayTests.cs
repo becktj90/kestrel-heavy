@@ -110,10 +110,11 @@ namespace Kestrel.Capture.Tests
             Assert.IsTrue(NavIds.Shown(tile));
 
             // A rocket that breaks up promptly (no safety margin), so the card comes quickly.
+            // Keep the hopper's three engines. One engine is under the row3 pattern and below
+            // liftoff thrust-to-weight, so Launch() refuses it and the card never opens.
             var starter = TestFlightHome.Starter();
             Assert.IsNotNull(starter, "a starter rocket");
             var d = Design.FromJson(starter);
-            d.stages[0].engineCount = 1;
             d.safetyFactor = 1.0;
             PadHandoff.Arm(d.ToJson(), false, false);
             Click(tile);
@@ -126,6 +127,7 @@ namespace Kestrel.Capture.Tests
             Assert.IsNotNull(Find(UiIds.TestFlightEyebrow), "the designer shows TEST FLIGHT");
 
             if (!app.FlightHudVisible) app.PressLaunch();
+            Assert.IsTrue(app.FlightHudVisible, "LAUNCH leaves the pad");
             var driver = UnityEngine.Object.FindAnyObjectByType<FlightDriver>();
             Assert.IsNotNull(driver, "live FlightDriver");
             VisualElement card = null;
