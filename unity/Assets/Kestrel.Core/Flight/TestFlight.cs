@@ -21,7 +21,11 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using Kestrel.Core.Data;
+using Kestrel.Core.Designer;
+using Kestrel.Core.Json;
 using Kestrel.Core.Physics;
+using Kestrel.Core.Vehicle;
 
 namespace Kestrel.Core.Flight
 {
@@ -97,9 +101,10 @@ namespace Kestrel.Core.Flight
         public string Outcome = "";
         public bool LiftedOff;
         public double ApoAltM = double.NaN, PeriAltM = double.NaN;
-        /// <summary>Drag-aware flown peak (MissionScore.FlownApoAltM).</summary>
+        /// <summary>Highest altitude the flight reached, m (watched per step; else MissionScore.FlownApoAltM).</summary>
         public double PeakAltM = double.NaN;
-        /// <summary>Highest inertial speed the flight reached, m/s.</summary>
+        /// <summary>Inertial speed at that highest point, m/s. At the top of an arc the speed is all sideways, so this is
+        /// the speed that counts toward staying up.</summary>
         public double PeakSpeedMps = double.NaN;
         /// <summary>Δv still in the tanks at the end (AscentSim.RemainingVacDeltaV), m/s.</summary>
         public double DvLeftMps = double.NaN;
@@ -159,8 +164,36 @@ namespace Kestrel.Core.Flight
         /// <summary>The speed an orbit needs at a height: circular speed at that height, or at the orbit floor when lower.</summary>
         public static double NeededSpeed(double altM) => CircularSpeed(double.IsNaN(altM) ? OrbitPerigeeFloorM : Math.Max(altM, OrbitPerigeeFloorM));
 
-        /// <summary>The sim's facts for one flight. <paramref name="sim"/> may be null (no tanks reading then).</summary>
-        public static TestFlightFacts Facts(SimResult result, FailureEvent failure, AscentSim sim, double liftoffTwr)
+        /// <summary>
+        /// Sideways speed a rocket needs at the top of its arc to stay up: the high-point speed of the orbit whose low
+        /// point just clears the test floor (vis-viva, √(2μ·r_floor / (r_top·(r_top + r_floor))). Below the floor there
+        /// is no such orbit, so the floor's circular speed.
+        /// </summary>
+        public static double NeededAtTop(double topAltM)
+        {
+            double rf = Gravity.R_EARTH + OrbitPerigeeFloorM;
+            if (double.IsNaN(topAltM)) return Math.Sqrt(Gravity.MU_EARTH / rf);
+            double ra = Gravity.R_EARTH + topAltM;
+            if (ra <= rf) return Math.Sqrt(Gravity.MU_EARTH / rf);
+            return Math.Sqrt(2 * Gravity.MU_EARTH * rf / (ra * (ra + rf)));
+        }
+
+        /// <summary>Speed at the high point of a coasting arc with these high and low points (vis-viva). NaN when unknown.</summary>
+        public static double SpeedAtTop(double apoAltM, double periAltM)
+        {
+            if (double.IsNaN(apoAltM) || double.IsNaN(periAltM) || double.IsInfinity(apoAltM)) return double.NaN;
+            double ra = Gravity.R_EARTH + apoAltM, rp = Math.Max(0, Gravity.R_EARTH + periAltM);
+            if (ra <= 0 || ra + rp <= 0) return double.NaN;
+            return Math.Sqrt(2 * Gravity.MU_EARTH * rp / (ra * (ra + rp)));
+        }
+
+        /// <summary>
+        /// The sim's facts for one flight. <paramref name="sim"/> may be null (no tanks reading then).
+        /// <paramref name="topAltM"/> and <paramref name="topSpeedMps"/> are the highest point the caller watched and the
+        /// inertial speed there (the live pad and <see cref="FlyHeadless"/> track them per step); NaN reads the result's
+        /// samples instead, then the drag-aware flown peak.
+        /// </summary>
+        public static TestFlightFacts Facts(SimResult result, FailureEvent failure, AscentSim sim, double liftoffTwr, double topAltM = double.NaN, double topSpeedMps = double.NaN)
         {
             var f = new TestFlightFacts { LiftoffTwr = liftoffTwr };
             if (result == null)
@@ -172,24 +205,49 @@ namespace Kestrel.Core.Flight
             f.Outcome = result.outcome ?? "";
             f.ApoAltM = result.orbit.apoAlt;
             f.PeriAltM = result.orbit.periAlt;
-            f.PeakAltM = MissionScore.FlownApoAltM(result);
             f.QLimPa = result.qLimPa;
+            SimEvent failAt = null;
             if (result.events != null)
                 for (int i = 0; i < result.events.Count; i++)
-                    if (result.events[i] != null && result.events[i].type == "liftoff") { f.LiftedOff = true; break; }
-            double peak = double.NaN;
-            if (result.samples != null)
-            {
-                for (int i = 0; i < result.samples.Count; i++)
                 {
-                    var s = result.samples[i];
-                    if (double.IsNaN(peak) || s.v > peak) peak = s.v;
+                    var e = result.events[i];
+                    if (e == null) continue;
+                    if (e.type == "liftoff") f.LiftedOff = true;
+                    if (e.type == "failure" && failAt == null) failAt = e;
+                }
+            if (!double.IsNaN(topAltM) && !double.IsNaN(topSpeedMps))
+            {
+                f.PeakAltM = topAltM;
+                f.PeakSpeedMps = topSpeedMps;
+            }
+            else if (result.samples != null && result.samples.Count > 0)
+            {
+                var top = result.samples[0];
+                for (int i = 1; i < result.samples.Count; i++) if (result.samples[i].alt > top.alt) top = result.samples[i];
+                f.PeakAltM = top.alt;
+                f.PeakSpeedMps = top.v;
+            }
+            // A flight that ended in the air (coasting out, suborbital or a failure on the way up) has not reached its
+            // top yet: the sim hands the rest of the arc to its orbit (MissionScore.FlownApoAltM is that arc's drag-aware
+            // peak). The speed there is the arc's high-point speed (vis-viva on the result's orbit). An impact has already
+            // flown its whole arc, so the watched top stands.
+            if (result.outcome != "crash")
+            {
+                double arcTop = MissionScore.FlownApoAltM(result);
+                double atTop = SpeedAtTop(f.ApoAltM, f.PeriAltM);
+                if (!double.IsNaN(arcTop) && !double.IsNaN(atTop) && (double.IsNaN(f.PeakAltM) || arcTop > f.PeakAltM))
+                {
+                    f.PeakAltM = arcTop;
+                    f.PeakSpeedMps = atTop;
                 }
             }
-            double end = Math.Sqrt(result.vx * result.vx + result.vy * result.vy);
-            if (!double.IsNaN(end) && (double.IsNaN(peak) || end > peak)) peak = end;
-            f.PeakSpeedMps = peak;
-            if (f.Failure != null && result.samples != null && result.samples.Count > 0)
+            if (double.IsNaN(f.PeakAltM)) f.PeakAltM = MissionScore.FlownApoAltM(result);
+            if (failAt != null && failAt.alt.HasValue && failAt.v.HasValue)
+            {
+                f.FailAltM = failAt.alt.Value;
+                f.FailSpeedMps = failAt.v.Value;
+            }
+            else if (f.Failure != null && result.samples != null && result.samples.Count > 0)
             {
                 SimSample at = result.samples[0];
                 for (int i = 0; i < result.samples.Count; i++)
@@ -242,7 +300,7 @@ namespace Kestrel.Core.Flight
                 Title = TestFlightCopy.ShortTitle, Kid = TestFlightCopy.ShortKid, Hint = TestFlightCopy.ShortHint,
                 Engineer = double.IsNaN(peakAlt) || double.IsNaN(f.PeakSpeedMps) ? "" : TestFlightCopy.ShortEngineer
                     .Replace("{alt}", Km(peakAlt)).Replace("{speed}", Whole(f.PeakSpeedMps))
-                    .Replace("{needed}", Whole(NeededSpeed(peakAlt))),
+                    .Replace("{needed}", Whole(NeededAtTop(peakAlt))),
             };
         }
 
@@ -255,7 +313,12 @@ namespace Kestrel.Core.Flight
                     string eng = "";
                     if (!double.IsNaN(f.FailAltM) && !double.IsNaN(f.FailSpeedMps))
                     {
-                        double shortBy = Math.Max(0, NeededSpeed(f.FailAltM) - f.FailSpeedMps);
+                        // Short by: the sideways push still missing at the top of the arc the rocket was on when the
+                        // tanks ran dry (the sim stops on the failure, so the result's orbit is that arc).
+                        double atTop = SpeedAtTop(f.ApoAltM, f.PeriAltM);
+                        double shortBy = double.IsNaN(atTop)
+                            ? Math.Max(0, NeededSpeed(f.FailAltM) - f.FailSpeedMps)
+                            : Math.Max(0, NeededAtTop(f.ApoAltM) - atTop);
                         eng = TestFlightCopy.FuelEngineer.Replace("{alt}", Km(f.FailAltM)).Replace("{speed}", Whole(f.FailSpeedMps)).Replace("{short}", Whole(shortBy));
                     }
                     return new TestFlightCard { Outcome = TestOutcome.OutOfFuel, Kind = ev.kind, Title = TestFlightCopy.FuelTitle, Kid = TestFlightCopy.FuelKid, Engineer = eng, Hint = TestFlightCopy.FuelHint };
@@ -263,8 +326,12 @@ namespace Kestrel.Core.Flight
                 case "structural-maxq" when ev.cause == QCause:
                 {
                     double alt = f.FailAltM;
+                    // Whole kPa, unless both round to the same number ("35 kPa · limit 35 kPa"): then one decimal, as the
+                    // g line does, so the card never shows a load equal to its limit.
+                    string q = Whole(ev.value / 1000.0), lim = Whole(ev.limit / 1000.0);
+                    if (q == lim) { q = One(ev.value / 1000.0); lim = One(ev.limit / 1000.0); }
                     string eng = double.IsNaN(alt) ? "" : TestFlightCopy.MaxQEngineer
-                        .Replace("{q}", Whole(ev.value / 1000.0)).Replace("{alt}", Km(alt)).Replace("{limit}", Whole(ev.limit / 1000.0));
+                        .Replace("{q}", q).Replace("{alt}", Km(alt)).Replace("{limit}", lim);
                     return new TestFlightCard { Outcome = TestOutcome.MaxQBreakup, Kind = ev.kind, Title = TestFlightCopy.MaxQTitle, Kid = TestFlightCopy.MaxQKid, Engineer = eng, Hint = TestFlightCopy.MaxQHint };
                 }
                 case "tumble" when ev.cause == AlphaCause:
@@ -278,11 +345,12 @@ namespace Kestrel.Core.Flight
                     // is the sim's own (FlightDebrief.NumberLine). Same card and lever otherwise.
                     return new TestFlightCard { Outcome = TestOutcome.LostControl, Kind = ev.kind, Title = TestFlightCopy.SpinTitle, Kid = TestFlightCopy.SpinKid, Engineer = FlightDebrief.NumberLine(ev, null, false), Hint = TestFlightCopy.SpinHint };
                 default:
+                    // No UX copy for this failure: the sim's own title, kid line and engineer line, never a guessed reason.
                     return new TestFlightCard
                     {
                         Outcome = TestOutcome.Failure, Kind = ev.kind ?? "",
-                        Title = FlightDebrief.TitleOf(ev.kind), Kid = ev.kid ?? "",
-                        Engineer = FlightDebrief.NumberLine(ev, null, false),
+                        Title = FlightDebrief.TitleOf(ev.kind == "axial-overload" ? "structural-maxq" : ev.kind), Kid = ev.kid ?? "",
+                        Engineer = ev.kind == "axial-overload" && !string.IsNullOrEmpty(ev.engineer) ? ev.engineer : FlightDebrief.NumberLine(ev, null, false),
                     };
             }
         }
@@ -290,7 +358,54 @@ namespace Kestrel.Core.Flight
         static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
         static string Km(double m) => double.IsNaN(m) ? "0" : Math.Round(m / 1000.0).ToString("#,0", Inv);
         static string Whole(double x) => double.IsNaN(x) ? "0" : Math.Round(x).ToString("#,0", Inv);
+        static string One(double x) => double.IsNaN(x) ? "0" : x.ToString("#,0.0", Inv);
         static string N2(double x) => x.ToString("0.00", Inv);
+
+        /// <summary>
+        /// One test flight, headless: the free build's own setup (MissionFlightSetup with no mission: the design's catalog
+        /// orbit, leo400 when unset), the seeded failure monitor at full strength and the live pad's director, stepped to
+        /// the end. The same path the designer predictor and the batch use for a free build; nothing is softened.
+        /// </summary>
+        public static TestFlightFacts FlyHeadless(Catalog catalog, JsonObject designJson, ulong seed, double dt = MissionFlightSetup.BatchDt)
+        {
+            if (catalog == null) throw new ArgumentNullException(nameof(catalog));
+            if (designJson == null) throw new ArgumentNullException(nameof(designJson));
+            var design = Design.FromJson(designJson);
+            var setup = MissionFlightSetup.Build(catalog, null, design, dt);
+            ulong hash = FlightBatch.DesignHash(design);
+            var monitor = FailureMonitor.Create(catalog, setup.Flown, setup.TargetAltM, hash, seed);
+            monitor.Gentle = false;
+            setup.Options.monitor = monitor;
+            var run = MissionFlightSetup.Start(setup, MissionFlightSetup.Director(catalog, setup, design, hash, seed));
+            var top = new TopTracker();
+            while (true)
+            {
+                bool more = run.Step();
+                top.Watch(run.Sim.Y);
+                if (!more) break;
+            }
+            var result = run.Finish();
+            double twr = double.NaN;
+            try { twr = Readout.Quick(catalog, designJson).liftoffTWR; }
+            catch (Exception) { twr = double.NaN; }
+            return Facts(result, result.failure, run.Sim, twr, top.AltM, top.SpeedMps);
+        }
+
+        /// <summary>The highest point of a flight and the inertial speed there, watched one state at a time.</summary>
+        public sealed class TopTracker
+        {
+            public double AltM = double.NaN, SpeedMps = double.NaN;
+            public void Reset() { AltM = SpeedMps = double.NaN; }
+            /// <summary>One sim state: x, y, vx, vy (Earth-centred inertial, m and m/s).</summary>
+            public void Watch(double[] y)
+            {
+                if (y == null || y.Length < 4) return;
+                double alt = Math.Sqrt(y[0] * y[0] + y[1] * y[1]) - Gravity.R_EARTH;
+                if (double.IsNaN(alt) || (!double.IsNaN(AltM) && alt <= AltM)) return;
+                AltM = alt;
+                SpeedMps = Math.Sqrt(y[2] * y[2] + y[3] * y[3]);
+            }
+        }
 
         /// <summary>Worst-case card strings for the text-fit sweep: the longest numbers each line can carry.</summary>
         public static IEnumerable<TestFlightCard> WorstCaseCards()
