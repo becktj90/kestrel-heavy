@@ -90,7 +90,7 @@ namespace Kestrel.Slice
                 foot.Add(fix);
             }
 
-            NextMission.AddRoutes(foot, actions, tap);
+            NextMission.AddRoutes(foot, actions, tap, pass);
             if (pass)
                 foot.Query<Button>().ForEach(b => ReportCardChrome.PaintButton(b, tap, ReportCardChrome.PassRole(b.name)));
             root.Add(foot);

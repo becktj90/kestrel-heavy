@@ -384,7 +384,9 @@ namespace Kestrel.Game.Tests
                 CareerStore migrated = null;
                 Assert.DoesNotThrow(() => migrated = CareerStore.Load(legacy, campaign, minor));
                 Assert.That(migrated.MigratedFromProgress, Is.True);
-                Assert.That(migrated.Career.BankMinor, Is.EqualTo(8800L));
+                // DECISIONS #87: an economy 1 bank is rescaled once (and lifted to the range-credit floor).
+                Assert.That(migrated.Career.BankMinor, Is.EqualTo(Kestrel.Core.Economy.Career.MigrateBankMinor(campaign, 8800L, 4, minor)));
+                Assert.That(migrated.RescaledBank, Is.True);
                 Assert.That(migrated.Career.Cleared, Is.EqualTo(4));
                 Assert.That(File.ReadAllText(Path.Combine(legacyDir, CareerStore.CareerKey + ".json.bak")), Is.EqualTo(bare));
                 var rewritten = MiniJson.ParseObject(File.ReadAllText(Path.Combine(legacyDir, CareerStore.CareerKey + ".json")));
