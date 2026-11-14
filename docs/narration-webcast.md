@@ -27,3 +27,26 @@ NarrationSchedule plays one line at a time with one Pending slot, and only `abor
 
 ## Tests
 `tests/narration-facts-lint.test.cjs` also covers every `color.*` slot: contexts for all designs on all pads, the claim-vs-design verifier (propellant is checked against the stage named in `requires`, "oxygen" must be a liquid-oxygen stage, comparisons such as "warmer than hydrogen" are general facts), schema (two speakers, lines match text, <=14 words per line, overlap <=0.3 s, sources listed in docs/narration-sources.md), a neutral take per slot for every design, and `color.recovery` eligibility per recovery mode and pad.
+
+## B01 mission-status calls (wired from #495)
+
+Take 1 of 91 B01 lines is in the manifest (`batch: "B01"`); take 2 and the held lines stay in `audio/staging/B01`
+(see `WIRED.md` there; `tools/clipgen/wire_b01.py` does the move). Every call goes through `CallTriggers` (4 s freshness,
+never over a waiting call) and the picker's `requires` gates. A gate that cannot be read keeps the call silent.
+
+| Event | Fires when (code) | Gate on the takes |
+|---|---|---|
+| `status.ontrack` | board verdict turns "On track" first time after "Climbing", live spare known and ≥ 0 (`StatusCalls`) | neutral |
+| `status.short` / `.clear` | verdict turns "Short on speed" with the spare < 0; back to "On track" with spare ≥ 0; short re-arms only after a clear | neutral |
+| `status.speed` | verdict turns "Speed is there" while an engine burns | neutral |
+| `status.heating` | verdict "Heating hard" while q is still rising (before the peak); none within 5 s of a max-Q throttle beat | neutral |
+| `engine-out` | sim `engine-out` (a tolerated stage-1 engine loss) | neutral; safety subtitle |
+| `engine-out.ok` | 3 s after it, vehicle intact and climbing; lit stage 1 (none with strap-ons) | `lit.engines >= 2` |
+| `sep-clear` | sim `separation` of the first core stage (a recontact fails the flight first) | `stages >= 2` |
+| `landing.alt.1k/500/100/10` | booster height above the landing surface crosses the mark on a live step of the landing burn; a jump over two marks or a skip says none; dropped if a line plays | `recovery` barge or rtls |
+| `landing.legs` | legs finish deploying on a live step of a planned landing | `legs`, `recovery` barge or rtls |
+| `hold_start` | the count clock enters a hold (`LaunchSequence.Held`); dropped if the hold ends first | no takes yet (gen6) |
+
+Held: hold:true lines (all `fuel-low` and `landing.fuel-low`), every `outcome.*` (no emitter), `status.offcourse(.clear)`
+(no corridor-deviation signal in the Unity sim), `sep-wide` (no rough-separation signal), `landing.sink.*` and
+`landing.drift` (the live test needs a Physics ruling), and seven landing takes that say more than the callout checks.

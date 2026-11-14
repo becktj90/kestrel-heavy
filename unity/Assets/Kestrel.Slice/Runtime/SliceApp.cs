@@ -2185,7 +2185,7 @@ namespace Kestrel.Slice
             }
             HideCountGrid();
             RefreshWebcast(sequence.Time, false);
-            if (counting) CountVoice()?.CountTick(sequence.Time, sequence.Fired, GuideSpeaking());
+            if (counting) CountVoice()?.CountTick(sequence.Time, sequence.Fired, GuideSpeaking(), sequence.Held);
         }
 
         static bool GuideSpeaking()
@@ -2205,7 +2205,7 @@ namespace Kestrel.Slice
             {
                 var mission = AscentFlight.CurrentMission();
                 voice.BeginCount(Kestrel.Core.Flight.Narration.NarrationFacts.From(design, null).With("mission", mission != null ? mission.Id : null), flightCalls);
-                voice.CountTick(sequence.Time, sequence.Fired, GuideSpeaking());
+                voice.CountTick(sequence.Time, sequence.Fired, GuideSpeaking(), sequence.Held);
             }
             catch (System.Exception e) { Debug.LogWarning("[Count] narration: " + e.Message); }
         }
@@ -2269,8 +2269,13 @@ namespace Kestrel.Slice
             double q = flying && flight != null ? flight.DynPressure : 0;
             // DECISIONS #90: the in-flight "short" cue reads the live spare, held below zero for 3 s.
             bool shortOnSpeed = false;
+            bool? spareOk = null;
             if (flying && flight != null && flight.Sim != null && liveSpare != null)
-                shortOnSpeed = liveSpare.Short(flight.Sim.T, liveSpare.Spare(flight.Sim));
+            {
+                double spareNow = liveSpare.Spare(flight.Sim);
+                shortOnSpeed = liveSpare.Short(flight.Sim.T, spareNow);
+                if (!double.IsNaN(spareNow)) spareOk = spareNow >= 0;
+            }
             // DECISIONS #83: the count line and in-flight "short" cue follow the predictor's verdict for this design.
             var countVerdict = verdictKey != null ? FlightVerdict.Recall(verdictKey) : null;
             var pulse = flying && flight != null && flight.Coasting
@@ -2280,6 +2285,12 @@ namespace Kestrel.Slice
                 : WebcastBoard.Pulse(flying, alt, spd, requiredMps, spareMps, q, maxQKpa, orbitLabel, hopGoalM, countVerdict, shortOnSpeed);
             hVerdict.text = pulse.Verdict;
             hPulse.text = pulse.Detail;
+            // B01 mission-status calls hear the same verdict the banner shows, only while the ascent itself flies.
+            if (flying && flight != null && flight.Sim != null && flight.Running && !flight.Coasting && !flight.Lost)
+            {
+                try { CountVoice()?.OnVerdict(pulse.Verdict, q, flight.Sim.Thrusting, spareOk); }
+                catch (System.Exception e) { Debug.LogWarning("[Flight] status narration: " + e.Message); }
+            }
             if (!flying && handoff != null && !handoff.Ascending)
             {
                 RefreshCountCard();

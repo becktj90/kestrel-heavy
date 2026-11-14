@@ -35,6 +35,23 @@ namespace Kestrel.Core.Flight.Narration
                     return new NarrationCue("ses1", lit);
                 }
                 case "meco": return new NarrationCue("meco", 1);
+                case "separation":
+                {
+                    // B01: the sim emits "separation" only after a separation that did not fail (a recontact fails the
+                    // flight first), so it is a clean sep. sep-clear is the first core stage dropping (its takes say
+                    // booster and upper stage); a strap-on drop or a later core sep says nothing.
+                    int core = strapOns ? simStage - 1 : simStage;
+                    if (simStage < 1 || core != 1 || stages < 2) return default;
+                    return new NarrationCue("sep-clear", 0);
+                }
+                case "engine-out":
+                {
+                    // A tolerated stage-1 engine-out. Without strap-ons sim entry 1 is core stage 1, whose engine count
+                    // the lit.* facts give. With strap-ons the entry mixes the group and the core: no lit stage, so a
+                    // take that claims lit.engines stays silent (fail closed).
+                    int lit = !strapOns && simStage == 1 ? 1 : 0;
+                    return new NarrationCue("engine-out", lit);
+                }
                 default: return new NarrationCue(simType, 0);
             }
         }
