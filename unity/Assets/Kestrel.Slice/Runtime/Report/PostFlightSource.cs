@@ -56,10 +56,12 @@ namespace Kestrel.Slice
             long minor = MinorPerKc();
             var look = Look();
             bool live = flight != null && flight.Result != null;
-            var card = !live
+            // DECISIONS #100: a test flight never opens the career save or the guide's memory. Compose writes nothing.
+            bool test = GameSession.IsTestFlight;
+            var card = !live || test
                 ? FlightDebrief.Compose(null, GameSession.Current, facts, pool, minor, look)
                 : FlightDebrief.Commit(TryStore(minor), GameSession.Current, facts, pool, minor, look);
-            GuideBinder.Debrief(flight, card);
+            if (!test) GuideBinder.Debrief(flight, card);
             return card;
         }
 
@@ -146,6 +148,15 @@ namespace Kestrel.Slice
                 if (score != null) facts.TimingMedal = FlightVerdict.Medal(score.Medal, facts.Passed); // DECISIONS #83
             }
             Quote(facts);
+            if (GameSession.IsTestFlight)
+            {
+                // Test Flight's card reads the sim's own numbers for the rocket that flew (no mission gates).
+                var top = flight != null ? flight.Top : null;
+                facts.Test = result != null
+                    ? Kestrel.Core.Flight.TestFlight.Facts(result, ascentFail, flight.Sim, Kestrel.Core.Flight.TestFlight.LiftoffTwr(catalog, design),
+                        top != null ? top.AltM : double.NaN, top != null ? top.SpeedMps : double.NaN)
+                    : new TestFlightFacts { Failure = ascentFail };
+            }
             return facts;
         }
 

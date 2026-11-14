@@ -36,8 +36,6 @@ namespace Kestrel.Core.Flight
         ReportMissions,
         ExitHome,
         ExitMissions,
-        /// <summary>Home's Test Flight tile (DECISIONS #86): a free build flagged as a test, straight to the designer.</summary>
-        HomeTestFlight,
         /// <summary>Test Flight card: Tweak &amp; Retry. The designer with the same rocket, still a test.</summary>
         TestRetry,
         /// <summary>Test Flight card: New Design. The designer with a fresh rocket, still a test.</summary>
@@ -128,14 +126,14 @@ namespace Kestrel.Core.Flight
         public bool IsFree => Mode == MissionMode.Free;
 
         /// <summary>
-        /// DECISIONS #86 Test Flight: this flight counts for nothing (no Kc, stars, medals, unlocks, records, draft, guide
+        /// DECISIONS #100 Test Flight: this flight counts for nothing (no Kc, stars, medals, unlocks, records, draft, guide
         /// or Game Center). Set on Home's Test Flight free build, and on a mission's "Test it" copy (<see cref="TestOf"/>).
         /// </summary>
         public bool TestFlight;
         /// <summary>The mission a "Test it" flight came from; Tweak &amp; Retry and New Design return to it. Null for Home's Test Flight.</summary>
         public MissionContext TestReturn;
 
-        /// <summary>Home's Test Flight: a free build flagged as a test (DECISIONS #86).</summary>
+        /// <summary>Home's Test Flight: a free build flagged as a test (DECISIONS #100).</summary>
         public static MissionContext Test(ulong seed = 1)
         {
             var ctx = Free(seed);
@@ -336,7 +334,7 @@ namespace Kestrel.Core.Flight
 
         public static bool IsFreeBuild => Current == null || Current.IsFree;
 
-        /// <summary>DECISIONS #86: the flight on the pad is a test flight and writes nothing to the career.</summary>
+        /// <summary>DECISIONS #100: the flight on the pad is a test flight and writes nothing to the career.</summary>
         public static bool IsTestFlight => Current != null && Current.TestFlight;
 
         public static void Carry(MissionContext context) => Current = context;
@@ -350,10 +348,8 @@ namespace Kestrel.Core.Flight
                 case RouteId.HomeLaunch:
                     return Done(SessionScreens.Missions, SessionScreens.None);
                 case RouteId.HomeHangar:
-                    Current = MissionContext.Free(briefing != null ? briefing.MissionSeed : 1);
-                    Current.ApplyBriefing(briefing);
-                    return Done(SessionScreens.Design, SessionScreens.None);
-                case RouteId.HomeTestFlight:
+                    // DECISIONS #100: the Sandbox free build (Missions board Sandbox, Home's Test Flight tile) is Test
+                    // Flight: still a free build (MissionMode.Free), flagged so it writes nothing and shows the test card.
                     Current = MissionContext.Test(briefing != null ? briefing.MissionSeed : 1);
                     Current.ApplyBriefing(briefing);
                     return Done(SessionScreens.Design, SessionScreens.None);

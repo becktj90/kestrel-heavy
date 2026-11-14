@@ -102,6 +102,9 @@ namespace Kestrel.Game.Shell
                     ? HomePhoneLayout.TileCaptionLines(t, grid, it.Caption)
                     : Math.Max(1, HomeTypeMetrics.Lines(HomeFace.GroteskMedium, it.Caption, t.TileCaption, grid - 2f * HomePhoneLayout.TileBorder - 2f * t.Pad)));
             }
+            // Test Flight's tile (DECISIONS #100) spans the column under LAUNCH, at the tile height.
+            if (sh.TestFlight)
+                worstLines = Math.Max(worstLines, Math.Max(1, HomeTypeMetrics.Lines(HomeFace.GroteskMedium, MainMenuCopy.TestFlight.Caption, t.TileCaption, grid - 2f * HomePhoneLayout.TileBorder - 2f * t.Pad)));
             z.TileCaptionLines = worstLines;
             float head = Math.Max(22f, z.TileName * LineH);
             z.TileH = Math.Max(HomePhoneLayout.TileH(t, worstLines), Math.Max(HitMin, 2f * TileBorder + 2f * z.Pad + head + 3f + worstLines * z.TileCaption * LineH));
@@ -126,7 +129,7 @@ namespace Kestrel.Game.Shell
             float bottom = Math.Max(0f, bottomInset);
             z.BottomReserve = MainMenuCopy.BarHeight(h, bottom);
             z.HintBand = Math.Max(0f, z.BottomReserve - bottom);   // root padding-bottom (the root already sits above the safe inset)
-            z.ControlsH = (sh.Stats ? z.StatsH + Gap : 0f) + z.LaunchH + Gap + (sh.DesignFirst ? z.DesignH + Gap : 0f) + z.TileH + Gap;
+            z.ControlsH = (sh.Stats ? z.StatsH + Gap : 0f) + z.LaunchH + Gap + (sh.DesignFirst ? z.DesignH + Gap : 0f) + (sh.TestFlight ? z.TileH + Gap : 0f) + z.TileH + Gap;
             z.ControlsTop = h - z.BottomReserve - z.ControlsH;
             z.TitleBottom = Math.Max(0f, topInset) + TopPadFor(true) + z.Title * 1.3f + z.Tagline * LineH;
             z.HeroLift = HeroLift(h, z.TitleBottom, z.ControlsTop);
