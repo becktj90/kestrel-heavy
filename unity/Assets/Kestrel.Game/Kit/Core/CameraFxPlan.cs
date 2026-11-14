@@ -60,7 +60,9 @@ namespace Kestrel.Kit
             switch (b)
             {
                 case CameraBeat.Ignition: return new CameraBeatSpec { Trauma = 0.15f, FovDeg = 0.4f };
-                case CameraBeat.Liftoff: return new CameraBeatSpec { Trauma = 0.30f, FovDeg = 0.8f, SlowScale = 0.6f, SlowSeconds = 0.25f };
+                // Pad clear is the first big arcade beat: harder trauma, a wider FOV punch, and a
+                // short hit-stop so the release reads. Caps in CameraFxLimits still apply.
+                case CameraBeat.Liftoff: return new CameraBeatSpec { Trauma = 0.55f, FovDeg = 1.25f, SlowScale = 0.5f, SlowSeconds = 0.30f };
                 case CameraBeat.MaxQ: return new CameraBeatSpec { Trauma = 0.35f, FovDeg = 0.5f };
                 case CameraBeat.Staging: return new CameraBeatSpec { Trauma = 0.30f, FovDeg = 0.7f, SlowScale = 0.7f, SlowSeconds = 0.20f };
                 case CameraBeat.Touchdown: return new CameraBeatSpec { Trauma = 0.35f, FovDeg = 1.0f, SlowScale = 0.5f, SlowSeconds = 0.30f };

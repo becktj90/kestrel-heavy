@@ -245,6 +245,13 @@ namespace Kestrel.Capture.Tests
             var starter = ShootAll("starter", problems);
             while (starter.MoveNext()) yield return starter.Current;
 
+            // Night launch: force pad night and re-shoot the pad/starter sky as night-launch.
+            Kestrel.Pad.PadLights.ForceNight = true;
+            yield return null; yield return null;
+            var night = ShootAll("night-launch", problems);
+            while (night.MoveNext()) yield return night.Current;
+            Kestrel.Pad.PadLights.ForceNight = null;
+
             // Launch: the held count.
             if (!app.FlightHudVisible) app.PressLaunch();
             for (int i = 0; i < 600 && !app.CountingForCapture; i++) yield return null;
@@ -252,6 +259,9 @@ namespace Kestrel.Capture.Tests
             for (int i = 0; i < 150; i++) yield return null;   // FlightViewPose smoothing settles in about 1.5 s
             var count = ShootAll("countdown", problems);
             while (count.MoveNext()) yield return count.Current;
+            // CoS 2026-11-09: "launch" is the held count (same frame as countdown).
+            var launch = ShootAll("launch", problems);
+            while (launch.MoveNext()) yield return launch.Current;
 
             // The ascent, at T+60.
             SliceApp.HoldCountForCapture = false;
@@ -307,6 +317,8 @@ namespace Kestrel.Capture.Tests
                     for (int f = 0; f < 600 && !BoosterShown(rec) && driver != null && driver.Running; f++) yield return null;
                     TestContext.WriteLine("booster shown " + BoosterShown(rec) + " at T+" + app.FlightClockForCapture.ToString("0.0") + "; ascent held while the booster flies");
                     if (driver != null) driver.Hold(true);
+                    var stg = ShootAll("staging", problems);
+                    while (stg.MoveNext()) yield return stg.Current;
                     var seen = rec.PhaseForCapture;
                     TestContext.WriteLine("recovery phase " + seen + " at frame " + Time.frameCount);
                     for (int f = 0; f < MaxFlightFrames; f++)
@@ -319,6 +331,9 @@ namespace Kestrel.Capture.Tests
                     }
                     if (landing)
                     {
+                        // Higher in the burn first: Haven's whole deck under the booster and its flame (review alternative).
+                        var high = LandingMoment(rec, 90.0, "landing-high", problems);
+                        while (high.MoveNext()) yield return high.Current;
                         // Low in the burn, so Haven's deck is in the frame under the booster and its flame: 40 m up, unless it
                         // has already touched down.
                         for (int i = 0; i < 2000 && rec.PhaseForCapture == RecoveryPhase.Landing && !(rec.AltitudeForCapture < 40.0); i++) yield return null;
@@ -363,15 +378,233 @@ namespace Kestrel.Capture.Tests
                             TestContext.WriteLine("ascent flown on to T+" + app.FlightClockForCapture.ToString("0.0") + " for the landing shot; short banner " + ShortBannerShown(app.UiForCapture) + ", running " + driver.Running);
                         }
                         TestContext.WriteLine("landing shot: phase " + rec.PhaseForCapture + " steer " + rec.SteerCamera + "; " + BoosterView(rec));
+                        TestContext.WriteLine("landing deck: " + DeckView(rec));
                         var ld = ShootAll("landing", problems);
                         while (ld.MoveNext()) yield return ld.Current;
                         RecoveryShow.HoldForCapture = false;
+                        // Lower still, legs over the deck (review alternatives for the barge frame).
+                        var low = LandingMoment(rec, 18.0, "landing-low", problems);
+                        while (low.MoveNext()) yield return low.Current;
+                        var deckShot = LandingMoment(rec, 6.0, "landing-deck", problems);
+                        while (deckShot.MoveNext()) yield return deckShot.Current;
+                        // Touchdown: let the booster finish its burn and settle on Haven's deck (camera still on it), then shoot
+                        // it standing on the barge. Soft: a missing frame is a warning, not a failure of this review-only job.
+                        for (int i = 0; i < 2000 && rec.StartedForCapture && rec.PhaseForCapture == RecoveryPhase.Landing; i++) yield return null;
+                        TestContext.WriteLine("after landing burn: phase " + rec.PhaseForCapture + " steer " + rec.SteerCamera + "; " + BoosterView(rec));
+                        if (rec.PhaseForCapture == RecoveryPhase.Down)
+                        {
+                            for (int i = 0; i < 20; i++) yield return null;   // legs settle, plume fades
+                            RecoveryShow.HoldForCapture = true;
+                            yield return null;
+                            TestContext.WriteLine("touchdown shot: steer " + rec.SteerCamera + "; " + BoosterView(rec) + "; deck " + DeckView(rec));
+                            var td = ShootAll("touchdown", problems);
+                            while (td.MoveNext()) yield return td.Current;
+                            RecoveryShow.HoldForCapture = false;
+                        }
+                        else TestContext.WriteLine("WARNING touchdown: booster did not reach Down (phase " + rec.PhaseForCapture + ")");
+                        // Mission complete: release holds so the ascent can finish and the report card can appear, then shoot it.
+                        // Bounded by the flight budget, a stalled flight clock, and a short grace after the ascent stops running.
+                        if (driver != null) driver.Hold(false);
+                        {
+                            double rLast = app.FlightClockForCapture; int rStill = 0, afterStop = 0;
+                            for (int i = 0; i < MaxFlightFrames && !ReportVisible(app.UiForCapture); i++)
+                            {
+                                yield return null;
+                                double now = app.FlightClockForCapture;
+                                if (!(now <= rLast)) { rLast = now; rStill = 0; } else rStill++;
+                                if (driver == null || !driver.Running) { if (++afterStop > 900) break; }
+                                else if (rStill > StallFrames) break;
+                            }
+                            TestContext.WriteLine("report wait ended at T+" + app.FlightClockForCapture.ToString("0.0") + ", report " + ReportVisible(app.UiForCapture) + ", " + StallState(driver));
+                        }
+                        if (ReportVisible(app.UiForCapture))
+                        {
+                            for (int i = 0; i < 90; i++) yield return null;   // the card's entrance animation settles
+                            var mc = ShootAll("mission-complete", problems);
+                            while (mc.MoveNext()) yield return mc.Current;
+                        }
+                        else TestContext.WriteLine("WARNING mission-complete: report card never appeared (landing hold path); night-launch and staging frames still shipped");
                     }
                     else problems.Add("landing: the booster never reached its landing burn with the camera on it (last phase " + seen + ")");
                     if (driver != null) driver.Hold(false);
                 }
                 else problems.Add("landing: the booster never separated (flight clock T+" + app.FlightClockForCapture.ToString("0.0") + ")");
             }
+            Assert.That(problems, Is.Empty, UiTreeChecks.Report(problems, 120));
+#endif
+        }
+
+#if UNITY_EDITOR
+        /// <summary>Hold the recovery show once the booster is below <paramref name="altM"/> in its landing burn and shoot it.
+        /// Soft: a burn that already ended is a warning, not a failure (review-only alternatives).</summary>
+        static IEnumerator LandingMoment(RecoveryShow rec, double altM, string scene, List<string> problems)
+        {
+            for (int i = 0; i < 2000 && rec.StartedForCapture && rec.PhaseForCapture == RecoveryPhase.Landing && !(rec.AltitudeForCapture < altM); i++) yield return null;
+            if (!rec.StartedForCapture || rec.PhaseForCapture != RecoveryPhase.Landing)
+            {
+                TestContext.WriteLine("WARNING " + scene + ": the landing burn ended before " + altM.ToString("0") + " m (phase " + rec.PhaseForCapture + ")");
+                yield break;
+            }
+            RecoveryShow.HoldForCapture = true;
+            yield return null;
+            TestContext.WriteLine(scene + " at " + rec.AltitudeForCapture.ToString("0") + " m: " + BoosterView(rec) + "; deck " + DeckView(rec));
+            var shot = ShootAll(scene, problems);
+            while (shot.MoveNext()) yield return shot.Current;
+            RecoveryShow.HoldForCapture = false;
+        }
+
+        /// <summary>Where Haven's deck is for the main camera (viewport box), so a review can tell which frame shows it best.</summary>
+        static string DeckView(RecoveryShow rec)
+        {
+            var cam = Camera.main;
+            var f = typeof(RecoveryShow).GetField("deck", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var deck = f != null && rec != null ? f.GetValue(rec) as Transform : null;
+            if (cam == null || deck == null) return "no camera or deck";
+            var r = deck.GetComponent<Renderer>();
+            if (r == null) return "deck has no renderer";
+            var b = r.bounds;
+            float x0 = 1e9f, x1 = -1e9f, y0 = 1e9f, y1 = -1e9f, z0 = 1e9f;
+            for (int i = 0; i < 8; i++)
+            {
+                var v = cam.WorldToViewportPoint(new Vector3((i & 1) == 0 ? b.min.x : b.max.x, (i & 2) == 0 ? b.min.y : b.max.y, (i & 4) == 0 ? b.min.z : b.max.z));
+                x0 = Mathf.Min(x0, v.x); x1 = Mathf.Max(x1, v.x); y0 = Mathf.Min(y0, v.y); y1 = Mathf.Max(y1, v.y); z0 = Mathf.Min(z0, v.z);
+            }
+            return "active " + deck.gameObject.activeInHierarchy + " vp x " + x0.ToString("0.00") + ".." + x1.ToString("0.00") + " y " + y0.ToString("0.00") + ".." + y1.ToString("0.00") + " zmin " + z0.ToString("0.0");
+        }
+
+        /// <summary>One passing rocket from data/campaign-winners.json (the repo's catalog-legal winner per mission).</summary>
+        static Kestrel.Core.Json.JsonObject Winner(string missionId, string designId)
+        {
+            string root = ScreenStub.RepoRoot();
+            if (root == null) return null;
+            string path = Path.Combine(root, "data", "campaign-winners.json");
+            if (!File.Exists(path)) return null;
+            var doc = Kestrel.Core.Json.MiniJson.ParseObject(File.ReadAllText(path));
+            var missions = doc.Arr("missions");
+            if (missions == null) return null;
+            foreach (var m in missions)
+            {
+                var mo = m as Kestrel.Core.Json.JsonObject;
+                if (mo == null || mo.Str("id") != missionId) continue;
+                var designs = mo.Arr("designs");
+                if (designs == null) continue;
+                foreach (var d in designs)
+                {
+                    var dobj = d as Kestrel.Core.Json.JsonObject;
+                    if (dobj != null && (designId == null || dobj.Str("id") == designId)) return dobj;
+                }
+            }
+            return null;
+        }
+
+        static string ChipState(VisualElement ui)
+        {
+            var chip = ui?.Q<Label>("issue-chip");
+            if (chip == null) return "no issue chip";
+            return "issue chip \"" + chip.text + "\" display " + chip.resolvedStyle.display + " visibility " + chip.resolvedStyle.visibility + " w " + chip.worldBound.width.ToString("0");
+        }
+
+        static string ReportText(VisualElement ui)
+        {
+            var r = ui?.Q(ReportView.RootName);
+            if (r == null) return "no report";
+            var parts = new List<string>();
+            foreach (var l in r.Query<Label>().ToList())
+                if (!string.IsNullOrEmpty(l.text) && parts.Count < 16) parts.Add(l.text.Replace("\n", " "));
+            return string.Join(" | ", parts);
+        }
+#endif
+
+        /// <summary>
+        /// Review captures for the store set: the full designer holding a repo campaign winner (no "things to fix" chip), and the
+        /// report card after KH-2 flown with its winner (data/campaign-winners.json m2a-2500: 3 stars in the batch, margin 6.6%).
+        /// The game state is driven only through the shipping route and PadHandoff; frames are not edited. Soft: a missing frame
+        /// warns, so this review-only job still reports the rest.
+        /// </summary>
+        [UnityTest]
+        [Timeout(3600000)]
+        public IEnumerator ShowcaseDesignerAndReportAtEveryStoreSize()
+        {
+#if !UNITY_EDITOR
+            Assert.Ignore("Store captures need the editor play-mode viewport.");
+            yield break;
+#else
+            if (!Wanted()) { Assert.Ignore("App Store captures run only with " + Flag); yield break; }
+            FlightCapture.RequireGraphics("App Store showcase captures");
+            var problems = new List<string>();
+            HomeFlagsBoot.Loaded = false;
+            FeatureFlags.Active = new FeatureFlags();
+            HomeFlagsBoot.Load();
+            int prevEngineer = PlayerPrefs.GetInt(Kestrel.Slice.DesignerV3.DesignerV3Panel.EngineerPref, 0);
+            Time.captureDeltaTime = 1f / 60f;
+            var vp = Resize(Flown, "flown", problems);
+            while (vp.MoveNext()) yield return vp.Current;
+
+            var picks = new[]
+            {
+                new { Cleared = 6, Mission = "m7", Design = "n12-p416-m160-u42", Scene = "designer-kh7" },
+                new { Cleared = 1, Mission = "m2", Design = "m2a-2500", Scene = "designer-kh2" },
+            };
+            foreach (var pick in picks)
+            {
+                var doc = Winner(pick.Mission, pick.Design);
+                if (doc == null) { TestContext.WriteLine("WARNING " + pick.Scene + ": no winner " + pick.Design); continue; }
+                CaptureCamera.Clear();
+                SliceApp app = null;
+                var boot = BootToMission(pick.Cleared, doc, a => app = a, problems);
+                while (boot.MoveNext()) yield return boot.Current;
+                if (app == null) continue;
+                for (int i = 0; i < 30; i++) yield return null;
+                app.ShowDesigner(true);
+                if (app.Designer == null) { TestContext.WriteLine("WARNING " + pick.Scene + ": the designer panel did not open"); continue; }
+                app.Designer.SetEngineer(true);
+                app.Designer.FinishReference();
+                for (int i = 0; i < 20; i++) yield return null;
+                TestContext.WriteLine(pick.Scene + " (" + pick.Design + "): " + ChipState(app.UiForCapture));
+                var shot = ShootAll(pick.Scene, problems);
+                while (shot.MoveNext()) yield return shot.Current;
+                CaptureCamera.Clear();
+            }
+            PlayerPrefs.SetInt(Kestrel.Slice.DesignerV3.DesignerV3Panel.EngineerPref, prevEngineer);
+
+            // KH-2 with its winner, flown on auto-assist to the report card.
+            var kh2 = Winner("m2", "m2a-2500");
+            if (kh2 == null) TestContext.WriteLine("WARNING report-kh2: no winner m2a-2500");
+            else
+            {
+                SliceApp fapp = null;
+                var boot = BootToMission(1, kh2, a => fapp = a, problems);
+                while (boot.MoveNext()) yield return boot.Current;
+                if (fapp != null)
+                {
+                    for (int i = 0; i < 30; i++) yield return null;
+                    if (!fapp.FlightHudVisible) fapp.PressLaunch();
+                    for (int i = 0; i < 600 && !fapp.CountingForCapture; i++) yield return null;
+                    Time.captureDeltaTime = 0.1f;
+                    var driver = UnityEngine.Object.FindAnyObjectByType<FlightDriver>();
+                    double last = fapp.FlightClockForCapture; int still = 0, afterStop = 0;
+                    for (int f = 0; f < MaxFlightFrames && !ReportVisible(fapp.UiForCapture); f++)
+                    {
+                        yield return null;
+                        if (driver == null) driver = UnityEngine.Object.FindAnyObjectByType<FlightDriver>();
+                        double now = fapp.FlightClockForCapture;
+                        if (!(now <= last)) { last = now; still = 0; } else still++;
+                        if (driver != null && !driver.Running && now > 1) { if (++afterStop > 900) break; }
+                        else if (now > 1 && still > StallFrames) break;
+                    }
+                    TestContext.WriteLine("report-kh2 wait ended at T+" + fapp.FlightClockForCapture.ToString("0.0") + ", report " + ReportVisible(fapp.UiForCapture) + ", " + StallState(driver));
+                    if (ReportVisible(fapp.UiForCapture))
+                    {
+                        Time.captureDeltaTime = 1f / 60f;
+                        for (int i = 0; i < 120; i++) yield return null;   // the card's entrance animation settles
+                        TestContext.WriteLine("report-kh2 card: " + ReportText(fapp.UiForCapture));
+                        var rep = ShootAll("report-kh2", problems);
+                        while (rep.MoveNext()) yield return rep.Current;
+                    }
+                    else TestContext.WriteLine("WARNING report-kh2: the report card never appeared");
+                }
+            }
+            Time.captureDeltaTime = 0f;
             Assert.That(problems, Is.Empty, UiTreeChecks.Report(problems, 120));
 #endif
         }
@@ -401,6 +634,13 @@ namespace Kestrel.Capture.Tests
         }
 
         /// <summary>The live "Short on speed" webcast pill is laid out and visible.</summary>
+        static bool ReportVisible(VisualElement ui)
+        {
+            if (ui == null) return false;
+            var r = ui.Q(ReportView.RootName);
+            return r != null && r.resolvedStyle.display != DisplayStyle.None && !r.ClassListContains("hidden");
+        }
+
         static bool ShortBannerShown(VisualElement ui)
         {
             if (ui == null) return false;
@@ -492,7 +732,11 @@ namespace Kestrel.Capture.Tests
         }
 
         /// <summary>FlightCapture.BootToCount's first half: Boot -> Home LAUNCH for KH-7 -> briefing -> build, ending on the Starter screen.</summary>
-        static IEnumerator BootToStarter(Action<SliceApp> got, List<string> problems)
+        static IEnumerator BootToStarter(Action<SliceApp> got, List<string> problems) => BootToMission(KhSevenCleared, null, got, problems);
+
+        /// <summary>Boot -> Home LAUNCH for the mission after <paramref name="cleared"/> -> briefing -> build. With a
+        /// <paramref name="design"/>, that rocket replaces the starter in PadHandoff before the designer takes it.</summary>
+        static IEnumerator BootToMission(int cleared, Kestrel.Core.Json.JsonObject design, Action<SliceApp> got, List<string> problems)
         {
             if (AppShell.Instance != null) { UnityEngine.Object.Destroy(AppShell.Instance.gameObject); yield return null; }
             SceneManager.LoadScene(SceneFlow.BootScene, LoadSceneMode.Single);
@@ -503,9 +747,10 @@ namespace Kestrel.Capture.Tests
                 yield return null;
             }
             if (flow == null || flow.Current != AppScreen.Home) { problems.Add("starter: Boot never settled on Home"); yield break; }
-            flow.Present(FlightCapture.LaunchAfter(KhSevenCleared));
+            flow.Present(FlightCapture.LaunchAfter(cleared));
             for (int i = 0; i < 600 && (flow.Busy || flow.Overlay != "Briefing"); i++) yield return null;
             if (flow.Overlay != "Briefing") { problems.Add("starter: LAUNCH did not open the briefing"); yield break; }
+            if (design != null) PadHandoff.Arm(design, flyNow: false, fromHome: true);
             flow.BuildFromBriefing();
             SliceApp app = null;
             for (int i = 0; i < 600 && (flow.Busy || flow.Current != AppScreen.Design || app == null); i++)
