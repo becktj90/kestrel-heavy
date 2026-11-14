@@ -69,7 +69,8 @@ namespace Kestrel.Game.Guide
         public static GuidePriority PriorityFor(string eventId)
         {
             if (string.IsNullOrEmpty(eventId)) return GuidePriority.Chatter;
-            if (eventId.StartsWith("abort") || eventId == "health-lethal") return GuidePriority.Safety;
+            // engine-out is a safety call (narration trigger contract, kh-gen5 triggers.md A.1).
+            if (eventId.StartsWith("abort") || eventId == "health-lethal" || eventId == "engine-out") return GuidePriority.Safety;
             if (eventId == "struct-warn" || eventId == "fuel-low" || eventId == "tip" || eventId == "splash" || eventId == "sep-contact")
                 return GuidePriority.Failure;
             return GuidePriority.Chatter;
