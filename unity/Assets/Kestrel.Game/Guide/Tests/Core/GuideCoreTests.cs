@@ -46,7 +46,7 @@ namespace Kestrel.Game.Guide.Tests
             Assert.AreEqual(48, table.AtlasH);
             for (int c = 32; c < 127; c++) Assert.IsTrue(table.Contains((char)c), "missing " + (char)c);
             Assert.IsTrue(table.Contains('\u2699'));
-            Assert.IsTrue(table.Covers("Oh! A visitor. Mind the oil."));
+            Assert.IsTrue(table.Covers("Oh! A visitor! Mind the oil."));
             Assert.IsFalse(table.Covers("caf\u00e9"));
             Assert.IsTrue(table.TryMask('A', out int index, out byte r0, out _, out _, out _, out _, out _, out _));
             Assert.Greater(index, 0);
@@ -368,7 +368,7 @@ namespace Kestrel.Game.Guide.Tests
             }
 
             var full = GuideScreen.FromPixels(750f, 1334f, 0f, 0f, 750f, 1294f, 2f, 0f, false);
-            var one = GuideLayout.Place(full, new[] { true }, new[] { "Oh! A visitor. Mind the oil. I am Thrum. I keep this hangar, and I talk to wrenches." }, 15f);
+            var one = GuideLayout.Place(full, new[] { true }, new[] { "Oh! A visitor! Mind the oil. I am Thrum. I keep this hangar, and I talk to wrenches." }, 15f);
             Assert.AreEqual(96f, one[0].Portrait);
             Assert.That(one[0].H, Is.LessThanOrEqualTo(GuidePacing.MaxHeightPt + 0.01f));
             Assert.That(one[0].Bottom + GuidePacing.ShadowPt, Is.LessThanOrEqualTo(full.LimitBottom + 0.05f));
@@ -390,7 +390,7 @@ namespace Kestrel.Game.Guide.Tests
         public void EveryNarrationClipHasASubtitle()
         {
             var clips = Clips();
-            Assert.AreEqual(449, clips.ClipCount);
+            Assert.AreEqual(456, clips.ClipCount);
             var seen = new HashSet<string>();
             foreach (var clip in clips.All)
             {
@@ -399,8 +399,7 @@ namespace Kestrel.Game.Guide.Tests
                 Assert.Greater(clip.Duration, 0.2f, clip.File);
                 seen.Add(clip.File);
             }
-            Assert.AreEqual(449, seen.Count);
-
+            Assert.AreEqual(456, seen.Count);
 
             Assert.IsTrue(clips.TryNext("liftoff", out var first));
             Assert.AreEqual(GuideSpeaker.MissionControl, first.Speaker);
