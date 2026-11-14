@@ -1,5 +1,7 @@
-// Career bank (§4). Reward minus cost is credited on a pass, plus the reuse refund.
-// A miss still pays the build cost and pays no reward, but never below the range-credit floor
+// Career bank (§4). A pass pays the fixed mission reward plus an unspent-budget bonus
+// (max(0, budget − cost)), minus hardware, plus the reuse refund (Poly Bridge / DECISIONS #100).
+// At the budget cap the bonus is 0 so the mission purse breaks even before recovery. A miss still
+// pays the build cost and pays no reward or bonus, but never below the range-credit floor
 // (DECISIONS #87, data/campaign.json rangeFloorKc). Unlocks arrive in mission order.
 // No timers, no energy, no ads.
 using System;
@@ -20,6 +22,8 @@ namespace Kestrel.Core.Economy
     {
         public bool accepted, passed;
         public long rewardMinor, costMinor, refundMinor, deltaMinor, bankMinor;
+        /// <summary>Poly Bridge unspent-budget bonus on a pass: max(0, budget − cost) in minor units. 0 on a miss.</summary>
+        public long unspentBonusMinor;
         /// <summary>What the range covered so the bank stays at the campaign floor (DECISIONS #87). Included in deltaMinor.</summary>
         public long rangeCreditMinor;
         public int cleared;
@@ -76,9 +80,12 @@ namespace Kestrel.Core.Economy
             result.passed = pass;
             int prior = 0;
             if (!string.IsNullOrEmpty(articleKey)) ArticleFlights.TryGetValue(articleKey, out prior);
+            long budgetMinor = KcToMinor(mission.BudgetKc, minorPerKc);
             if (pass)
             {
                 result.rewardMinor = KcToMinor(mission.RewardKc, minorPerKc);
+                // Unspent-budget bonus (DECISIONS #100): leftover against the mission budget, paid on top of reward.
+                result.unspentBonusMinor = Math.Max(0L, budgetMinor - result.costMinor);
                 result.refundMinor = CostModel.ReuseRefundMinor(recoveredHardwareMinor, prior);
                 if (!string.IsNullOrEmpty(articleKey) && recoveredHardwareMinor > 0)
                     ArticleFlights[articleKey] = prior + 1;
@@ -86,7 +93,7 @@ namespace Kestrel.Core.Economy
                 if (mission.Unlocks != null)
                     foreach (var id in mission.Unlocks) Unlocks.Add(id);
             }
-            long settled = result.rewardMinor - result.costMinor + result.refundMinor;
+            long settled = result.rewardMinor + result.unspentBonusMinor - result.costMinor + result.refundMinor;
             // Range credit (DECISIONS #87): the range covers whatever would take the bank below the floor, so the
             // next Starter default is always affordable. Free and automatic: no timer, nothing to buy or wait for.
             long floor = FloorMinor;

@@ -78,24 +78,27 @@ namespace Kestrel.Core.Guide
 
         public GuideFace Welcome(double t)
         {
-            var deferred = new List<GuideLine>();
+            // Opening intro plays Thrum first; the CTA is priority "decision" and would drop
+            // chatter if enqueued here. LiveGuideEngine queues beats separately via OpeningIntroSequence.
             for (int i = 0; i < Script.Lines.Count; i++)
             {
                 var line = Script.Lines[i];
                 if (line.Trigger != "guide.first" || !State.Allows(line)) continue;
-                // Decision CTA waits behind opening chatter so it cannot drop first.1.
-                if (line.Priority == GuidePriority.Decision) { deferred.Add(line); continue; }
-                Push(line, t, null);
-            }
-            for (int i = 0; i < deferred.Count; i++)
-            {
-                var line = deferred[i];
-                string clip = null;
-                if (State.Settings.VoiceOn && State.Settings.VoiceAvailable)
-                    clip = GuideVoice.ClipFor(RepoRoot, line.Id);
-                Queue.EnqueueBehind(line, t, null, clip);
+                // A decision Push would drop the greeting. Append it so the CTA still follows first.1.
+                if (line.Priority == GuidePriority.Decision)
+                    AppendWelcome(line, t);
+                else
+                    Push(line, t, null);
             }
             return Queue.Face(t);
+        }
+
+        void AppendWelcome(GuideLine line, double t)
+        {
+            string clip = null;
+            if (State.Settings.VoiceOn && State.Settings.VoiceAvailable)
+                clip = GuideVoice.ClipFor(RepoRoot, line.Id);
+            Queue.Append(line, t, null, clip);
         }
 
         /// <summary>Skip asks nothing. The welcome does not return.</summary>

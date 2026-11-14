@@ -171,8 +171,10 @@ namespace Kestrel.Core.Tests
                 Assert.That(card.MedalsLine, Does.Contain("Silver for timing"));
                 Assert.AreEqual(1000, card.RewardMinor);
                 Assert.AreEqual(400, card.CostMinor);
-                Assert.AreEqual(bank - 400 + 1000, card.BankMinor);
+                Assert.AreEqual(4600, card.UnspentBonusMinor, "budget 50 Kc − 4 Kc hardware at Minor=100");
+                Assert.AreEqual(bank - 400 + 1000 + 4600, card.BankMinor);
                 Assert.That(card.KcLine, Does.Contain("Reward 10 Kc"));
+                Assert.That(card.KcLine, Does.Contain("Unspent bonus 46 Kc"));
                 Assert.That(card.KcLine, Does.Contain("Hardware 4 Kc"));
                 Assert.That(card.KcLine, Does.Not.Contain("you failed"));
                 Assert.That(card.KcHeadline, Is.EqualTo(KcFormat.Signed(card.DeltaKc) + " Kc"), "#416 pass card money");

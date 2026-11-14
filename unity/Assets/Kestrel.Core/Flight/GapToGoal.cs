@@ -2,6 +2,8 @@
 // Margins match data/landing.json and the Haven grade: vyMargin = 1 - |vy| / landingVy.
 // A negative margin is quoted as a shortfall in m/s or metres. The sentence never
 // rounds a miss down, and never rounds spare margin up.
+// Ascent gaps use the same shape: "Short by X → one fix" so the report matches peers
+// (Spaceflight Simulator / Juno iterate on an honest shortfall, not a vague tip).
 using System;
 using System.Globalization;
 
@@ -29,11 +31,66 @@ namespace Kestrel.Core.Flight
         }
     }
 
+    public readonly struct AscentDebrief
+    {
+        public readonly string Kind;
+        public readonly double Shortfall;
+        public readonly string Fix;
+        public readonly string Text;
+
+        public AscentDebrief(string kind, double shortfall, string fix, string text)
+        {
+            Kind = kind;
+            Shortfall = shortfall;
+            Fix = fix;
+            Text = text;
+        }
+    }
+
     public static class GapToGoal
     {
         public const string EaseBurn = "ease the landing burn";
         public const string AimPaint = "aim for the paint";
         public const string HoldUpright = "hold the booster upright";
+        public const string AddTank = "add a tank or swap to a vacuum engine";
+        public const string RaiseApogee = "add fuel or a stage until the high point clears the goal";
+
+        /// <summary>Δv short of the mission need. Propellant kg is a labelled estimate at 300 s Isp when known.</summary>
+        public static AscentDebrief DeltaV(double haveMps, double needMps, double propellantKgHint = double.NaN)
+        {
+            double have = FiniteSigned(haveMps);
+            double need = FiniteSigned(needMps);
+            if (!(need > 0)) return new AscentDebrief("dv", 0, null, "No speed target for this flight.");
+            double shortfall = need - have;
+            if (!(shortfall > 0))
+            {
+                string spare = F0(FloorTo(have - need, 1));
+                return new AscentDebrief("dv", shortfall, null, "Speed covered. Spare " + spare + " m/s.");
+            }
+            string shortText = F0(CeilTo(shortfall, 1));
+            string text = "Short by " + shortText + " m/s Δv";
+            if (!double.IsNaN(propellantKgHint) && propellantKgHint > 0)
+                text += " ≈ " + F0(CeilTo(propellantKgHint, 1)) + " kg propellant";
+            text += " → " + AddTank + ".";
+            return new AscentDebrief("dv", shortfall, AddTank, text);
+        }
+
+        /// <summary>Apogee short of the mission goal (km).</summary>
+        public static AscentDebrief Apoapsis(double apoKm, double goalKm)
+        {
+            double apo = FiniteSigned(apoKm);
+            double goal = FiniteSigned(goalKm);
+            if (!(goal > 0)) return new AscentDebrief("apo", 0, null, "No altitude goal for this flight.");
+            double shortfall = goal - apo;
+            if (!(shortfall > 0))
+            {
+                string spare = F0(FloorTo(apo - goal, 1));
+                return new AscentDebrief("apo", shortfall, null, "High point cleared. Spare " + spare + " km.");
+            }
+            string shortText = F0(CeilTo(shortfall, 1));
+            return new AscentDebrief("apo", shortfall, RaiseApogee,
+                "Short by " + shortText + " km apogee (goal " + F0(CeilTo(goal, 1)) + " km) → " + RaiseApogee + ".");
+        }
 
         public static LandingDebrief Landing(string kind, double vy, double dx, double landingVy, double landingTol, bool tipped)
         {
@@ -97,6 +154,7 @@ namespace Kestrel.Core.Flight
         }
 
         static double Finite(double v) => double.IsNaN(v) || double.IsInfinity(v) ? 0 : Math.Abs(v);
+        static double FiniteSigned(double v) => double.IsNaN(v) || double.IsInfinity(v) ? 0 : v;
 
         /// <summary>Smallest step that is still at least the shortfall. Exact multiples stay put.</summary>
         public static double CeilTo(double value, double step)
