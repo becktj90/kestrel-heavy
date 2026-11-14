@@ -14,7 +14,6 @@ using System.Linq;
 using Kestrel.Core.Features;
 using Kestrel.Core.Guide;
 using Kestrel.Core.Ui;
-using Kestrel.Game.Guide;
 using Kestrel.Game.Shell;
 using Kestrel.Kit;
 using Kestrel.UiChecks;
@@ -30,6 +29,8 @@ namespace Kestrel.Capture.Tests
     [Category("DeviceCapture")]
     public class HomeCaptureTests
     {
+        static readonly string[] WelcomeBeats = { "first.1", "first.host", "first.cohost", "first.cta" };
+
         const int Frames = 60;          // most frames to wait for the play-mode viewport to take a new size
         const int ReadyFrames = 600;    // most frames to wait for Boot to land on Home (FlightCapture.BootToCount's cap)
         const int SettleFrames = 12;    // frames after Home is up, for layout and the GeometryChanged re-lay-out
@@ -150,12 +151,12 @@ namespace Kestrel.Capture.Tests
                 yield return null;
             }
             CaptureCamera.Clear();
-            GuideSession.Bind(null);
+            Kestrel.Game.Guide.GuideSession.Bind(null);
             string saves = Path.Combine(Application.persistentDataPath, "saves");
             Directory.CreateDirectory(saves);
             var guide = GuideState.Fresh(false, false);
             guide.FirstRunDone = true;
-            foreach (var id in OpeningIntroSequence.BeatIds) guide.MarkSeen(id);
+            foreach (var id in WelcomeBeats) guide.MarkSeen(id);
             File.WriteAllText(Path.Combine(saves, GuideState.SaveKey + ".json"), guide.ToJson());
             SceneManager.LoadScene(SceneFlow.BootScene, LoadSceneMode.Single);
             // Until Boot's SceneFlow has settled on Home and the shell holds the Home root (FlightCapture.BootToCount's

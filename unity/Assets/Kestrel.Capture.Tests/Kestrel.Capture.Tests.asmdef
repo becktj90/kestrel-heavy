@@ -6,6 +6,7 @@
         "Kestrel.Core",
         "Kestrel.Slice",
         "Kestrel.Game.Shell",
+        "Kestrel.Game.Guide.Core",
         "Kestrel.Game.Audio",
         "Kestrel.Game.Guide",
         "Kestrel.Game.Guide.Core",
