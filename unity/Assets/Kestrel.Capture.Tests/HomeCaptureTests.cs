@@ -155,10 +155,10 @@ namespace Kestrel.Capture.Tests
             GuideSession.Bind(null);
             string saves = Path.Combine(Application.persistentDataPath, "saves");
             Directory.CreateDirectory(saves);
-            var guide = GuideState.Fresh(false, false);
-            guide.FirstRunDone = true;
-            foreach (var id in WelcomeBeats) guide.MarkSeen(id);
-            File.WriteAllText(Path.Combine(saves, GuideState.SaveKey + ".json"), guide.ToJson());
+            var guideState = GuideState.Fresh(false, false);
+            guideState.FirstRunDone = true;
+            foreach (var id in WelcomeBeats) guideState.MarkSeen(id);
+            File.WriteAllText(Path.Combine(saves, GuideState.SaveKey + ".json"), guideState.ToJson());
             SceneManager.LoadScene(SceneFlow.BootScene, LoadSceneMode.Single);
             // Until Boot's SceneFlow has settled on Home and the shell holds the Home root (FlightCapture.BootToCount's
             // signal), then a few frames for layout (HeroLift re-lays out on GeometryChanged). With IntroPlayed set Home
@@ -183,10 +183,10 @@ namespace Kestrel.Capture.Tests
             var home = root.Q(UiIds.ScreenHome);
             Assert.IsNotNull(home, name + " " + UiIds.ScreenHome);
             // Captures are the settled Home, not the first-run welcome stack over the CTAs.
-            var guide = GuideSession.Engine as LiveGuideEngine;
-            if (guide != null)
+            var liveGuide = GuideSession.Engine as LiveGuideEngine;
+            if (liveGuide != null)
             {
-                guide.SkipWelcome();
+                liveGuide.SkipWelcome();
                 foreach (var driver in UnityEngine.Object.FindObjectsByType<GuideBoxDriver>(FindObjectsSortMode.None))
                     driver.SyncSprite();
             }
