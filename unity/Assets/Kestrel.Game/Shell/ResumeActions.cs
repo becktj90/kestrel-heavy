@@ -109,7 +109,11 @@ namespace Kestrel.Game.Shell
 
             PadHandoff.Arm(design, false, true);
             var campaign = ScreenStub.LoadCampaign();
+            int cleared = ScreenStub.ClearedCount();
             var mission = campaign != null && !string.IsNullOrEmpty(missionId) ? campaign.ById(missionId) : null;
+            // After a career restart, a draft may still name a later KH. Soft-linear only opens Cleared+1.
+            if (mission != null && mission.Index > cleared + 1)
+                mission = HomeRoutes.NextMission(campaign, cleared);
             if (mission != null)
             {
                 var ctx = MissionContext.FromMission(campaign, mission);
