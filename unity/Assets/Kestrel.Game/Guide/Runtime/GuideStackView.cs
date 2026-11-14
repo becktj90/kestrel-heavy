@@ -100,9 +100,21 @@ namespace Kestrel.Game.Guide
             }
             stack.style.display = DisplayStyle.Flex;
             stack.style.position = Position.Absolute;
-            stack.style.left = frames[0].X * scale;
-            stack.style.top = frames[0].Y * scale;
-            stack.style.width = frames[0].W * scale;
+            float left = frames[0].X * scale;
+            float top = frames[0].Y * scale;
+            float width = frames[0].W * scale;
+            if (left < 0f) left = 0f;
+            if (top < 0f) top = 0f;
+            var host = stack.parent;
+            float hostW = host != null ? host.resolvedStyle.width : 0f;
+            if (hostW > 1f && left + width > hostW)
+            {
+                width = Mathf.Max(80f, hostW - left);
+                if (left + width > hostW) { left = 0f; width = hostW; }
+            }
+            stack.style.left = left;
+            stack.style.top = top;
+            stack.style.width = width;
             float band = 0f;
             for (int i = 0; i < shown && i < stack.childCount; i++)
             {
@@ -217,7 +229,7 @@ namespace Kestrel.Game.Guide
             box.style.width = frame.W * scale;
             box.style.marginBottom = GuidePacing.StackGapPt * scale;
             box.style.position = Position.Relative;
-            box.style.overflow = Overflow.Visible;
+            box.style.overflow = Overflow.Hidden;
             box.style.flexShrink = 0;
             PaintChrome(box, scale);
 
@@ -251,22 +263,21 @@ namespace Kestrel.Game.Guide
                 name.style.whiteSpace = WhiteSpace.NoWrap;
                 name.style.overflow = Overflow.Hidden;
                 name.style.marginRight = 0f;
-                float nameW = frame.TextW * scale;
-                if (nameW > 20f)
-                {
-                    name.style.width = nameW;
-                    name.style.maxWidth = nameW;
-                    // One line is what the box height reserves. Shrink until the role fits that line.
-                    float measured = name.panel != null
-                        ? name.MeasureTextSize(name.text, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined).x
-                        : 0f;
-                    if (measured < 1f) measured = name.text.Length * font * 0.72f;
-                    if (measured > nameW)
+                    float nameW = frame.TextW * scale;
+                    if (nameW > 20f)
                     {
-                        name.style.letterSpacing = 0;
-                        name.style.fontSize = Mathf.Max(8f, font * nameW / measured);
+                        // The column is a few pixels inside TextW, and bold tracking runs past a tight measure.
+                        float fit = Mathf.Max(40f, nameW - 14f);
+                        name.style.width = fit;
+                        name.style.maxWidth = fit;
+                        name.style.flexShrink = 1f;
+                        name.style.letterSpacing = 0f;
+                        float measured = name.panel != null
+                            ? name.MeasureTextSize(name.text, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined).x
+                            : 0f;
+                        if (measured < 1f) measured = name.text.Length * font * 0.75f;
+                        if (measured > fit) name.style.fontSize = Mathf.Max(8f, font * fit / measured * 0.94f);
                     }
-                }
             }
 
             var body = box.Q<BitmapTextElement>("guide-body");
@@ -312,11 +323,16 @@ namespace Kestrel.Game.Guide
             var skip = box.Q<Button>("guide-skip");
             if (skip != null)
             {
-                skip.style.width = frame.Skip * scale;
-                skip.style.height = frame.Skip * scale;
-                skip.style.minWidth = frame.Skip * scale;
-                skip.style.minHeight = frame.Skip * scale;
-                skip.style.fontSize = font;
+                float skipPx = frame.Skip * scale;
+                float boxH = frame.H * scale;
+                if (boxH > 4f && skipPx > boxH - 4f) skipPx = boxH - 4f;
+                if (skipPx < 8f) skipPx = 8f;
+                float skipFont = frame.Skip * scale > 1f ? font * skipPx / (frame.Skip * scale) : font;
+                skip.style.width = skipPx;
+                skip.style.height = skipPx;
+                skip.style.minWidth = skipPx;
+                skip.style.minHeight = skipPx;
+                skip.style.fontSize = skipFont;
                 skip.style.color = Cream;
                 skip.style.backgroundColor = new Color(0x2A / 255f, 0x31 / 255f, 0x42 / 255f, 1f);
             }
@@ -390,7 +406,7 @@ namespace Kestrel.Game.Guide
             var nameLabel = box.Q("guide-name");
             if (nameLabel != null)
             {
-                nameLabel.style.flexShrink = 0;
+                nameLabel.style.flexShrink = 1;
                 nameLabel.style.overflow = Overflow.Hidden;
                 nameLabel.style.whiteSpace = WhiteSpace.NoWrap;
                 nameLabel.style.textOverflow = TextOverflow.Ellipsis;

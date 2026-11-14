@@ -366,12 +366,17 @@ namespace Kestrel.Game.Shell
             float top = bottom;
             float columnRight = columnWidth > 1f ? columnLeft + columnWidth : float.PositiveInfinity;
             if (columnWidth <= 1f) columnLeft = float.NegativeInfinity;
-            foreach (var id in new[] { "home-primary", "home-design", UiIds.HomeTestFlight, "home-missions", "home-codex", "mm-grid" })
+            // The wordmark and a top-corner control (web CONTINUE) share the header. The sheet clears the stack under that.
+            float header = root.worldBound.yMin;
+            var title = root.Q("mm-title");
+            if (title != null && title.worldBound.height > 1f) header = Mathf.Max(header, title.worldBound.yMax);
+            foreach (var id in new[] { "mm-stats", "mm-fuel", "mm-thrust", "mm-record", "home-primary", "home-design", UiIds.HomeTestFlight, "home-missions", "home-codex", "mm-grid" })
             {
                 var e = root.Q(id);
                 if (e == null || e.resolvedStyle.display == DisplayStyle.None) continue;
                 var b = e.worldBound;
                 if (b.height < 1f || float.IsNaN(b.y)) continue;
+                if (b.y < header - 1f) continue;
                 if (b.xMax <= columnLeft + 0.5f || b.xMin >= columnRight - 0.5f) continue;
                 if (b.y < top) top = b.y;
             }
