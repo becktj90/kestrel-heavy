@@ -82,7 +82,7 @@ namespace Kestrel.Pad
 
     public static class PadGenerator
     {
-        public const int Version = 7;   // rail rides a compact service tower; towers get plank decks, stairs and an elevator shaft (invalidates caches)
+        public const int Version = 8;   // mast catenary ring + design-aware archetype wiring; enclosed service rooms on the tower face
         /// <summary>Rail beam centre line to the vehicle skin (m). The I-beam is 0.5 m deep, so its face stays 0.35 m off the skin.</summary>
         public const float RailSkinGap = 0.6f;
 
@@ -178,6 +178,7 @@ namespace Kestrel.Pad
             float wb = hm / rng.Range(9f, 14f), wt = wb * rng.Range(0.35f, 0.6f);
             float r = Math.Max(hv * 0.5f * rng.Range(1.0f, 1.8f), L.DeckRadius + wb);
             if (L.Tower != null) r = Math.Max(r, L.Tower.StandOff + L.Tower.Width * 0.75f + wb);   // slot 0 stands clear behind the tower
+            var tips = new List<Vec3>(n);
             for (int i = 0; i < n; i++)
             {
                 // spread over the back/side arc away from the tower; tower sits at bearing 0 (+Z)
@@ -205,6 +206,42 @@ namespace Kestrel.Pad
                 }
                 M($"{id}.spike", MemberKind.Mast, new Vec3(cx, hl, cz), new Vec3(cx, hm, cz));
                 L.Members[L.Members.Count - 1] = new Member { Id = $"{id}.spike", Kind = MemberKind.Mast, A = new Vec3(cx, hl, cz), B = new Vec3(cx, hm, cz), ParentId = id, Material = MaterialRole.Insulation };
+                tips.Add(new Vec3(cx, hm, cz));
+            }
+            // Lightning protection tent (PAD_DETAIL_GRAMMAR §2): tip-to-tip ring, optional cross over the pad.
+            // Straight thin Mast segments approximate the catenary so they share the existing brace batch.
+            if (tips.Count >= 2) BuildMastWires(L, tips, hv, ref rng);
+        }
+
+        /// <summary>Sagging wires between lightning-mast tips. Lowest point stays ≥ 0.1 × H_v above the vehicle tip.</summary>
+        static void BuildMastWires(PadLayout L, List<Vec3> tips, float hv, ref PadRng rng)
+        {
+            const string root = "pad.wires";
+            if (!L.Graph.Contains(root))
+            {
+                var g = L.Graph.Add(root, ElementCategory.Structure, TowerLayout.SiteId, "wire", "lightning-catenary");
+                g.DisplayName = "Lightning wires";
+            }
+            float floor = hv * 1.1f;   // 0.1 H_v clearance above the nose
+            void Wire(string id, Vec3 a, Vec3 b, float sagFrac)
+            {
+                float dx = b.X - a.X, dz = b.Z - a.Z;
+                float span = (float)Math.Sqrt(dx * dx + dz * dz);
+                if (span < 1f) return;
+                float midY = (a.Y + b.Y) * 0.5f - span * sagFrac;
+                if (midY < floor) midY = floor;
+                var mid = new Vec3((a.X + b.X) * 0.5f, midY, (a.Z + b.Z) * 0.5f);
+                AddM(L, root, id + ".0", MemberKind.Mast, a, mid, MaterialRole.Galvanized, "wire", "catenary");
+                AddM(L, root, id + ".1", MemberKind.Mast, mid, b, MaterialRole.Galvanized, "wire", "catenary");
+            }
+            float sag = rng.Range(0.03f, 0.07f);
+            for (int i = 0; i < tips.Count; i++)
+                Wire($"wire.ring.{i:00}", tips[i], tips[(i + 1) % tips.Count], sag);
+            // HEAVY / multi-mast pads: one cross wire over the centre (grammar §2, p≈0.6).
+            if (tips.Count >= 3 && (L.Archetype == PadArchetype.TowerStrongback || rng.Range(0, 10) < 6))
+            {
+                int j = tips.Count / 2;
+                Wire("wire.cross.00", tips[0], tips[j], sag * 1.1f);
             }
         }
 
@@ -279,6 +316,7 @@ namespace Kestrel.Pad
                 StandOff = Math.Max(railTop.Z, r + RailSkinGap) + RailTowerGap + width * 0.5f,
                 CrewArmHalfWidth = Math.Max(0.45f, Math.Min(0.9f, r * 0.5f)),
                 CrewArmHeight = Math.Max(1.2f, Math.Min(2.4f, lh * 0.55f)),
+                ServiceRooms = false,   // compact rail keep-out; rooms belong on full tower pads
             };
             tp.SpikeHeight = Math.Max(1.5f, tp.CapHeight * 1.5f);
             tp.CrewLevel = Math.Max(0, Math.Min(levels - 1, (int)Math.Floor(h * 0.85f / lh) - 1));
