@@ -1,4 +1,5 @@
 using Kestrel.Core.Guide;
+using Kestrel.Core.Ui;
 using Kestrel.Game.Audio;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -151,27 +152,33 @@ namespace Kestrel.Game.Guide
             {
                 // Welcome keeps its own stack without the corner pop; drop any pop left from an earlier On.
                 // Lines that are not the welcome are still dropped below once the intro is finished.
-                if (pop != null)
-                {
-                    Silence();
-                    if (stage != null) stage.Blip -= OnBlip;
-                    pop.Pop?.RemoveFromHierarchy();
-                    pop = null;
-                    if (blipSource != null)
-                    {
-                        if (Application.isPlaying) Destroy(blipSource);
-                        else DestroyImmediate(blipSource);
-                        blipSource = null;
-                    }
-                    blipClip = null;
-                    blipUntil = 0f;
-                    shownKey = "";
-                }
+                DropCornerPop();
                 EnsureWelcomeStack();
                 return;
             }
             DropSprite();
             if (live != null) live.DropQueued();
+        }
+
+        void DropCornerPop()
+        {
+            if (pop != null)
+            {
+                pop.Tapped -= OnTap;
+                if (pop.Pop != null) pop.Pop.RemoveFromHierarchy();
+                pop = null;
+            }
+            if (stage != null) stage.Blip -= OnBlip;
+            Silence();
+            if (blipSource != null)
+            {
+                if (Application.isPlaying) Destroy(blipSource);
+                else DestroyImmediate(blipSource);
+                blipSource = null;
+                blipClip = null;
+            }
+            blipUntil = 0f;
+            shownKey = "";
         }
 
         void EnsureWelcomeStack()
@@ -254,6 +261,7 @@ namespace Kestrel.Game.Guide
             }
             voice.Hold(paused);
             ApplyScreen();
+            if (welcomeStack != null) welcomeStack.Screen = screen;
             if (GuideClipPlayer.InFlight || !GuidePopLayout.Shows(Place) || (!welcome && Hidden()))
             {
                 if (voice != null && (voice.Sounding || voice.HasClip || voice.CardId.Length > 0)) Silence();
