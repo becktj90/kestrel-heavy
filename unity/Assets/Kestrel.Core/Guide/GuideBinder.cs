@@ -84,10 +84,21 @@ namespace Kestrel.Core.Guide
             {
                 var line = Script.Lines[i];
                 if (line.Trigger != "guide.first" || !State.Allows(line)) continue;
-                if (GuidePriority.Rank(line.Priority) >= GuidePriority.Rank(GuidePriority.Decision)) continue;
-                Push(line, t, null);
+                // A decision Push would drop the greeting. Append it so the CTA still follows first.1.
+                if (line.Priority == GuidePriority.Decision)
+                    AppendWelcome(line, t);
+                else
+                    Push(line, t, null);
             }
             return Queue.Face(t);
+        }
+
+        void AppendWelcome(GuideLine line, double t)
+        {
+            string clip = null;
+            if (State.Settings.VoiceOn && State.Settings.VoiceAvailable)
+                clip = GuideVoice.ClipFor(RepoRoot, line.Id);
+            Queue.Append(line, t, null, clip);
         }
 
         /// <summary>Skip asks nothing. The welcome does not return.</summary>

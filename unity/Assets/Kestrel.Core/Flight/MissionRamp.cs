@@ -119,6 +119,8 @@ namespace Kestrel.Core.Flight
     {
         public int Index;
         public string Id, Name, PayloadId;
+        /// <summary>Player-facing payload name from briefing.payloadName (KH-1 is Pebble). Empty when the briefing omits it.</summary>
+        public string PayloadName;
         /// <summary>Catalog orbit id. Home stamps this on payload.orbit. Legacy builds used kh- plus the mission id.</summary>
         public string OrbitId;
         public double MassKg, VolumeM3, DiameterM;
