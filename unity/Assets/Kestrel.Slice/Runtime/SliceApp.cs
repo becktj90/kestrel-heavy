@@ -789,7 +789,9 @@ namespace Kestrel.Slice
             flight.Plume.Apply(0, Atmosphere.P0, 0);
             vehicleRoot.localPosition = Vector3.zero; vehicleRoot.localRotation = Quaternion.identity;
             float rr = r.mesh.bounds.extents.x;
-            var padR = PadTower.Apply(tower, r.height, rr, PadTower.DefaultArchetype(rr), PadTower.DefaultSeed, plates.Count > 0 ? plates : null, rocketGO.transform, PadTower.FarmFor(design));
+            // Archetype from Pad.For (first-stage diameter + liquid), not mesh half-width: strap-ons must not
+            // promote a small core onto a tower, and liquid towers get the strongback the timeline already names.
+            var padR = PadTower.Apply(tower, r.height, rr, PadTower.ArchetypeFor(SliceData.Catalog, design), PadTower.DefaultSeed, plates.Count > 0 ? plates : null, rocketGO.transform, PadTower.FarmFor(design));
             padLights = padR != null ? padR.GetComponent<Kestrel.Pad.PadLights>() : null;   // plume splash/light (time of day)
             float deckR = PadGround.DeckRadius(padR != null ? padR.Layout : null); // deck under every tower leg
             deck.localScale = new Vector3(2 * deckR, deck.localScale.y, 2 * deckR);
@@ -2316,6 +2318,15 @@ namespace Kestrel.Slice
                 : WebcastBoard.Pulse(flying, alt, spd, requiredMps, spareMps, q, maxQKpa, orbitLabel, hopGoalM, countVerdict, shortOnSpeed);
             hVerdict.text = pulse.Verdict;
             hPulse.text = pulse.Detail;
+            // Pad clear owns the banner for FlightPresenter.LiftoffHoldSec so the first second of flight
+            // reads as a product beat (the $0.99 / five-star bar), not a quiet "Climbing" pill.
+            // Coast climax (Apogee!/Orbit!) and Lost always win — never paint LIFTOFF over them.
+            if (flying && flight != null && !flight.Coasting && !flight.Lost
+                && juice != null && juice.Call == "LIFTOFF")
+            {
+                hVerdict.text = "LIFTOFF";
+                if (hPulse != null) hPulse.text = "Clear of the tower";
+            }
             if (!flying && handoff != null && !handoff.Ascending)
             {
                 RefreshCountCard();

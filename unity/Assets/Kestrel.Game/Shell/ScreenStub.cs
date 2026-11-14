@@ -127,7 +127,7 @@ namespace Kestrel.Game.Shell
                 catch (Exception e) { Debug.LogWarning("[Kestrel] home record skipped: " + e.Message); }
                 try
                 {
-                    HomeResumeBar.Mount(_overlay, ResumeActions.Credits(), ResumeActions.HasContinue(), () => shell.Flow.HomePressed("continue"));
+                    HomeResumeBar.Mount(_overlay, ResumeActions.Credits(), ResumeActions.HasContinue(), () => shell.Flow.HomePressed("continue"), ResumeActions.Caption());
                 }
                 catch (Exception e) { Debug.LogWarning("[Kestrel] resume bar skipped: " + e.Message); }
                 float placedW = -1f, placedH = -1f, placedTop = -1f;

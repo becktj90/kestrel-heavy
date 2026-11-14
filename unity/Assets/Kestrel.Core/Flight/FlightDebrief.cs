@@ -46,6 +46,8 @@ namespace Kestrel.Core.Flight
         public double GLimit;
         public long CostMinor;
         public long RecoveredHardwareMinor;
+        /// <summary>The strap-on boosters landed well (KH-10, KH-19), so their hardware joins the reuse refund.</summary>
+        public bool BoostersHome;
         public string ArticleKey;
         public string DesignId;
         public ulong Seed;
@@ -57,6 +59,34 @@ namespace Kestrel.Core.Flight
         public int EngineCount;
         public double ApoKm;
         public double GoalKm;
+        /// <summary>Playthrough 2026-11-11: a GTO or C3 mission (MissionRamp.DepartsFromParking). The sim flies the rocket to
+        /// its parking orbit and books the transfer or departure burn on the Δv left there; that burn is not flown.</summary>
+        public bool Departs;
+        public string TargetKind;
+        public double PeriKm = double.NaN;
+        /// <summary>Δv left in the parking orbit (SimResult.departureDv) and the burn it must cover (MissionScore.DepartureRequiredMps).</summary>
+        public double DepartureDvLeft = double.NaN, DepartureNeedMps = double.NaN;
+        /// <summary>The flown orbit itself met the target (an ellipse apogee or a C3 actually reached).</summary>
+        public bool ReachedDirectly;
+        /// <summary>The flight ended parked, with the transfer or departure burn still to come.</summary>
+        public bool Parked => Departs && !ReachedDirectly && !double.IsNaN(DepartureDvLeft) && !double.IsNaN(DepartureNeedMps);
+        /// <summary>"transfer" (an ellipse such as GTO) or "departure" (a C3 escape).</summary>
+        public string BurnName => TargetKind == "c3" ? "departure" : "transfer";
+
+        /// <summary>Fill the departure facts from the mission row, the flown orbit, and the goal check (PostFlightSource).</summary>
+        public void FillDeparture(CampaignMission row, double apoMeters, double periMeters, GoalCheck extra)
+        {
+            if (row == null || !row.DepartsFromParking) return;
+            Departs = true;
+            TargetKind = row.TargetKind;
+            PeriKm = periMeters / 1000.0;
+            DepartureDvLeft = extra != null ? extra.DepartureDv : double.NaN;
+            DepartureNeedMps = extra != null
+                ? MissionScore.DepartureRequiredMps(row.TargetKind, row.ApoKm, row.C3Km2PerS2, row.GuidanceAltM, extra.DepartureTW)
+                : double.NaN;
+            double c3 = extra != null ? extra.C3Km2PerS2 : double.NaN;
+            ReachedDirectly = MissionScore.TargetMet(row.TargetKind, row.ApoKm, row.PeriKm, row.C3Km2PerS2, apoMeters, periMeters, c3, false, out _);
+        }
         public double RequiredMps;
         /// <summary>F4: why an intact flight missed (<see cref="MissReason.Explain"/>). Null on a pass or a failure event.</summary>
         public MissExplanation Miss;
@@ -135,6 +165,9 @@ namespace Kestrel.Core.Flight
         public bool TriedSettle;
         public bool WroteCareer;
         public long RewardMinor, CostMinor, RefundMinor, DeltaMinor, BankMinor;
+        /// <summary>DECISIONS #87: what the range covered so the bank stays at the campaign floor. Part of DeltaMinor.</summary>
+        public long RangeCreditMinor;
+        public double RangeCreditKc;
         public double RewardKc, CostKc, RefundKc, DeltaKc, BankKc;
         /// <summary>Credits this flight paid. Zero on a miss, a free build, or when no wallet is attached.</summary>
         public long CreditsEarned;
@@ -330,7 +363,9 @@ namespace Kestrel.Core.Flight
             debrief.MedalsLine = MedalSentence(debrief.Medals, passed);
 
             string narrKind = kind;
-            var line = pool.Pick(narrKind, cause, facts.DesignTags, debrief.Seed);
+            // A parked GTO/C3 win picks the "departure" pass lines: the generic ones quote apogee against the goal.
+            string narrCause = passed && ev == null && facts.Parked ? "departure" : cause;
+            var line = pool.Pick(narrKind, narrCause, facts.DesignTags, debrief.Seed);
             if (miss != null)
             {
                 debrief.NarratorKid = "";
@@ -367,6 +402,7 @@ namespace Kestrel.Core.Flight
                 debrief.EconomySettled = settled.accepted;
                 debrief.RewardMinor = settled.rewardMinor;
                 debrief.RefundMinor = settled.refundMinor;
+                debrief.RangeCreditMinor = settled.rangeCreditMinor;
                 debrief.DeltaMinor = settled.deltaMinor;
                 debrief.BankMinor = settled.accepted ? settled.bankMinor : store.Career.BankMinor;
                 if (settled.accepted) debrief.CostMinor = settled.costMinor;
@@ -398,6 +434,7 @@ namespace Kestrel.Core.Flight
 
             debrief.RewardKc = debrief.RewardMinor / (double)minorPerKc;
             debrief.RefundKc = debrief.RefundMinor / (double)minorPerKc;
+            debrief.RangeCreditKc = debrief.RangeCreditMinor / (double)minorPerKc;
             debrief.DeltaKc = debrief.DeltaMinor / (double)minorPerKc;
             debrief.BankKc = debrief.BankMinor / (double)minorPerKc;
             if (debrief.EconomySettled)
@@ -417,10 +454,53 @@ namespace Kestrel.Core.Flight
             return debrief;
         }
 
+        /// <summary>
+        /// Playthrough 2026-11-11: "Air pushed 25 kPa. The walls held 25 kPa." from 25.06 vs 25.00 kPa. Two values shown
+        /// side by side are rounded to whole numbers unless that makes them read equal; then one decimal, then two, then
+        /// three (1 Pa), the first precision where they differ. Values that are equal to 1 Pa read equal.
+        /// </summary>
+        public static void PairText(double a, double b, out string aText, out string bText) => PairText(a, b, 0, out aText, out bText);
+
+        /// <summary>
+        /// <see cref="PairText(double, double, out string, out string)"/> from <paramref name="decimals"/> places: both values
+        /// always print at the same precision ("8.04 g past the 8.00 g limit", never "8.00 g past 8.0 g"), and up to three
+        /// more places are added only while the two would read equal.
+        /// </summary>
+        public static void PairText(double a, double b, int decimals, out string aText, out string bText)
+        {
+            if (decimals < 0) decimals = 0;
+            aText = Fixed(a, decimals);
+            bText = Fixed(b, decimals);
+            if (aText != bText || double.IsNaN(a) || double.IsNaN(b) || a == b) return;
+            for (int d = decimals + 1; d <= decimals + 3; d++)
+            {
+                aText = Fixed(a, d);
+                bText = Fixed(b, d);
+                if (aText != bText) return;
+            }
+        }
+
+        static string Fixed(double x, int decimals)
+            => decimals == 0 ? N0(x) : x.ToString("0." + new string('0', decimals), CultureInfo.InvariantCulture);
+
+        /// <summary>Air load against the wall, in kPa, as <see cref="PairText"/> prints the pair.</summary>
+        public static void KpaPair(double valuePa, double limitPa, out string q, out string qlim) =>
+            PairText(valuePa / 1000.0, limitPa / 1000.0, out q, out qlim);
+
         public static string NumberLine(FailureEvent ev, FlightFacts facts, bool passed)
         {
             if (ev == null)
             {
+                // Playthrough 2026-11-11: a GTO or C3 win read "Apogee 204 km. Goal 35786 km." (or "Goal 0 km."). The rocket
+                // is parked; say where, and the Δv left for the burn the sim books but does not fly.
+                if (facts != null && facts.Parked)
+                {
+                    PairText(facts.DepartureDvLeft, facts.DepartureNeedMps, out var left, out var need);
+                    string burn = facts.BurnName;
+                    if (passed)
+                        return "Parked " + ParkText(facts) + " with " + left + " m/s left. The " + burn + " burn needs " + need + " m/s and isn't flown.";
+                    return "Parked " + ParkText(facts) + " with " + left + " m/s left. The " + burn + " burn needs " + need + " m/s.";
+                }
                 double apo = facts != null ? facts.ApoKm : 0;
                 double goal = facts != null ? facts.GoalKm : 0;
                 if (passed) return "Apogee " + N0(apo) + " km. Goal " + N0(goal) + " km.";
@@ -429,17 +509,21 @@ namespace Kestrel.Core.Flight
             switch (ev.kind)
             {
                 case "structural-maxq" when ev.cause == "q":
-                    return "Air pushed " + N0(ev.value / 1000.0) + " kPa. The walls held " + N0(ev.limit / 1000.0) + " kPa.";
+                    KpaPair(ev.value, ev.limit, out var airQ, out var wallQ);
+                    return "Air pushed " + airQ + " kPa. The walls held " + wallQ + " kPa.";
                 case "structural-maxq":
                     return "At T+" + N0(ev.t) + " s. Load margin " + N2(ev.value) + ".";
                 case "engine-overpressure":
-                    return "Chamber pressure " + N0(ev.value) + " bar. Rated " + N0(ev.limit) + " bar.";
+                    PairText(ev.value, ev.limit, 0, out var bar, out var rated);
+                    return "Chamber pressure " + bar + " bar. Rated " + rated + " bar.";
                 case "bad-mixture":
-                    return "Mixture " + N1(Math.Abs(ev.value)) + "% off. The band is " + N1(Math.Abs(ev.limit)) + "%.";
+                    PairText(Math.Abs(ev.value), Math.Abs(ev.limit), 1, out var mixOff, out var band);
+                    return "Mixture " + mixOff + "% off. The band is " + band + "%.";
                 case "engine-out":
                     return N0(ev.value) + (Math.Abs(ev.value - 1) < 0.001 ? " engine quit out of " : " engines quit out of ") + N0(ev.limit) + ".";
                 case "tumble" when ev.cause == "alpha":
-                    return N0(ev.value) + " degrees sideways. The limit is " + N0(ev.limit) + " degrees.";
+                    PairText(ev.value, ev.limit, 0, out var side, out var sideLim);
+                    return side + " degrees sideways. The limit is " + sideLim + " degrees.";
                 case "tumble":
                     return "Stability " + N2(ev.value) + " cal at T+" + N0(ev.t) + " s.";
                 case "prop-depletion":
@@ -448,31 +532,44 @@ namespace Kestrel.Core.Flight
                         fuel += " Short " + N0(-facts.Margin * facts.RequiredMps) + " m/s.";
                     return fuel;
                 case "separation-collision":
-                    return "Parted at " + N2(ev.value) + " m/s. Needed " + N2(ev.limit) + " m/s.";
+                    PairText(ev.value, ev.limit, 2, out var parted, out var needed);
+                    return "Parted at " + parted + " m/s. Needed " + needed + " m/s.";
                 case "overg":
-                    string peakG = N1(ev.value);
-                    string limG = N1(ev.limit);
-                    if (peakG == limG) peakG = ev.value.ToString("0.00", CultureInfo.InvariantCulture);
+                    PairText(ev.value, ev.limit, 1, out var peakG, out var limG);
                     return "The push reached " + peakG + " g, past the " + limG + " g limit.";
                 case "thermal" when ev.cause != "base-heating":
-                    return N0(ev.value) + " K. The material handles " + N0(ev.limit) + " K.";
+                    PairText(ev.value, ev.limit, 0, out var skin, out var handles);
+                    return skin + " K. The material handles " + handles + " K.";
                 case "thermal":
                     return "Base heating at T+" + N0(ev.t) + " s. More than " + N0(ev.limit) + " engines.";
                 case "leg-collapse":
-                    return "Falling at " + N1(ev.value) + " m/s. The legs take " + N1(ev.limit) + " m/s.";
+                    PairText(ev.value, ev.limit, 1, out var falling, out var legs);
+                    return "Falling at " + falling + " m/s. The legs take " + legs + " m/s.";
                 case "recovery-fuel":
-                    return "Landing fuel gone. Sink " + N1(ev.value) + " m/s. The legs hold " + N1(ev.limit) + " m/s.";
+                    PairText(ev.value, ev.limit, 1, out var sink, out var hold);
+                    return "Landing fuel gone. Sink " + sink + " m/s. The legs hold " + hold + " m/s.";
                 case "recovery-fast":
-                    return "Touchdown " + N1(ev.value) + " m/s. The legs hold " + N1(ev.limit) + " m/s.";
+                    PairText(ev.value, ev.limit, 1, out var touch, out var holds);
+                    return "Touchdown " + touch + " m/s. The legs hold " + holds + " m/s.";
                 case "recovery-tilt":
-                    return "Tilt " + N1(ev.value) + "°. The limit is " + N1(ev.limit) + "°.";
+                    PairText(ev.value, ev.limit, 1, out var tilt, out var tiltLim);
+                    return "Tilt " + tilt + "°. The limit is " + tiltLim + "°.";
                 case "recovery-miss":
-                    return "Missed by " + N0(System.Math.Abs(ev.value)) + " m. The deck reaches " + N0(ev.limit) + " m.";
+                    PairText(System.Math.Abs(ev.value), ev.limit, 0, out var missed, out var deck);
+                    return "Missed by " + missed + " m. The deck reaches " + deck + " m.";
                 case "cryo-material":
                     return "The tank cracked on the pad. T+" + N0(ev.t) + " s.";
                 default:
                     return "Value " + N2(ev.value) + ". Limit " + N2(ev.limit) + ". T+" + N0(ev.t) + " s.";
             }
+        }
+
+        /// <summary>"at 204 km", or "in a 180 × 204 km orbit" when perigee and apogee round apart.</summary>
+        public static string ParkText(FlightFacts facts)
+        {
+            string apo = N0(facts.ApoKm);
+            string peri = double.IsNaN(facts.PeriKm) ? apo : N0(facts.PeriKm);
+            return peri == apo ? "at " + apo + " km" : "in a " + peri + " × " + apo + " km orbit";
         }
 
         public static string Fill(string template, FailureEvent ev, FlightFacts facts, FlightDebrief debrief)
@@ -485,21 +582,41 @@ namespace Kestrel.Core.Flight
             double goal = facts != null ? facts.GoalKm : 0;
             int stars = debrief != null ? debrief.Stars : 0;
             string s = template;
-            s = s.Replace("{q}", N0(value / 1000.0));
-            s = s.Replace("{qlim}", N0(limit / 1000.0));
+            KpaPair(value, limit, out var qText, out var qlimText);
+            s = s.Replace("{q}", qText);
+            s = s.Replace("{qlim}", qlimText);
             s = s.Replace("{qPa}", value.ToString("0.0", CultureInfo.InvariantCulture));
             s = s.Replace("{qlimPa}", limit.ToString("0.0", CultureInfo.InvariantCulture));
             s = s.Replace("{t}", N0(t));
-            s = s.Replace("{value}", N2(value));
-            s = s.Replace("{limit}", N2(limit));
-            s = s.Replace("{n0}", N0(value));
-            s = s.Replace("{n0lim}", N0(limit));
-            s = s.Replace("{n1}", N1(Math.Abs(value)));
-            s = s.Replace("{g}", N1(value));
-            s = s.Replace("{glim}", N1(limit));
+            // Playthrough 2026-11-11: a value and its limit print at one precision, with more places only while they read equal.
+            PairText(value, limit, 2, out var valueText, out var limitText);
+            PairText(value, limit, 0, out var n0Text, out var n0LimText);
+            PairText(value, limit, 1, out var gText, out var gLimText);
+            s = s.Replace("{value}", valueText);
+            s = s.Replace("{limit}", limitText);
+            s = s.Replace("{n0lim}", n0LimText);
+            s = s.Replace("{n0}", n0Text);
+            PairText(Math.Abs(value), Math.Abs(limit), 1, out var n1Text, out var n1LimText);
+            s = s.Replace("{n1lim}", n1LimText);
+            s = s.Replace("{n1}", n1Text);
+            s = s.Replace("{glim}", gLimText);
+            s = s.Replace("{g}", gText);
             s = s.Replace("{stars}", stars.ToString(CultureInfo.InvariantCulture));
             s = s.Replace("{apo}", N0(apo));
             s = s.Replace("{goal}", N0(goal));
+            if (s.IndexOf('{') >= 0)
+            {
+                // The departure lines are picked only for a parked GTO/C3 pass (FlightFacts.Parked); elsewhere the tokens
+                // still fill, so no brace ever reaches the player.
+                var f = facts ?? new FlightFacts();
+                double dvLeft = double.IsNaN(f.DepartureDvLeft) ? 0 : f.DepartureDvLeft;
+                double dvNeed = double.IsNaN(f.DepartureNeedMps) ? 0 : f.DepartureNeedMps;
+                PairText(dvLeft, dvNeed, out var left, out var need);
+                s = s.Replace("{park}", ParkText(f));
+                s = s.Replace("{dvleft}", left);
+                s = s.Replace("{dvneed}", need);
+                s = s.Replace("{burn}", f.BurnName);
+            }
             return s;
         }
 
@@ -594,10 +711,12 @@ namespace Kestrel.Core.Flight
         {
             if (free) return "Free build. No Kc, and no unlocks. Medals still count.";
             if (facts == null || !facts.EconomyKnown) return "Kc waits until the build cost is known.";
+            // DECISIONS #87: when the range covered part of the bill, the card says so in the same plain words.
+            string range = d.RangeCreditMinor > 0 ? " Range credit " + Kc(d.RangeCreditKc) + "." : "";
             if (d.EconomySettled && d.Passed)
-                return "Reward " + Kc(d.RewardKc) + ". Hardware " + Kc(d.CostKc) + ". Recovery " + Kc(d.RefundKc) + ". Bank " + Kc(d.BankKc) + ".";
+                return "Reward " + Kc(d.RewardKc) + ". Hardware " + Kc(d.CostKc) + ". Recovery " + Kc(d.RefundKc) + "." + range + " Bank " + Kc(d.BankKc) + ".";
             if (d.EconomySettled)
-                return "No reward. Hardware " + Kc(d.CostKc) + ". Bank " + Kc(d.BankKc) + ".";
+                return "No reward. Hardware " + Kc(d.CostKc) + "." + range + " Bank " + Kc(d.BankKc) + ".";
             if (d.TriedSettle)
                 return "Stars saved. Kc was settled the first time this mission opened.";
             return "Kc is not posted from this screen.";

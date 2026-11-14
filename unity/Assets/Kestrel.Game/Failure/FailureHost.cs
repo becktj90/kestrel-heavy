@@ -97,7 +97,7 @@ namespace Kestrel.Game.Failure
         {
             if (!cardPending) return;
             cardPending = false;
-            ShowCard();
+            ShowCardOrUndo();
         }
 
         /// <summary>
@@ -163,6 +163,14 @@ namespace Kestrel.Game.Failure
         {
             if (!Application.isPlaying || flight == null) return;
             Sample();
+            if (flight.Result == null)
+                flight.EnsureReportReady(Time.unscaledTime);
+            // Only an on-screen card counts. latch.Reported / reported can be true while
+            // cardPending still waits on RecoveryLog.Active — counting those as "reported"
+            // made this host's watchdog never Release (Trevor mission-done softlock).
+            bool cardUp = CardIsUp();
+            bool ascentOver = flight.Result != null || (flight.Sim != null && flight.Sim.Done);
+            reportWatchdog.TryRelease(ascentOver, RecoveryLog.Active, cardUp, Time.unscaledTime);
             if (played)
             {
                 Seek(age + Time.deltaTime);
@@ -171,18 +179,18 @@ namespace Kestrel.Game.Failure
                     if (Tapped()) cardTapped = true;
                     if (FailureFx.CardOpens(age, CardDueAt, cardTapped, RecoveryLog.Active)) OpenCardNow();
                 }
+                else if (!cardUp && !RecoveryLog.Active)
+                {
+                    // OpenCardNow cleared cardPending; ShowCardOrUndo may have UndoOpen'd the latch.
+                    // Keep presenting without requiring latch.Reported (Codex P2 on #531).
+                    try { ShowCard(); }
+                    catch (System.Exception e) { Debug.LogWarning("[Kestrel] post-flight card: " + e.Message); }
+                }
                 return;
             }
-            if (flight.Result == null)
-                flight.EnsureReportReady(Time.unscaledTime);
             var result = flight.Result;
             if (result == null) return;
             bool failed = result.failure != null;
-            // #482 left a hole: Conclude never Releases on a lost ascent or an open
-            // player burn, and Present may not run (HUD hidden). After the ascent is
-            // over, free the report so the card cannot stay blocked (Trevor, TF 218/219).
-            bool reportedAlready = reported || latch.Reported || Card != null;
-            reportWatchdog.TryRelease(true, RecoveryLog.Active, reportedAlready, Time.unscaledTime);
             // #333: wait for booster landing to complete before showing the failure card.
             // The latch's recovering wait covers the pass path only ("a failure opens at
             // once"), so the failure path checks RecoveryLog.Active itself, before the
@@ -190,18 +198,45 @@ namespace Kestrel.Game.Failure
             // the latch is not consumed while the recovery is still running.
             // The watchdog above is what stops that wait from lasting forever.
             if (failed && RecoveryLog.Active) return;
-            if (!latch.TryOpen(result, failed, flight.Running, RecoveryLog.Active)) return;
+            if (!latch.TryOpen(result, failed, flight.Running, RecoveryLog.Active))
+            {
+                if (latch.Reported && !CardIsUp() && !RecoveryLog.Active && !flight.Running)
+                    RetryShowCard();
+                return;
+            }
             reduce = ReduceMotionOverride ?? Comfort.ReduceMotion;
             StampLosses(result);
             if (!failed)
             {
                 failure = null;
-                ShowCard();
+                ShowCardOrUndo();
                 return;
             }
             Begin(result.failure, false);
             reported = true;
             closedResult = result;
+        }
+
+        bool CardIsUp() => Card != null || (ui != null && ui.Q(ReportView.RootName) != null);
+
+        /// <summary>ShowCard never landed a card after the latch fired — try again.</summary>
+        void RetryShowCard()
+        {
+            latch.UndoOpen();
+            if (flight == null || flight.Result == null) return;
+            var result = flight.Result;
+            bool failed = result.failure != null;
+            if (!latch.TryOpen(result, failed, flight.Running, RecoveryLog.Active)) return;
+            if (!failed) { failure = null; ShowCardOrUndo(); }
+            else if (!cardPending && Card == null) ShowCardOrUndo();
+        }
+
+        void ShowCardOrUndo()
+        {
+            try { ShowCard(); }
+            catch (System.Exception e) { Debug.LogWarning("[Kestrel] post-flight card: " + e.Message); }
+            if (Card == null && (ui == null || ui.Q(ReportView.RootName) == null))
+                latch.UndoOpen();
         }
 
         static bool Tapped()
@@ -234,7 +269,7 @@ namespace Kestrel.Game.Failure
             cardPending = false;
             cardTapped = false;
             // The break-up plays now, live. Its card waits for the show and for a booster landing still in the air (#333).
-            if (cardNow || FailureFx.CardOpens(0f, CardDueAt, false, RecoveryLog.Active)) ShowCard();
+            if (cardNow || FailureFx.CardOpens(0f, CardDueAt, false, RecoveryLog.Active)) ShowCardOrUndo();
             else cardPending = true;
         }
 

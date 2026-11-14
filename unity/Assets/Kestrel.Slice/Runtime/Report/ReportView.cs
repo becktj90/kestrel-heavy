@@ -172,6 +172,9 @@ namespace Kestrel.Slice
             }
         }
 
+        /// <summary>The plot's drawing area, under its caption row.</summary>
+        public const string PlotAreaName = "plot-area";
+
         public static VisualElement Plots(TelemetryLog log, ReportRect rect, bool flow = false)
         {
             var wrap = new VisualElement { name = "failure-plots" };
@@ -195,13 +198,26 @@ namespace Kestrel.Slice
                 plot.style.overflow = Overflow.Hidden;
                 string label = i < ChannelLabels.Length ? ChannelLabels[i] : built[i].Channel;
                 string full = i < ChannelFullNames.Length ? ChannelFullNames[i] : label;
+                // Playthrough 2026-11-11: the caption sat on top of the bars and markers (KH-7 card). It now takes its own
+                // row, and the bars and markers draw in the plot area under it.
+                plot.style.flexDirection = FlexDirection.Column;
                 var caption = new Label(label) { name = "plot-label" };
                 caption.style.fontSize = 14;
                 caption.style.color = new Color(0.8f, 0.86f, 0.92f);
-                caption.style.position = Position.Absolute;
-                caption.style.left = 2;
-                caption.style.top = 0;
+                caption.style.position = Position.Relative;
+                caption.style.flexShrink = 0;
+                caption.style.whiteSpace = WhiteSpace.NoWrap;
+                caption.style.marginLeft = 2;
+                caption.style.marginTop = 0;
+                caption.style.marginBottom = 0;
+                caption.style.paddingTop = 0;
+                caption.style.paddingBottom = 0;
                 plot.Add(caption);
+                var area = new VisualElement { name = PlotAreaName };
+                area.style.position = Position.Relative;
+                area.style.flexGrow = 1;
+                area.style.overflow = Overflow.Hidden;
+                plot.Add(area);
                 int bars = Math.Min(24, built[i].X.Length);
                 for (int b = 0; b < bars; b++)
                 {
@@ -211,31 +227,31 @@ namespace Kestrel.Slice
                     bar.style.bottom = 2;
                     bar.style.width = 2;
                     bar.style.left = Length.Percent(built[i].X[src] * 100f);
-                    bar.style.height = Length.Percent(Mathf.Clamp(built[i].Y[src], 0.05f, 1f) * 70f);
+                    bar.style.height = Length.Percent(Mathf.Clamp(built[i].Y[src], 0.05f, 1f) * 92f);
                     bar.style.backgroundColor = new Color(0.65f, 0.82f, 1f);
-                    plot.Add(bar);
+                    area.Add(bar);
                 }
                 for (int m = 0; m < built[i].MarkerX.Length; m++)
                 {
                     var mark = new VisualElement { name = "marker" };
                     mark.style.position = Position.Absolute;
                     mark.style.bottom = 0;
-                    mark.style.top = 12;
+                    mark.style.top = 0;
                     mark.style.width = 2;
                     mark.style.left = Length.Percent(built[i].MarkerX[m] * 100f);
                     mark.style.backgroundColor = new Color(1f, 0.85f, 0.4f, 0.85f);
-                    plot.Add(mark);
+                    area.Add(mark);
                 }
                 if (built[i].FailureX >= 0f)
                 {
                     var fail = new VisualElement { name = "failure-marker" };
                     fail.style.position = Position.Absolute;
                     fail.style.bottom = 0;
-                    fail.style.top = 10;
+                    fail.style.top = 0;
                     fail.style.width = 4;
                     fail.style.left = Length.Percent(built[i].FailureX * 100f);
                     fail.style.backgroundColor = new Color(1f, 0.35f, 0.25f);
-                    plot.Add(fail);
+                    area.Add(fail);
                     plot.tooltip = full + ". Failure marked.";
                 }
                 else plot.tooltip = full + ".";

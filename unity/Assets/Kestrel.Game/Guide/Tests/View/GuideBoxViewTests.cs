@@ -55,7 +55,7 @@ namespace Kestrel.Game.Guide.Tests
             Assert.IsNotNull(body);
             Assert.That(body.Text, Does.StartWith("Oh! A visitor!"));
             Assert.That(thrum.tooltip, Does.Contain("Thrum, hangar keeper"));
-            Assert.AreEqual("1/5", thrum.Q<Label>("guide-index").text);
+            Assert.AreEqual("1/4", thrum.Q<Label>("guide-index").text);
         }
 
         [Test]
