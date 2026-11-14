@@ -11,6 +11,7 @@ using Kestrel.Core.Hangar;
 using Kestrel.Core.Json;
 using Kestrel.Core.Physics;
 using Kestrel.Core.Save;
+using Kestrel.Core.Vehicle;
 using NUnit.Framework;
 
 namespace Kestrel.Core.Tests
@@ -70,6 +71,36 @@ namespace Kestrel.Core.Tests
             var m = System.Text.RegularExpressions.Regex.Match(card.Engineer, @"^([\d.,]+) kPa at [\d,]+ km · limit ([\d.,]+) kPa$");
             Assert.IsTrue(m.Success, card.Engineer);
             Assert.AreNotEqual(m.Groups[1].Value, m.Groups[2].Value, "a load printed equal to its limit");
+        }
+
+        /// <summary>
+        /// The PlayMode home-tile test arms this hopper and calls PressLaunch. Dropping the first stage to one
+        /// engine is a launch block (row3 wants three, thrust-to-weight under 1), so the count never starts and
+        /// the card wait expires. Safety factor 1.0 alone still launches and breaks up at max-Q inside that wait.
+        /// </summary>
+        [Test]
+        public void HomeTileRocket_SafetyFactor_LaunchesAndBreaksAtMaxQ()
+        {
+            DesignerLimits.Load(Golden.Root);
+            var starter = HangarEditor.ForkTemplate(HangarData.LoadFromRepo(Golden.Root).Template("hopper"));
+            var blocked = Design.FromJson(starter);
+            blocked.stages[0].engineCount = 1;
+            blocked.safetyFactor = 1.0;
+            var refused = Validate.Engineering(Golden.Catalog, blocked.ToJson());
+            Assert.IsFalse(refused.ok, "one engine on the hopper must not be launchable");
+            Assert.IsTrue(refused.blocks.Exists(b => b.code == "twr-low"), "thrust-to-weight block");
+            Assert.IsTrue(refused.blocks.Exists(b => b.code == "cluster-count"), "row3 pattern block");
+
+            var flying = Design.FromJson(starter);
+            flying.safetyFactor = 1.0;
+            var json = flying.ToJson();
+            var report = Validate.Engineering(Golden.Catalog, json);
+            Assert.IsTrue(report.ok && report.blocks.Count == 0, "safety factor 1.0 keeps the hopper launchable: " + string.Join(",", report.blocks.ConvertAll(b => b.code)));
+            var facts = TestFlight.FlyHeadless(Golden.Catalog, json, 1, MissionFlightSetup.LiveDt);
+            var card = TestFlight.Card(facts);
+            Assert.AreEqual(TestOutcome.MaxQBreakup, card.Outcome, card.Title + " / " + card.Engineer);
+            Assert.IsNotNull(facts.Failure);
+            Assert.Less(facts.Failure.t, 120.0, "breaks up inside the PlayMode card wait, after the count");
         }
 
         [Test]
