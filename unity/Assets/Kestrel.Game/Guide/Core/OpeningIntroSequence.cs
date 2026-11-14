@@ -27,6 +27,14 @@ namespace Kestrel.Game.Guide
                 engine.Offer("guide.first", "cta", null, "home", false);
         }
 
+        public static bool IsWelcome(string beatId)
+        {
+            if (string.IsNullOrEmpty(beatId)) return false;
+            for (int i = 0; i < BeatIds.Length; i++)
+                if (BeatIds[i] == beatId) return true;
+            return false;
+        }
+
         public static bool IsComplete(GuideState state)
         {
             if (state == null) return true;

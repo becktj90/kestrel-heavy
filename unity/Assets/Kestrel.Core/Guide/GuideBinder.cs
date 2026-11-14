@@ -78,8 +78,7 @@ namespace Kestrel.Core.Guide
 
         public GuideFace Welcome(double t)
         {
-            // Opening intro plays Thrum first; the CTA is priority "decision" and would drop
-            // chatter if enqueued here. LiveGuideEngine queues beats separately via OpeningIntroSequence.
+            // The CTA is a decision, which would otherwise jump the greeting. The welcome plays in file order.
             for (int i = 0; i < Script.Lines.Count; i++)
             {
                 var line = Script.Lines[i];
@@ -115,12 +114,12 @@ namespace Kestrel.Core.Guide
             Queue.DropTrigger("guide.first", 0);
         }
 
-        GuideFace Push(GuideLine line, double t, IReadOnlyDictionary<string, string> tokens)
+        GuideFace Push(GuideLine line, double t, IReadOnlyDictionary<string, string> tokens, bool inOrder = false)
         {
             string clip = null;
             if (State.Settings.VoiceOn && State.Settings.VoiceAvailable)
                 clip = GuideVoice.ClipFor(RepoRoot, line.Id);
-            var face = Queue.Push(line, t, tokens, clip);
+            var face = Queue.Push(line, t, tokens, clip, inOrder);
             Note();
             return face;
         }
