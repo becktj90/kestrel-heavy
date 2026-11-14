@@ -8,6 +8,7 @@
 // Batchmode-safe: no LogError, no throw outside asserts; surfaces disposed per case, globals restored in TearDown.
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using Kestrel.Core.Data;
 using Kestrel.Core.Designer;
@@ -106,12 +107,22 @@ namespace Kestrel.Game.Tests
             var r = new StarterRocket(catalog, campaign.ById(id), StarterBases.For(id));
             if (key != null)
             {
-                var p = key.Split('-');
+                var full = key;
+                string land = null;
+                int li = full.LastIndexOf("-l", StringComparison.Ordinal);
+                if (li >= 0) { land = full.Substring(li + 2); full = full.Substring(0, li); }
+                var p = full.Split('-');
                 int i = 0;
                 if (StarterManufacturing.TryParse(p[0], out var build) && (p[0] == "shop" || p[0] == "flight" || p[0] == "standard"))
                 { r.BuildGrade = build; i = 1; }
                 StarterRocket.TryEngine(p[i], out var e);
-                r.Engine = e; r.Stages = int.Parse(p[i + 1]); r.FuelNotch = int.Parse(p[i + 2].Substring(1)); r.Boosters = int.Parse(p[i + 3].Substring(1));
+                r.Engine = e;
+                r.Stages = int.Parse(p[i + 1], CultureInfo.InvariantCulture);
+                r.FuelNotch = int.Parse(p[i + 2].Substring(1), CultureInfo.InvariantCulture);
+                r.Boosters = int.Parse(p[i + 3].Substring(1), CultureInfo.InvariantCulture);
+                r.Landing = land != null
+                    ? (StarterLanding)int.Parse(land, CultureInfo.InvariantCulture)
+                    : StarterLanding.Expend;
                 Assert.AreEqual(key, r.Choice.Key, id + " setting");
             }
             return r;

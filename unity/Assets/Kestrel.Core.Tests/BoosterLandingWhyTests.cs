@@ -13,7 +13,7 @@ namespace Kestrel.Core.Tests
         [Test]
         public void Why_NoFuelNoLegs_IsFactual_AndDoesNotNameRecovery()
         {
-            BoosterLanding.Why(Craft(0, false), out string kid, out _);
+            BoosterLanding.Why(Craft(0, false), starter: true, out string kid, out _);
             StringAssert.Contains("no landing fuel", kid);
             StringAssert.Contains("no legs", kid);
             StringAssert.Contains("falls into the sea", kid);
@@ -24,7 +24,7 @@ namespace Kestrel.Core.Tests
         [Test]
         public void Why_FuelWithoutLegs_DoesNotNameRecovery()
         {
-            BoosterLanding.Why(Craft(5000, false), out string kid, out _);
+            BoosterLanding.Why(Craft(5000, false), starter: true, out string kid, out _);
             StringAssert.Contains("no landing legs", kid);
             StringAssert.DoesNotContain("Recovery", kid);
         }
@@ -32,7 +32,7 @@ namespace Kestrel.Core.Tests
         [Test]
         public void Why_LegsWithoutFuel_DoesNotNameRecovery()
         {
-            BoosterLanding.Why(Craft(0, true), out string kid, out _);
+            BoosterLanding.Why(Craft(0, true), starter: true, out string kid, out _);
             StringAssert.Contains("no landing fuel", kid);
             StringAssert.DoesNotContain("Recovery", kid);
         }
@@ -40,7 +40,7 @@ namespace Kestrel.Core.Tests
         [Test]
         public void Why_FuelAndLegsButExpendable_DoesNotNameRecovery()
         {
-            BoosterLanding.Why(Craft(5000, true, true), out string kid, out _);
+            BoosterLanding.Why(Craft(5000, true, true), starter: true, out string kid, out _);
             StringAssert.Contains("No landing was picked", kid);
             StringAssert.DoesNotContain("Recovery", kid);
         }

@@ -161,7 +161,7 @@ namespace Kestrel.Core.Tests
 
             // KH-7 with two stages: short on the readout, and Launch stays on. (#313 regrew KH-7's GTO winner, so one notch
             // less fuel on three stages now reads Tight, +9.5%; two stages at the default fuel is about 6% short.)
-            var shortOne = StarterLayoutTests.Rocket("m7", "kerosene-2-f2-b0");
+            var shortOne = StarterLayoutTests.Rocket("m7", "kerosene-2-f2-b0-l1");
             Assert.IsTrue(StarterScreen.Readiness(shortOne, out badge, out rest), "short is information, not a block");
             Assert.AreEqual(StarterScreen.ShortBadge, badge);
             StringAssert.StartsWith("About ", rest);
