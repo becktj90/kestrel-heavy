@@ -1,0 +1,115 @@
+{
+  "_note": "Kestrel Heavy App Store set. Sources are real in-game Unity captures (AppStoreScreenshotTests via the 'App Store screenshots' workflow). Panels render as one panorama, then slice, so every seam joins.",
+  "sources": "docs/appstore/screenshots-2026-11-09",
+  "out": "docs/appstore/screenshots-2026-11-09/store",
+  "sizes": {
+    "iphone-1206x2622": {
+      "w": 1206,
+      "h": 2622,
+      "kind": "phone"
+    },
+    "ipad-2064x2752": {
+      "w": 2064,
+      "h": 2752,
+      "kind": "tablet"
+    }
+  },
+  "panels": [
+    {
+      "id": "01_hero",
+      "hero": "left",
+      "scene": [
+        "countdown",
+        "launch"
+      ],
+      "title": [
+        "Build it.",
+        "Fly it."
+      ],
+      "sub": "A pocket rocket you design yourself."
+    },
+    {
+      "id": "02_hero",
+      "hero": "right",
+      "title": [
+        "Then land it."
+      ],
+      "sub": "Rocket physics, pad to barge."
+    },
+    {
+      "id": "03_mission",
+      "scene": [
+        "starter"
+      ],
+      "title": [
+        "Pick your",
+        "mission."
+      ],
+      "sub": "From first hop to high orbit."
+    },
+    {
+      "id": "04_designer",
+      "scene": [
+        "designer-kh2"
+      ],
+      "title": [
+        "Tune fuel",
+        "and stages."
+      ],
+      "sub": "Kerosene or methane, one to three stages."
+    },
+    {
+      "id": "05_ascent",
+      "scene": [
+        "flight"
+      ],
+      "title": [
+        "Fly the",
+        "climb."
+      ],
+      "sub": "Thrust, drag and fuel, live on screen."
+    },
+    {
+      "id": "06_staging",
+      "scene": [
+        "staging"
+      ],
+      "title": [
+        "Nail stage",
+        "separation."
+      ],
+      "sub": "Upper stage climbs. Booster turns home."
+    },
+    {
+      "id": "07_landing",
+      "scene": [
+        "landing-low",
+        "landing"
+      ],
+      "title": [
+        "Stick it",
+        "on Haven."
+      ],
+      "sub": "Hold to burn. Set it down on the barge.",
+      "scene_by_size": {
+        "ipad-2064x2752": [
+          "landing",
+          "landing-low"
+        ]
+      },
+      "_note": "iPhone: 18 m into the burn, Haven's deck spans the frame under the booster. iPad: the 4:3 landing camera keeps the deck behind the bottom HUD in every moment captured, so the 40 m burn frame is used."
+    },
+    {
+      "id": "08_report",
+      "scene": [
+        "report-kh2",
+        "mission-complete"
+      ],
+      "title": [
+        "Earn every",
+        "star."
+      ],
+      "sub": "Stars and medals for every flight."
+    }
+  ]
+}

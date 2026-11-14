@@ -35,7 +35,7 @@ namespace Kestrel.Game.Audio
 
         static SfxCatalog()
         {
-            Add(new SfxSpec("liftoff", "liftoff", 0.72f, 3.2f, false, true), "liftoff");
+            Add(new SfxSpec("liftoff", "liftoff", 0.88f, 3.2f, false, true), "liftoff");
             Add(new SfxSpec("maxq", "maxq", 0.58f, 1.6f, true, true), "maxq");
             Add(new SfxSpec("meco", "meco", 0.52f, 2.1f, false, true), "meco");
             Add(new SfxSpec("whoosh", "whoosh", 0.5f, 1.4f, true, true), "whoosh", "separation", "sep");
