@@ -146,6 +146,7 @@ namespace Kestrel.Game.Guide
             if (welcome)
             {
                 // Welcome keeps its own stack without the corner pop; drop any pop left from an earlier On.
+                // Lines that are not the welcome are still dropped below once the intro is finished.
                 if (pop != null)
                 {
                     Silence();
@@ -166,7 +167,6 @@ namespace Kestrel.Game.Guide
                 return;
             }
             DropSprite();
-            // Off: nothing consumes the engine's queue, so keep it empty. Turning the character on later starts clean.
             if (live != null) live.DropQueued();
         }
 

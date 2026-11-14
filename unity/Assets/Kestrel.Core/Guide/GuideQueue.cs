@@ -77,6 +77,25 @@ namespace Kestrel.Core.Guide
             return Face(t);
         }
 
+        /// <summary>
+        /// Queue behind the line that is showing. Does not preempt it and does not drop chatter.
+        /// The first-run CTA is a decision, and it still waits until the welcome in front of it finishes.
+        /// </summary>
+        public GuideFace Append(GuideLine line, double t, IReadOnlyDictionary<string, string> tokens, string clip)
+        {
+            if (line == null || line.Cards.Count == 0) return Face(t);
+            pending.Add(new Slot
+            {
+                Line = line,
+                Tokens = Copy(tokens),
+                Clip = clip,
+                Seq = ++seq,
+                StartT = t,
+            });
+            if (current == null) StartHead(t);
+            return Face(t);
+        }
+
         public GuideFace Tick(double t)
         {
             if (current == null) return null;

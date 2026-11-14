@@ -46,6 +46,7 @@ namespace Kestrel.Game.Guide
         public static bool Active(LiveGuideEngine engine)
         {
             if (engine == null || engine.State.FirstRunDone) return false;
+            // Incomplete intro beats, not a later tip. The stack stays up until those beats are seen.
             return !IsComplete(engine.State);
         }
 
@@ -90,33 +91,32 @@ namespace Kestrel.Game.Guide
         }
 
         static MissionBoardFacts FactsFor(Campaign campaign)
-        {
-            CampaignMission m1 = null;
-            if (campaign?.Missions != null)
-            {
-                for (int i = 0; i < campaign.Missions.Count; i++)
-                {
-                    var row = campaign.Missions[i];
-                    if (row != null && row.Index == 1) { m1 = row; break; }
-                }
-                if (m1 == null && campaign.Missions.Count > 0) m1 = campaign.Missions[0];
-            }
-            return MissionBoardFacts.Of(m1, MissionBoardAccess.Open, 0, null, 0, 0, true);
-        }
+            => MissionBoardFacts.Of(First(campaign), MissionBoardAccess.Open, 0, null, 0, 0, true);
 
         static string PebbleName(Campaign campaign)
         {
-            var m1 = campaign?.Missions != null && campaign.Missions.Count > 0 ? campaign.Missions[0] : null;
+            var m1 = First(campaign);
             if (m1 != null && !string.IsNullOrEmpty(m1.PayloadName)) return m1.PayloadName;
             return "Pebble";
         }
 
         static string ApogeeKm(Campaign campaign)
         {
-            var m1 = campaign?.Missions != null && campaign.Missions.Count > 0 ? campaign.Missions[0] : null;
+            var m1 = First(campaign);
             if (m1 != null && m1.ApoKm > 0)
                 return m1.ApoKm.ToString("0", CultureInfo.InvariantCulture);
             return "10";
+        }
+
+        static CampaignMission First(Campaign campaign)
+        {
+            if (campaign?.Missions == null || campaign.Missions.Count == 0) return null;
+            for (int i = 0; i < campaign.Missions.Count; i++)
+            {
+                var row = campaign.Missions[i];
+                if (row != null && row.Index == 1) return row;
+            }
+            return campaign.Missions[0];
         }
     }
 }
