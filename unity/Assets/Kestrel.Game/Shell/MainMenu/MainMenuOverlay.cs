@@ -37,6 +37,9 @@ namespace Kestrel.Game.Shell
         /// <summary>Codex tile opens the reader. Null shows "Coming soon."</summary>
         public static Action OpenCodex;
 
+        /// <summary>Settings → Restart career (after confirm). Host wipes the save and refreshes Home.</summary>
+        public static Action RestartCareer;
+
         /// <summary>Builds the overlay. <paramref name="safe"/> holds the controls (safe-area inset);
         /// <paramref name="full"/> holds the full-bleed bars and grain. Returns the root parented in <paramref name="safe"/>.</summary>
         public static VisualElement Build(VisualElement full, VisualElement safe, Action launch, Action design, Action missions, bool reduceMotion, string missionLine = null)
@@ -1555,6 +1558,40 @@ namespace Kestrel.Game.Shell
             list.Add(cornerCharacter);
             list.Add(cornerNote);
 
+            // Optional campaign wipe: LAUNCH follows Cleared+1, so without this a mid-career player cannot open KH-1 as next.
+            var restart = SettingButton(UiIds.SettingsRestartCareer, RestartCareerLabel);
+            var restartState = restart.Q(restart.name + "-state");
+            if (restartState != null) restartState.style.display = DisplayStyle.None;
+            restart.style.paddingRight = 10;
+            restart.style.backgroundColor = new Color(0.10f, 0.14f, 0.22f, 1f);
+            restart.style.color = new Color(0.96f, 0.93f, 0.86f, 1f);
+            restart.tooltip = RestartCareerTooltip;
+            bool restartArmed = false;
+            void PaintRestart()
+            {
+                restart.text = restartArmed ? RestartCareerConfirm : RestartCareerLabel;
+                restart.style.backgroundColor = restartArmed
+                    ? new Color(0.42f, 0.18f, 0.14f, 1f)
+                    : new Color(0.10f, 0.14f, 0.22f, 1f);
+                restart.tooltip = restartArmed ? RestartCareerConfirmTooltip : RestartCareerTooltip;
+            }
+            restart.clicked += () =>
+            {
+                if (!restartArmed)
+                {
+                    restartArmed = true;
+                    PaintRestart();
+                    return;
+                }
+                restartArmed = false;
+                PaintRestart();
+                RestartCareer?.Invoke();
+                HideSheet();
+            };
+            PaintRestart();
+            list.Add(restart);
+            list.Add(SettingNote("settings-restart-career-note", RestartCareerNote));
+
             var close = new Button { name = UiIds.SettingsClose, text = "Close" };
             close.AddToClassList("kh-button");
             close.tooltip = "Close settings.";
@@ -1696,6 +1733,8 @@ namespace Kestrel.Game.Shell
                 PaintMotion();
                 PaintFullDesigner();
                 PaintCornerCharacter();
+                restartArmed = false;
+                PaintRestart();
                 ApplySettingsFeatures(full);
                 sheet.style.display = DisplayStyle.Flex;
                 scrim.style.display = DisplayStyle.Flex;
@@ -1723,6 +1762,11 @@ namespace Kestrel.Game.Shell
         public const string FullDesignerNote = "Every part and number. For older kids and engineers.";
         public const string CornerCharacterLabel = "Show corner character";
         public const string CornerCharacterNote = "A little helper in the corner. Off by default.";
+        public const string RestartCareerLabel = "Restart career";
+        public const string RestartCareerConfirm = "Confirm restart";
+        public const string RestartCareerNote = "Opens KH-1 again. Bank, unlocks, and mission records reset. Your designs stay.";
+        public const string RestartCareerTooltip = "Restart career. Starts again at KH-1.";
+        public const string RestartCareerConfirmTooltip = "Confirm restart. Wipes campaign progress back to KH-1.";
 
         /// <summary>The Settings Codex row stands in for the Codex tile: shown only while home.codexTile is off.</summary>
         static void ApplySettingsFeatures(VisualElement full)

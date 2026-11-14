@@ -51,6 +51,8 @@ namespace Kestrel.Core.Ui
         public const string SettingsCommentary = "settings-commentary";
         /// <summary>Time warp: Auto / Off (kh.flight.timewarp). Tap flips.</summary>
         public const string SettingsTimeWarp = "settings-time-warp";
+        /// <summary>Optional wipe: campaign progress back to KH-1. Two taps to confirm.</summary>
+        public const string SettingsRestartCareer = "settings-restart-career";
 
         // ---- sub-screens reachable from Home, and their ways out ---------------------------------
         public const string CodexBack = "codex-back";
@@ -66,7 +68,8 @@ namespace Kestrel.Core.Ui
         public static readonly string[] SettingsControls =
         {
             SettingsMusic, SettingsSound, SettingsVoice, SettingsSubtitles, SettingsSandbox, SettingsReduceMotion,
-            SettingsCodex, SettingsFullDesigner, SettingsCornerCharacter, SettingsCommentary, SettingsTimeWarp, SettingsClose,
+            SettingsCodex, SettingsFullDesigner, SettingsCornerCharacter, SettingsCommentary, SettingsTimeWarp,
+            SettingsRestartCareer, SettingsClose,
         };
     }
 }
