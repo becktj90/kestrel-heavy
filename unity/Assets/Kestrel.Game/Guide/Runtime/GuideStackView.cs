@@ -248,9 +248,25 @@ namespace Kestrel.Game.Guide
                 name.style.fontSize = font;
                 name.style.color = Amber;
                 name.style.unityFontStyleAndWeight = FontStyle.Bold;
-                name.style.whiteSpace = WhiteSpace.Normal;
+                name.style.whiteSpace = WhiteSpace.NoWrap;
                 name.style.overflow = Overflow.Hidden;
                 name.style.marginRight = 0f;
+                float nameW = frame.TextW * scale;
+                if (nameW > 20f)
+                {
+                    name.style.width = nameW;
+                    name.style.maxWidth = nameW;
+                    // One line is what the box height reserves. Shrink until the role fits that line.
+                    float measured = name.panel != null
+                        ? name.MeasureTextSize(name.text, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined).x
+                        : 0f;
+                    if (measured < 1f) measured = name.text.Length * font * 0.72f;
+                    if (measured > nameW)
+                    {
+                        name.style.letterSpacing = 0;
+                        name.style.fontSize = Mathf.Max(8f, font * nameW / measured);
+                    }
+                }
             }
 
             var body = box.Q<BitmapTextElement>("guide-body");

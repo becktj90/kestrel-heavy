@@ -19,6 +19,10 @@ namespace Kestrel.Game.Guide
         /// on screen, so the corner pop rests under them instead of on the gear. Null or 0 keeps the plain corner.</summary>
         public static System.Func<float> ClearTopPanel;
 
+        /// <summary>Panel pixels from the panel bottom that the opening sheet must stay above. The two arguments are the
+        /// sheet column's left and width in panel pixels, so a control beside the sheet does not lift it. 0 keeps the menu footer.</summary>
+        public static System.Func<float, float, float> ClearBottomPanel;
+
         /// <summary>Home sets this while it is up: true keeps the corner pop off the menu (Starter Home, home.thrum off).</summary>
         public static System.Func<bool> HideOnMenu;
 
@@ -108,13 +112,18 @@ namespace Kestrel.Game.Guide
             var doc = Document != null ? Document : GetComponent<UIDocument>();
             var parent = doc != null ? doc.rootVisualElement : null;
             if (parent == null) return;
-            overlay = new VisualElement { name = "guide-overlay", pickingMode = PickingMode.Ignore };
-            overlay.style.position = Position.Absolute;
-            overlay.style.left = 0;
-            overlay.style.right = 0;
-            overlay.style.top = 0;
-            overlay.style.bottom = 0;
-            parent.Add(overlay);
+            // The opening sheet may already own the overlay. A second one stacks on Home.
+            if (overlay == null)
+            {
+                overlay = new VisualElement { name = "guide-overlay", pickingMode = PickingMode.Ignore };
+                overlay.style.position = Position.Absolute;
+                overlay.style.left = 0;
+                overlay.style.right = 0;
+                overlay.style.top = 0;
+                overlay.style.bottom = 0;
+                parent.Add(overlay);
+                overlay.RegisterCallback<GeometryChangedEvent>(_ => ApplyScreen());
+            }
             pop = new GuidePopView(overlay)
             {
                 Glyphs = art.Glyphs,
@@ -122,7 +131,7 @@ namespace Kestrel.Game.Guide
                 Portrait = art.Portrait,
             };
             pop.Tapped += OnTap;
-            overlay.RegisterCallback<GeometryChangedEvent>(_ => ApplyScreen());
+            if (blipSource != null) return;
             blipSource = gameObject.AddComponent<AudioSource>();
             blipSource.playOnAwake = false;
             blipSource.spatialBlend = 0f;
@@ -182,9 +191,6 @@ namespace Kestrel.Game.Guide
         void EnsureWelcomeStack()
         {
             if (welcomeStack != null || stage == null) return;
-            // Home's missions row sits higher than the 52 pt menu footer. Keep the sheet above it.
-            if (Place == GuidePlace.Menu && screen.Footer < 120f)
-                screen = screen.WithFooter(120f);
             var doc = Document != null ? Document : GetComponent<UIDocument>();
             var parent = doc != null ? doc.rootVisualElement : null;
             if (parent == null) return;
@@ -262,6 +268,11 @@ namespace Kestrel.Game.Guide
             }
             voice.Hold(paused);
             ApplyScreen();
+            if (welcome)
+            {
+                FitWelcomeToShell();
+                ApplyMenuClearance();
+            }
             if (GuideClipPlayer.InFlight || !GuidePopLayout.Shows(Place) || (!welcome && Hidden()))
             {
                 if (voice != null && (voice.Sounding || voice.HasClip || voice.CardId.Length > 0)) Silence();
@@ -274,6 +285,11 @@ namespace Kestrel.Game.Guide
             if (welcome)
             {
                 EnsureWelcomeStack();
+                if (welcomeStack != null)
+                {
+                    welcomeStack.Screen = screen;
+                    welcomeStack.PanelPerPoint = panelPerPoint;
+                }
                 welcomeStack.Tick(Time.unscaledDeltaTime);
                 if (pop != null) pop.Hide();
                 if (!WelcomePlaying(liveEngine)) TearDownWelcomeStack();
@@ -378,6 +394,44 @@ namespace Kestrel.Game.Guide
             blipSource.time = 0f;
             blipSource.Play();
             blipUntil = Time.unscaledTime + GuidePacing.BlipSeconds;
+        }
+
+        /// <summary>The opening sheet uses the shell's safe rect, which is the area Home captures check. Screen.safeArea
+        /// in the editor is the full frame, so a sheet placed from it sits in the inset and fails that check.</summary>
+        void FitWelcomeToShell()
+        {
+            var doc = Document != null ? Document : GetComponent<UIDocument>();
+            var root = doc != null ? doc.rootVisualElement : null;
+            var safe = root != null ? root.Q("safe") : null;
+            if (root == null || safe == null || panelPerPoint <= 0f) return;
+            if (safe.worldBound.width < 1f || root.worldBound.width < 1f) return;
+            float inv = 1f / panelPerPoint;
+            float left = (safe.worldBound.xMin - root.worldBound.xMin) * inv;
+            float top = (safe.worldBound.yMin - root.worldBound.yMin) * inv;
+            float right = (root.worldBound.xMax - safe.worldBound.xMax) * inv;
+            float bottom = (root.worldBound.yMax - safe.worldBound.yMax) * inv;
+            if (left < 0f) left = 0f;
+            if (top < 0f) top = 0f;
+            if (right < 0f) right = 0f;
+            if (bottom < 0f) bottom = 0f;
+            screen = new GuideScreen(screen.Width, screen.Height, top, bottom, left, right, screen.Header, screen.Compact, screen.Footer);
+        }
+
+        /// <summary>Home reports how far up from the panel bottom its controls reach, so the opening sheet sits above them.</summary>
+        void ApplyMenuClearance()
+        {
+            if (Place != GuidePlace.Menu || ClearBottomPanel == null || panelPerPoint <= 0f) return;
+            var doc = Document != null ? Document : GetComponent<UIDocument>();
+            var root = doc != null ? doc.rootVisualElement : null;
+            float origin = root != null ? root.worldBound.xMin : 0f;
+            float left = origin + screen.ColumnX * panelPerPoint;
+            float width = screen.ColumnWidth * panelPerPoint;
+            float px;
+            try { px = ClearBottomPanel(left, width); }
+            catch (System.Exception) { px = 0f; }
+            if (float.IsNaN(px) || px < 1f) return;
+            float pt = px / panelPerPoint + 8f;
+            if (pt > screen.Footer) screen = screen.WithFooter(pt);
         }
 
         void ApplyScreen()
