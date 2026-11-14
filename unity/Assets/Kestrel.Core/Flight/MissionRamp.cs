@@ -130,6 +130,8 @@ namespace Kestrel.Core.Flight
         public bool MarginNonNegative, StrapOnsAllowed, NoRedRisks, RandomFailures, LandBoosters;
         public string LandingMode, LandingGrade, LandingSite;
         public string Customer, Control, Goal, WhatItIs, WhatItDoes, Why, Form, CodexId, Band;
+        /// <summary>Player-facing payload name from briefing.payloadName (e.g. Pebble).</summary>
+        public string PayloadName;
         public readonly List<string> Unlocks = new List<string>();
 
         public bool HasInclination => TargetKind == "circular" || TargetKind == "ellipse" || TargetKind == "c3";
@@ -286,6 +288,7 @@ namespace Kestrel.Core.Flight
                 m.Why = brief.Str("why");
                 m.Form = brief.Str("form");
                 m.CodexId = brief.Str("codex");
+                m.PayloadName = brief.Str("payloadName");
             }
             return m;
         }
