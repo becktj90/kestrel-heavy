@@ -95,8 +95,8 @@ namespace Kestrel.Game.Tests
             Assert.AreEqual("Circular orbit 500 km", board.Target);
             CollectionAssert.AreEqual(new[] { "Peak g at most 6" }, board.Requirements);
             CollectionAssert.AreEqual(new[] { "Land the booster", "Keep peak g under 4" }, board.Bonuses);
-            Assert.AreEqual("Budget 40,000,000 Kc", board.Budget);
-            Assert.AreEqual("Reward 40,000,000 Kc", board.Reward);
+            Assert.AreEqual("Budget 140,000 Kc", board.Budget);
+            Assert.AreEqual("Reward 140,000 Kc", board.Reward);
             Assert.AreEqual("Gentle off.", board.Gentle);
             Assert.AreEqual(BriefingBoard.SeedLabel(ctx.Seed), card.Replay.Label);
             StringAssert.Contains("m/s", board.Engineer);
@@ -114,7 +114,7 @@ namespace Kestrel.Game.Tests
             Assert.AreEqual("Apogee 10 km", m1.Target);
             Assert.AreEqual(0, m1.Requirements.Count);
             CollectionAssert.AreEqual(new[] { "Keep peak g under 6" }, m1.Bonuses);
-            Assert.AreEqual("Budget 2,000,000 Kc", m1.Budget);
+            Assert.AreEqual("Budget 40,000 Kc", m1.Budget);
             Assert.AreEqual("Gentle on.", m1.Gentle);
 
             var m6 = Board(campaign, "m6");
