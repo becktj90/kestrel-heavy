@@ -213,10 +213,17 @@ namespace Kestrel.Core.Tests
             {
                 Running = true, HasAttitude = true, AttitudeDeg = 90, VehicleHeight = 70,
                 Stage = 0, Health01 = 1, Fuel01 = 1, ThrustFraction = 1, QLimitPa = 35000,
+                Altitude = 0,
             };
             p.Step(s, 1.0 / 60.0, false);
             Assert.That(p.Began, Is.True);
-            Assert.AreEqual(28, p.HapticMs);
+            Assert.That(p.Lifted, Is.False, "still on the pad: no liftoff juice yet");
+            Assert.AreEqual(0, p.HapticMs);
+            Assert.AreEqual(0, p.Shake.Vx, 0);
+            s.Altitude = FlightPresenter.LiftoffAltM + 0.1;
+            p.Step(s, 1.0 / 60.0, false);
+            Assert.That(p.Lifted, Is.True);
+            Assert.AreEqual(36, p.HapticMs);
             Assert.That(Math.Abs(p.Shake.Vx) + Math.Abs(p.Shake.Vy), Is.GreaterThan(1));
             s.Stage = 0;
             p.Step(s, 1.0 / 60.0, false);

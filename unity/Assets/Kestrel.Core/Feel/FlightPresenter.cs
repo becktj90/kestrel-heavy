@@ -28,10 +28,14 @@ namespace Kestrel.Core.Feel
         public int Stage = -1;
         public int HapticMs;
         public bool HapticHard;
-        public bool Began, Lost, QCue;
+        /// <summary>True once the flight is running. Liftoff juice waits for <see cref="Lifted"/> (alt &gt; 1 m), matching the sim's term.liftoff.</summary>
+        public bool Began, Lifted, Lost, QCue;
         public string Band = "nominal";
         public string Call = "NOMINAL";
         public string Line = "";
+
+        /// <summary>Same 1 m gate as AscentSim / Headless liftoff events and TimelineGenerator term.liftoff.</summary>
+        public const double LiftoffAltM = 1.0;
 
         public FlightPresenter(int debrisCapacity)
         {
@@ -47,7 +51,7 @@ namespace Kestrel.Core.Feel
             Stage = -1;
             HapticMs = 0;
             HapticHard = false;
-            Began = Lost = QCue = false;
+            Began = Lifted = Lost = QCue = false;
             Band = "nominal";
             Call = "NOMINAL";
             Line = "";
@@ -65,9 +69,15 @@ namespace Kestrel.Core.Feel
             {
                 Began = true;
                 Stage = s.Stage;
+            }
+            // Arcade juice on pad clear, not on Launch()/Running. Firing at countdown start left the
+            // shake dead by T+0 (KH-3 playtest: "Rocket just quietly lifts off.").
+            if (s.Running && !Lifted && s.Altitude > LiftoffAltM)
+            {
+                Lifted = true;
                 Cue("liftoff", reduced);
             }
-            else if (s.Running && s.Stage != Stage)
+            else if (s.Running && Began && s.Stage != Stage)
             {
                 Stage = s.Stage;
                 Cue("stage", reduced);
