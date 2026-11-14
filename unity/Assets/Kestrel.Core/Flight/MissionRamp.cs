@@ -119,6 +119,8 @@ namespace Kestrel.Core.Flight
     {
         public int Index;
         public string Id, Name, PayloadId;
+        /// <summary>Player name from briefing.payloadName (Pebble). Empty when the row has no briefing name.</summary>
+        public string PayloadName;
         /// <summary>Catalog orbit id. Home stamps this on payload.orbit. Legacy builds used kh- plus the mission id.</summary>
         public string OrbitId;
         public double MassKg, VolumeM3, DiameterM;
@@ -278,6 +280,7 @@ namespace Kestrel.Core.Flight
             var brief = o.Obj("briefing");
             if (brief != null)
             {
+                m.PayloadName = brief.Str("payloadName");
                 m.Customer = brief.Str("customer");
                 m.Control = brief.Str("control");
                 m.Goal = brief.Str("goal");

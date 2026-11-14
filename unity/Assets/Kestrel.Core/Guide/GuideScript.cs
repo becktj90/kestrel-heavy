@@ -273,7 +273,9 @@ namespace Kestrel.Core.Guide
                 if (all && letters >= 4)
                 {
                     string word = text.Substring(start, i - start);
-                    if (word != "SKIP" && word != "MECO" && word != "SECO" && word != "RTLS") return true;
+                    // Button labels and flight callouts are capitals on the screen. A longer shout still fails.
+                    if (word != "SKIP" && word != "LAUNCH" && word != "MISSIONS"
+                        && word != "MECO" && word != "SECO" && word != "RTLS") return true;
                 }
             }
             return false;

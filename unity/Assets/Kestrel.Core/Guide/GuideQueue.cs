@@ -45,9 +45,12 @@ namespace Kestrel.Core.Guide
         {
             if (line == null || line.Cards.Count == 0) return Face(t);
             int rank = GuidePriority.Rank(line.Priority);
-            if (current != null && rank == GuidePriority.Rank(GuidePriority.Chatter) && GuidePriority.Rank(current.Line.Priority) >= GuidePriority.Rank(GuidePriority.Decision))
+            // A scripted run (the welcome: chatter, then its decision) stays in file order.
+            // A decision from another trigger still drops chatter and jumps the queue.
+            bool scripted = SharesTrigger(line.Trigger);
+            if (current != null && rank == GuidePriority.Rank(GuidePriority.Chatter) && GuidePriority.Rank(current.Line.Priority) >= GuidePriority.Rank(GuidePriority.Decision) && !scripted)
                 return Face(t);
-            if (rank >= GuidePriority.Rank(GuidePriority.Decision))
+            if (rank >= GuidePriority.Rank(GuidePriority.Decision) && !scripted)
             {
                 for (int i = pending.Count - 1; i >= 0; i--)
                     if (GuidePriority.Rank(pending[i].Line.Priority) == GuidePriority.Rank(GuidePriority.Chatter))
@@ -67,7 +70,7 @@ namespace Kestrel.Core.Guide
             pending.Sort(Order);
             if (current == null)
                 StartHead(t);
-            else if (rank > GuidePriority.Rank(current.Line.Priority))
+            else if (!scripted && rank > GuidePriority.Rank(current.Line.Priority))
             {
                 pending.Add(current);
                 current = null;
@@ -75,6 +78,15 @@ namespace Kestrel.Core.Guide
                 StartHead(t);
             }
             return Face(t);
+        }
+
+        bool SharesTrigger(string trigger)
+        {
+            if (string.IsNullOrEmpty(trigger)) return false;
+            if (current != null && current.Line.Trigger == trigger) return true;
+            for (int i = 0; i < pending.Count; i++)
+                if (pending[i].Line.Trigger == trigger) return true;
+            return false;
         }
 
         public GuideFace Tick(double t)
