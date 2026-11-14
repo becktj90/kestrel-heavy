@@ -166,5 +166,57 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual(OrbitCoast.MaxStepSeconds, OrbitCoast.Advance(0, 3, 3), 1e-12);
             Assert.AreEqual(0.0, OrbitCoast.Advance(0, double.NaN, -1), 1e-12);
         }
+
+        /// <summary>
+        /// A 7 s hitch used to satisfy EnsureReportReady's MaxWallSeconds+2 check in one callback, while the coast
+        /// clock could add only MaxStepSeconds. PlayMode then saw Coasting false before CoastWall reached 1.5.
+        /// </summary>
+        [Test]
+        public void WatchdogCredit_AHitchCountsAsOneCappedStep()
+        {
+            double mark = double.NaN;
+            double credit = OrbitCoast.WatchdogCredit(mark, 10, out mark);
+            Assert.AreEqual(0, credit, 1e-12, "the first sample only arms the clock");
+            Assert.AreEqual(10, mark, 1e-12);
+
+            credit = OrbitCoast.WatchdogCredit(mark, 17, out mark);
+            Assert.AreEqual(OrbitCoast.MaxStepSeconds, credit, 1e-12, "a 7 s hitch is one capped step, not the whole stall budget");
+            Assert.AreEqual(17, mark, 1e-12);
+
+            double again = mark;
+            Assert.AreEqual(0, OrbitCoast.WatchdogCredit(mark, 17, out again), 1e-12, "FailureHost and SliceApp share one timestamp");
+            Assert.AreEqual(17, again, 1e-12);
+            Assert.AreEqual(0, OrbitCoast.WatchdogCredit(mark, double.NaN, out double kept), 1e-12);
+            Assert.AreEqual(mark, kept, 1e-12);
+            Assert.AreEqual(0, OrbitCoast.WatchdogCredit(20, 19, out double back), 1e-12, "a backwards clock does not add credit");
+            Assert.AreEqual(19, back, 1e-12);
+        }
+
+        [Test]
+        public void WatchdogCredit_SmoothFramesTrackRealTime_HitchesTakeTheStepCap()
+        {
+            double mark = double.NaN;
+            double credit = OrbitCoast.WatchdogCredit(mark, 0, out mark);
+            double t = 0;
+            for (int i = 0; i < 70; i++)
+            {
+                t += 0.1;
+                credit += OrbitCoast.WatchdogCredit(mark, t, out mark);
+            }
+            Assert.AreEqual(7.0, credit, 1e-9, "10 fps is under the step cap, so the budget still matches real time");
+
+            mark = double.NaN;
+            credit = OrbitCoast.WatchdogCredit(mark, 0, out mark);
+            t = 0;
+            int frames = 0;
+            while (credit < OrbitCoast.MaxWallSeconds + 2 && frames < 100)
+            {
+                t += 7;
+                credit += OrbitCoast.WatchdogCredit(mark, t, out mark);
+                frames++;
+            }
+            Assert.AreEqual((int)Math.Ceiling((OrbitCoast.MaxWallSeconds + 2) / OrbitCoast.MaxStepSeconds), frames,
+                "hitch frames reach the stall budget in capped steps, not on the first 7 s gap");
+        }
     }
 }
