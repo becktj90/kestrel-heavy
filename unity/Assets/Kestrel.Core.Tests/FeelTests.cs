@@ -213,14 +213,41 @@ namespace Kestrel.Core.Tests
             {
                 Running = true, HasAttitude = true, AttitudeDeg = 90, VehicleHeight = 70,
                 Stage = 0, Health01 = 1, Fuel01 = 1, ThrustFraction = 1, QLimitPa = 35000,
+                Altitude = 0,
             };
             p.Step(s, 1.0 / 60.0, false);
             Assert.That(p.Began, Is.True);
-            Assert.AreEqual(28, p.HapticMs);
+            Assert.That(p.Lifted, Is.False, "still on the pad: no liftoff juice yet");
+            Assert.AreEqual(0, p.HapticMs);
+            Assert.AreEqual(0, p.Shake.Vx, 0);
+            s.Altitude = FlightPresenter.LiftoffAltM + 0.1;
+            p.Step(s, 1.0 / 60.0, false);
+            Assert.That(p.Lifted, Is.True);
+            Assert.AreEqual(36, p.HapticMs);
             Assert.That(Math.Abs(p.Shake.Vx) + Math.Abs(p.Shake.Vy), Is.GreaterThan(1));
+            Assert.AreEqual("LIFTOFF", p.Call);
+            Assert.That(p.Line, Does.Contain("LIFTOFF"));
+            // Hold keeps a readable banner and a decaying rumble — not a one-frame kick.
+            double shakeAfter = Math.Abs(p.Shake.Vx) + Math.Abs(p.Shake.Vy);
+            for (int i = 0; i < 20; i++) p.Step(s, 1.0 / 60.0, false);
+            Assert.AreEqual("LIFTOFF", p.Call, "hold still owns the banner ~0.3 s in");
+            Assert.That(Math.Abs(p.Shake.Vx) + Math.Abs(p.Shake.Vy), Is.GreaterThan(0.05), "rumble still alive in the hold");
+            Assert.That(p.LiftoffAge, Is.GreaterThan(0.2).And.LessThan(FlightPresenter.LiftoffHoldSec));
+
+            // Late Present (CaptureClock catch-up at coast altitude) must not arm the pad-clear hold.
+            var late = new FlightPresenter(40);
+            var high = s;
+            high.Altitude = FlightPresenter.LiftoffHoldMaxAltM + 10;
+            late.Step(high, 1.0 / 60.0, false);
+            Assert.That(late.Lifted, Is.True);
+            Assert.That(late.LiftoffAge, Is.GreaterThanOrEqualTo(FlightPresenter.LiftoffHoldSec));
+            Assert.AreNotEqual("LIFTOFF", late.Call, "late arm skips the LIFTOFF hold");
+            Assert.AreEqual(0, late.HapticMs, "late arm skips the pad-clear kick");
+
             s.Stage = 0;
             p.Step(s, 1.0 / 60.0, false);
             Assert.AreEqual(0, p.HapticMs);
+            Assert.That(shakeAfter, Is.GreaterThan(0));
             s.Stage = 1;
             p.Step(s, 1.0 / 60.0, false);
             Assert.AreEqual(14, p.HapticMs);
