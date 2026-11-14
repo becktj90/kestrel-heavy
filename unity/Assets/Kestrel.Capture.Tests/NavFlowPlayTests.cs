@@ -633,6 +633,10 @@ namespace Kestrel.Capture.Tests
             Assert.That(driver.CoastWall, Is.GreaterThan(wallAtHold), "climax wall clock advances while Held (KH-3 freeze: Pause must not freeze Orbit!)");
             Assert.IsTrue(driver.Coasting, "still coasting under Hold");
             driver.CaptureClock = false;
+            // LateUpdate frames the coast only while CaptureClock is off, and this coroutine can
+            // resume before that LateUpdate. Two frames let the camera write CoastTrace. Each frame
+            // adds at most OrbitCoast.MaxStepSeconds, so a 3 s coast that is already 1.5 s in is still playing.
+            yield return null;
             yield return null;
             var verdict = SliceUi()?.Q<Label>("h-verdict");
             Assert.IsNotNull(verdict, "flight HUD verdict");
