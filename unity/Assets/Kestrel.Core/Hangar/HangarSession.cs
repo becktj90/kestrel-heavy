@@ -191,7 +191,25 @@ namespace Kestrel.Core.Hangar
             DerivedChanged?.Invoke();
         }
 
-        public EngineeringReport Report => report ??= Validate.Engineering(catalog, Design);
+        /// <summary>
+        /// Engineering report plus the hangar orbit/default budget gate (Poly Bridge). A stamped <c>budgetKc</c> is
+        /// already in Validate; sandbox designs without a stamp still get an over-budget block from
+        /// <see cref="HangarData.budgets"/> so LaunchGate and LaunchEnabled agree.
+        /// </summary>
+        public EngineeringReport Report
+        {
+            get
+            {
+                if (report != null) return report;
+                report = Validate.Engineering(catalog, Design);
+                double budget = data != null ? data.budgets.For(Design) : Design.Num("budgetKc");
+                int before = report.blocks != null ? report.blocks.Count : 0;
+                if (report.blocks == null) report.blocks = new List<Issue>();
+                Validate.AppendBudgetBlock(catalog, report.readout, report.blocks, budget);
+                if (report.blocks.Count > before) report.ok = false;
+                return report;
+            }
+        }
 
         /// <summary>Null when the design cannot be computed (a schema block); the readout strip then shows dashes.</summary>
         public DataSheet Sheet
@@ -213,8 +231,8 @@ namespace Kestrel.Core.Hangar
 
         public List<Advisory> Advisories => advisories ??= Hangar.Advisories.From(Report, Sheet, Design);
 
-        /// <summary>Launch needs no blocks. Over budget is a hard block (Poly Bridge / DECISIONS #100); other warnings still fly.</summary>
-        public bool LaunchEnabled => Report.ok && Report.blocks.Count == 0 && (Sheet == null || !Sheet.overBudget);
+        /// <summary>Launch needs no blocks. Over budget is a hard block on the report (Poly Bridge / DECISIONS #100).</summary>
+        public bool LaunchEnabled => Report.ok && Report.blocks.Count == 0;
 
         /// <summary>Validate.MakeItFly as one undoable step. Returns what it changed (empty when nothing).</summary>
         public List<string> MakeItFly()

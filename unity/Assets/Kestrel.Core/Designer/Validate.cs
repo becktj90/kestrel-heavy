@@ -94,18 +94,20 @@ namespace Kestrel.Core.Designer
                 if ((int)design.Num("version") < 2)
                     AeroNotes(c, design, r, blocks, warnings);
                 // Poly Bridge / DECISIONS #100: over the mission budget is a hard pad block (not a post-flight miss).
-                BudgetBlock(c, design, r, blocks);
+                if (design != null) AppendBudgetBlock(c, r, blocks, design.Num("budgetKc"));
             }
             if (r != null) DesignRules.Append(c, design, blocks, warnings, r);
             return new EngineeringReport { ok = blocks.Count == 0, blocks = blocks, warnings = warnings, readout = r };
         }
 
-        /// <summary>When the design stamps <c>budgetKc</c>, cost above that budget blocks launch and names how far over.</summary>
-        static void BudgetBlock(Catalog c, JsonObject design, QuickReadout r, List<Issue> blocks)
+        /// <summary>
+        /// When <paramref name="budgetKc"/> is set (mission stamp or hangar orbit/default), cost above it blocks
+        /// launch and names how far over. Idempotent if an over-budget block is already present.
+        /// </summary>
+        public static void AppendBudgetBlock(Catalog c, QuickReadout r, List<Issue> blocks, double budgetKc)
         {
-            if (design == null || r == null) return;
-            double budgetKc = design.Num("budgetKc");
-            if (!(budgetKc > 0)) return;
+            if (r == null || blocks == null || !(budgetKc > 0)) return;
+            for (int i = 0; i < blocks.Count; i++) if (blocks[i] != null && blocks[i].code == "over-budget") return;
             long per = CostModel.MinorPerKc(c);
             if (per <= 0) per = CostModel.DefaultMinorPerKc;
             double costKc = r.cost / (double)per;

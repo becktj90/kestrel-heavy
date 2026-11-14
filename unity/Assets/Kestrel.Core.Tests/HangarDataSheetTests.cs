@@ -160,12 +160,36 @@ namespace Kestrel.Core.Tests
             Assert.IsFalse(session.LaunchEnabled, "Poly Bridge: over budget blocks Launch");
             Assert.IsTrue(session.Report.blocks.Exists(b => b.code == "over-budget"));
             StringAssert.Contains("Over budget by", session.Report.blocks.Find(b => b.code == "over-budget").msg);
+            var gate = LaunchGate.Evaluate(session.Report, session.Report.readout);
+            Assert.IsFalse(gate.CanLaunch);
+            Assert.AreEqual("over-budget", gate.code);
 
             JsonMut.Set(d, "budgetKc", session.Sheet.cost_Kc / 0.95);
             var near = new HangarSession(c, H, d);
             Assert.IsTrue(near.Sheet.nearBudget);
             Assert.AreEqual(AdvisorySeverity.Note, near.Advisories.Find(x => x.code == "near-budget").severity);
             Assert.IsTrue(near.LaunchEnabled);
+        }
+
+        [Test]
+        public void OrbitBudget_WithoutStamp_BlocksLaunchGate()
+        {
+            // Sandbox designs often have no budgetKc; the hangar orbit/default budget must still hard-block the gate.
+            var c = Golden.Catalog;
+            var d = HangarFixtures.Template("workhorse");
+            d.Remove("budgetKc");
+            var h = HangarData.LoadFromRepo(Golden.Root);
+            string orbit = d.Obj("payload")?.Str("orbit") ?? "leo400";
+            h.budgets.byOrbit[orbit] = 1;
+            h.budgets.defaultKc = 1;
+            var session = new HangarSession(c, h, d);
+            Assert.IsTrue(session.Sheet.overBudget);
+            Assert.IsFalse(session.LaunchEnabled);
+            Assert.IsTrue(session.Report.blocks.Exists(b => b.code == "over-budget"), "report must carry the sheet budget block");
+            var gate = LaunchGate.Evaluate(session.Report, session.Report.readout);
+            Assert.IsFalse(gate.CanLaunch, "DesignerV3Panel.Gate / SliceApp use LaunchGate, not LaunchEnabled alone");
+            Assert.AreEqual("over-budget", gate.code);
+            StringAssert.Contains("Over budget by", gate.Line);
         }
 
         [Test]
