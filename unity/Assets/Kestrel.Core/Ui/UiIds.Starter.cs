@@ -50,7 +50,7 @@ namespace Kestrel.Core.Ui
         /// <summary>Notch 1..5 (the fuel slider reads "Fuel, 3 of 5").</summary>
         public static string StarterFuelNotch(int notch1To5) => StarterFuel + "-" + notch1To5.ToString(CultureInfo.InvariantCulture);
         public static string StarterBoostersOption(int count) => StarterBoosters + "-" + count.ToString(CultureInfo.InvariantCulture);
-        public static string StarterLandingOption(StarterLanding landing) => StarterLanding + "-" + StarterRocket.LandingId(landing);
+        public static string StarterLandingOption(global::Kestrel.Core.Designer.StarterLanding landing) => StarterLanding + "-" + global::Kestrel.Core.Designer.StarterRocket.LandingId(landing);
 
         /// <summary>Every interactive Starter control, in reading order. Booster options exist on every
         /// mission but are hidden where the mission has no strap-ons.</summary>
