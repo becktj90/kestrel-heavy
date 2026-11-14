@@ -126,9 +126,12 @@ namespace Kestrel.Game.Tests
             // Off (default): the driver can run its whole sync and nothing is built.
             Assert.DoesNotThrow(() => { driver.SyncSprite(); driver.SyncSprite(); });
             Assert.That(driver.HasSprite, Is.False);
-            Assert.That(root.Q("guide-overlay"), Is.Null);
             Assert.That(root.Q("guide-pop"), Is.Null);
-            Assert.That(root.childCount, Is.EqualTo(before), "nothing added where the portrait sat");
+            if (!WelcomeUp(driver))
+            {
+                Assert.That(root.Q("guide-overlay"), Is.Null);
+                Assert.That(root.childCount, Is.EqualTo(before), "nothing added where the portrait sat");
+            }
             Assert.DoesNotThrow(() => driver.Silence(), "Silence is safe with no portrait");
             Assert.That(uiGo.GetComponents<AudioSource>().Length, Is.EqualTo(0), "off: no blip source");
 
@@ -146,9 +149,12 @@ namespace Kestrel.Game.Tests
             ExperienceSettings.SetCornerCharacter(false, PlayerPrefs.SetInt);
             Assert.DoesNotThrow(() => driver.SyncSprite());
             Assert.That(driver.HasSprite, Is.False);
-            Assert.That(root.Q("guide-overlay"), Is.Null);
             Assert.That(root.Q("guide-pop"), Is.Null);
-            Assert.That(root.childCount, Is.EqualTo(before));
+            if (!WelcomeUp(driver))
+            {
+                Assert.That(root.Q("guide-overlay"), Is.Null);
+                Assert.That(root.childCount, Is.EqualTo(before));
+            }
             Assert.That(uiGo.GetComponents<AudioSource>().Length, Is.EqualTo(0), "off again: no blip source");
 
             // And on once more after being off: one overlay, not two.
@@ -184,13 +190,23 @@ namespace Kestrel.Game.Tests
             driver.SyncSprite();
             Assert.That(driver.HasSprite, Is.False);
 
-            // Lines offered while off must not wait for the next time it is turned on.
-            bool offered = live.Offer("guide.first", "1", null, "home", false);
-            Assume.That(offered, "the first-run line is not allowed on this save");
-            Assert.That(live.Pending.Count, Is.GreaterThan(0), "the line is queued before the sync");
-            driver.SyncSprite();
-            Assert.That(live.Pending.Count, Is.EqualTo(0), "off: the queue is emptied");
+            // The opening sheet keeps its own queue while the portrait is off. With no opening,
+            // a line offered while off must not wait for the next time the portrait is turned on.
+            if (!OpeningIntroSequence.Active(live))
+            {
+                bool offered = live.Offer("guide.first", "1", null, "home", false);
+                Assume.That(offered, "the first-run line is not allowed on this save");
+                Assert.That(live.Pending.Count, Is.GreaterThan(0), "the line is queued before the sync");
+                driver.SyncSprite();
+                Assert.That(live.Pending.Count, Is.EqualTo(0), "off: the queue is emptied");
+            }
             LogAssert.NoUnexpectedReceived();
+        }
+
+        static bool WelcomeUp(GuideBoxDriver driver)
+        {
+            var live = driver != null && driver.Stage != null ? driver.Stage.Engine as LiveGuideEngine : null;
+            return OpeningIntroSequence.Active(live);
         }
 
         static void Press(Button button)
