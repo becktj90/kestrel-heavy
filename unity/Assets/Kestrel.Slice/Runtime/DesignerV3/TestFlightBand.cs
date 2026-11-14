@@ -1,4 +1,4 @@
-// Test Flight (DECISIONS #100): the designer's header band in a test. The "TEST FLIGHT" eyebrow and the one-line rules
+// Test Flight (DECISIONS #102): the designer's header band in a test. The "TEST FLIGHT" eyebrow and the one-line rules
 // note, above the live numbers. LAUNCH keeps its own label (UX spec: no "TEST LAUNCH").
 using Kestrel.Core.Flight;
 using Kestrel.Core.Ui;

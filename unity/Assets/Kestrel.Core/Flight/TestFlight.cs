@@ -1,4 +1,4 @@
-// Test Flight (DECISIONS #100): build anything, fly it, see if it reaches orbit or blows up. Engine-free so the
+// Test Flight (DECISIONS #102): build anything, fly it, see if it reaches orbit or blows up. Engine-free so the
 // dotnet runner and Unity EditMode share the same tests.
 //
 // What it is: the existing free build (MissionMode.Free, the Home hangar route) flown with MissionContext.TestFlight
@@ -77,7 +77,7 @@ namespace Kestrel.Core.Flight
         public const string ShortKid = "It went up, but not fast enough to stay up.";
         public const string ShortHint = "More fuel, or another stage.";
         public const string HintPrefix = "Try: ";
-        // Physics ruling on #508 (DECISIONS #100). Escape: specific orbital energy >= 0. Not an orbit, no apogee printed.
+        // Physics ruling on #508 (DECISIONS #102). Escape: specific orbital energy >= 0. Not an orbit, no apogee printed.
         public const string EscapeTitle = "Leaving Earth";
         public const string EscapeKid = "It's going so fast that Earth can't pull it back.";
         // Suborbital: perigee at or under the 120 km floor, apogee above it. The word "orbit" appears nowhere on this card.
@@ -177,7 +177,7 @@ namespace Kestrel.Core.Flight
     public static class TestFlight
     {
         /// <summary>
-        /// The test orbit (DECISIONS #100): the sim's own orbit rule. A coasting rocket whose perigee is above this
+        /// The test orbit (DECISIONS #102): the sim's own orbit rule. A coasting rocket whose perigee is above this
         /// height is in orbit (Headless.cs: outcome "orbit" when periAlt &gt; 120 km). The guidance aim is the free
         /// build's own: the design's catalog orbit, leo400 when unset (MissionFlightSetup).
         /// </summary>

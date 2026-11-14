@@ -1,4 +1,4 @@
-// Nav-harness ids for Test Flight (DECISIONS #100): Home's tile, the Starter's "Test it", the designer's test band
+// Nav-harness ids for Test Flight (DECISIONS #102): Home's tile, the Starter's "Test it", the designer's test band
 // and the result card. Same convention as UiIds.cs.
 namespace Kestrel.Core.Ui
 {

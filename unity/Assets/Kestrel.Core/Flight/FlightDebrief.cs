@@ -94,7 +94,7 @@ namespace Kestrel.Core.Flight
         public double LandingOffsetM = double.NaN;
         /// <summary>F4: why an intact flight missed (<see cref="MissReason.Explain"/>). Null on a pass or a failure event.</summary>
         public MissExplanation Miss;
-        /// <summary>DECISIONS #100: what a test flight did, for its result card. Null on a counted flight.</summary>
+        /// <summary>DECISIONS #102: what a test flight did, for its result card. Null on a counted flight.</summary>
         public TestFlightFacts Test;
 
         /// <summary>
@@ -165,7 +165,7 @@ namespace Kestrel.Core.Flight
         public string PbLine = "";
         public bool Passed;
         public bool FreeBuild;
-        /// <summary>DECISIONS #100: a test flight. Nothing was written, and <see cref="TestCard"/> is the card.</summary>
+        /// <summary>DECISIONS #102: a test flight. Nothing was written, and <see cref="TestCard"/> is the card.</summary>
         public bool TestFlight;
         /// <summary>The Test Flight result card (real sim numbers). Null unless <see cref="TestFlight"/>.</summary>
         public TestFlightCard TestCard;
@@ -319,7 +319,7 @@ namespace Kestrel.Core.Flight
             if (pool == null) pool = NarrationPool.Empty;
             if (minorPerKc < 1) minorPerKc = 1;
             var ev = facts.Failure;
-            // DECISIONS #100: a test flight (Home's Test Flight or a mission's "Test it") writes nothing, like a free build,
+            // DECISIONS #102: a test flight (Home's Test Flight or a mission's "Test it") writes nothing, like a free build,
             // and earns no stars or medals.
             bool test = mission != null && mission.TestFlight;
             bool free = test || mission == null || mission.IsFree || mission.Mode == MissionMode.Free;

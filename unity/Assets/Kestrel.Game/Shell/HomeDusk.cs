@@ -373,7 +373,7 @@ namespace Kestrel.Game.Shell
             p.Stroke();
         }
 
-        /// <summary>Test Flight's mark (DECISIONS #100): a lab flask, drawn, because no shipped font has the emoji.</summary>
+        /// <summary>Test Flight's mark (DECISIONS #102): a lab flask, drawn, because no shipped font has the emoji.</summary>
         public static void Flask(Painter2D p, float w, float h)
         {
             p.BeginPath();

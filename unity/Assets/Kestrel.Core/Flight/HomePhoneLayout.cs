@@ -29,7 +29,7 @@ namespace Kestrel.Core.Flight
     {
         public HomePhoneType Type;
         public HomeRect Safe, Bar, Gear, Pop, Eyebrow, Title, Stats, Launch, Design, Missions, Codex, Thrum;
-        /// <summary>Test Flight's tile (DECISIONS #100): full width, directly under LAUNCH (and Design first), over MISSIONS.</summary>
+        /// <summary>Test Flight's tile (DECISIONS #102): full width, directly under LAUNCH (and Design first), over MISSIONS.</summary>
         public HomeRect TestFlight;
         public float Hero, StatFont, ThrumH;
         public int RecordLines, DesignCaptionLines, TileCaptionLines, ThrumLines, LaunchCaptionLines;
