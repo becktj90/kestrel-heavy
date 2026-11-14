@@ -377,7 +377,7 @@ namespace Kestrel.Game.Shell
             float header = root.worldBound.yMin;
             var title = root.Q("mm-title");
             if (title != null && title.worldBound.height > 1f) header = Mathf.Max(header, title.worldBound.yMax);
-            foreach (var id in new[] { "mm-stats", "mm-fuel", "mm-thrust", "mm-record", "home-primary", "home-design", UiIds.HomeTestFlight, "home-missions", "home-codex", "mm-grid" })
+            foreach (var id in new[] { "mm-stats", "mm-fuel", "mm-thrust", "mm-record", "home-primary", "home-design", UiIds.HomeTestFlight, "home-missions", "home-codex", "mm-grid", "home-thrum" })
             {
                 var e = root.Q(id);
                 if (e == null || e.resolvedStyle.display == DisplayStyle.None) continue;
@@ -395,6 +395,7 @@ namespace Kestrel.Game.Shell
         public static float PopSheetStopX(VisualElement root, float columnLeft, float columnWidth)
         {
             if (root == null || root.panel == null || columnWidth < 80f) return 0f;
+            if (!root.ClassListContains("kh-mm-wide")) return 0f;
             float header = root.worldBound.yMin;
             var title = root.Q("mm-title");
             if (title != null && title.worldBound.height > 1f) header = Mathf.Max(header, title.worldBound.yMax);

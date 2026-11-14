@@ -269,7 +269,7 @@ namespace Kestrel.Game.Guide
                     // The check measures the whole string, not the ellipsis. MeasureTextSize reports the
                     // already-constrained box, so size the face from the character count instead.
                     float fit = Mathf.Max(48f, nameW - 18f);
-                    float natural = name.text.Length * font * 0.62f;
+                    float natural = name.text.Length * font * 0.85f;
                     if (natural > fit && natural > 1f) name.style.fontSize = font * fit / natural;
                     name.style.width = fit;
                     name.style.maxWidth = fit;
