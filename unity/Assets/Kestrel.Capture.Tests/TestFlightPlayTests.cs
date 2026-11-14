@@ -4,6 +4,7 @@
 using System;
 using System.Collections;
 using System.IO;
+using Kestrel.Core.Features;
 using Kestrel.Core.Flight;
 using Kestrel.Core.Json;
 using Kestrel.Core.Ui;
@@ -37,8 +38,10 @@ namespace Kestrel.Capture.Tests
             }
             GameSession.Clear();
             PadHandoff.Clear();
+            ReportWatchdog.BlockRecoveryPresent = false;
             Time.timeScale = 1f;
             Time.captureDeltaTime = 0f;
+            HomeFeatures.TestFlightTile = true;
             if (AppShell.Instance != null)
             {
                 UnityEngine.Object.Destroy(AppShell.Instance.gameObject);
@@ -115,7 +118,6 @@ namespace Kestrel.Capture.Tests
             var d = Design.FromJson(starter);
             d.stages[0].engineCount = 1;
             d.safetyFactor = 1.0;
-            PadHandoff.Arm(d.ToJson(), false, false);
             Click(tile);
             SliceApp app = null;
             yield return Until(() => !flow.Busy && flow.Current == AppScreen.Design && (app = UnityEngine.Object.FindAnyObjectByType<SliceApp>()) != null);
@@ -125,11 +127,28 @@ namespace Kestrel.Capture.Tests
             yield return Until(() => Find(UiIds.TestFlightBand) != null, 10f);
             Assert.IsNotNull(Find(UiIds.TestFlightEyebrow), "the designer shows TEST FLIGHT");
 
+            // After the hangar route opens the designer, put the weak rocket on the pad (SceneFlow may replace PadHandoff).
+            PadHandoff.Arm(d.ToJson(), false, false);
             if (!app.FlightHudVisible) app.PressLaunch();
             var driver = UnityEngine.Object.FindAnyObjectByType<FlightDriver>();
             Assert.IsNotNull(driver, "live FlightDriver");
+            yield return Until(() => driver.Sim != null && driver.Running, 90f);
             VisualElement card = null;
-            yield return Until(() => (card = Find(UiIds.TestRetry)) != null && NavIds.Shown(card), 180f);
+            const float pumpDt = 1f / 60f;
+            driver.CaptureClock = true;
+            float sim = 0f;
+            const float maxSim = 120f;
+            while (sim < maxSim && ((card = Find(UiIds.TestRetry)) == null || !NavIds.Shown(card)))
+            {
+                if (driver.Running)
+                    driver.Advance(pumpDt, pumpDt);
+                var rec = app.RecoveryForCapture;
+                if (rec != null) rec.Present(pumpDt);
+                sim += pumpDt;
+                if ((int)(sim / pumpDt) % 15 == 0) yield return null;
+            }
+            driver.CaptureClock = false;
+            yield return Until(() => (card = Find(UiIds.TestRetry)) != null && NavIds.Shown(card), 30f);
             Assert.IsNotNull(card, "the test flight reaches its card");
             Assert.IsNotNull(Find(UiIds.TestCardTitle));
             Assert.IsNotNull(Find(UiIds.TestNewDesign));
