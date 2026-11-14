@@ -39,3 +39,22 @@ Rule: newest explicit Trevor instruction wins, then DECISIONS.md, then UNITY_SHI
 - IPA ≤40 MB with URP + voice + music → audit at U4, U7.
 - UI Toolkit VoiceOver/Dynamic Type gap → U9.
 - Unity ToS note on agent-driven automation → support email drafted by Chief of Staff, Trevor sends.
+
+## 4. Peer parity (launch-focused sims: SFS, Juno, Space Agency)
+Compared against Spaceflight Simulator / Juno: New Origins / Space Agency for features that fit Kestrel's launch loop (not full solar-system sandbox).
+
+| Peer expectation | Status |
+|---|---|
+| Rocket builder + staging + recovery (RTLS / barge) | Present |
+| Campaign + sandbox | Present |
+| Time / coast warp | Present |
+| Tutorials / coach | Present |
+| Gap-to-goal debrief ("short by X → fix") | **Wired** (H3 `GapToGoal` on report + recovery) |
+| Ghost last-attempt trajectory | **Wired** (`FlightGhost` on rail) |
+| Daily challenge (shared local seed) | **Wired** (mission board Daily) |
+| Per-metric personal bests | **Wired** (cost / mass / margin / landing) |
+| Multi-seed predict odds | Open (still 0/1) |
+| Challenge lab / weekly | Open (1.0/1.1) |
+| Offline design codes | Open (X5) |
+| Photo mode / orbit map | Open (1.1 / partial cameras) |
+| Interplanetary sandbox | Out of scope (post-2.0 S7) |

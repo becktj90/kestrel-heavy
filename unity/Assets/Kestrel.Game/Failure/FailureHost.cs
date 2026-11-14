@@ -552,6 +552,9 @@ namespace Kestrel.Game.Failure
                 actions.Designer = () => { leave(); if (designer != null) designer(); };
                 actions.Fix = () => { leave(); FixField.Apply(ui, FixField.For(kind)); };
             }
+            bool failed = debrief == null || !debrief.Passed;
+            try { FlightGhost.CommitLive(failed); }
+            catch (System.Exception) { /* ghost is best-effort */ }
             Card = ReportView.Build(shown, log, frame, reduce, () => { reveal(); FixField.Apply(ui, FixField.For(kind)); }, debrief, actions);
             Card.userData = this;
             ReportCardChrome.Present(ui, Card, upp, top, bottom);

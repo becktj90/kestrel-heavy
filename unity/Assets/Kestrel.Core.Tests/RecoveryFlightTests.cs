@@ -116,7 +116,9 @@ namespace Kestrel.Core.Tests
             var hard = RecoveryScore.Judge(fast, craft, null);
             Assert.AreEqual(RecoveryScore.Fast, hard.Cause);
             Assert.AreEqual("bronze", hard.Medal, "a deck hit that is too fast is salvage, and salvage keeps bronze");
-            Assert.That(hard.Failure.engineer, Does.Contain("9.00"));
+            // H3: engineer line is GapToGoal (honest shortfall + one fix), not the raw sink dump.
+            Assert.That(hard.Failure.engineer, Does.Contain("Short by"));
+            Assert.That(hard.Failure.engineer, Does.Contain("ease the landing burn"));
 
             var tip = Sample(1.0, 12, 5, 400, false, RecoveryPhase.Down, 1);
             var tipped = RecoveryScore.Judge(tip, craft, null);
