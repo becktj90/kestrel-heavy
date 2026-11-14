@@ -1,0 +1,153 @@
+id,take,file,voice,event,layer,duration_sec,LUFS,dBTP,in_spec,issues,variant,sources
+host/designer.payload.g5-1#a,1,host__designer.payload.g5-1__a.t1.mp3,Sarah,designer.payload,longform,4.911,-16.44,-3.09,yes,,main,G43 (docs/narration-sources.md)
+host/designer.payload.g5-1#a,2,host__designer.payload.g5-1__a.t2.mp3,Sarah,designer.payload,longform,5.46,-16.44,-3.26,yes,,main,G43 (docs/narration-sources.md)
+host/designer.payload.g5-1#b,1,host__designer.payload.g5-1__b.t1.mp3,Chris,designer.payload,longform,6.087,-16.44,-1.76,yes,,main,
+host/designer.payload.g5-1#b,2,host__designer.payload.g5-1__b.t2.mp3,Chris,designer.payload,longform,5.46,-16.44,-1.8,yes,,main,
+host/designer.payload.g5-1#c,1,host__designer.payload.g5-1__c.t1.mp3,Sarah,designer.payload,longform,5.016,-16.44,-3.29,yes,,main,
+host/designer.payload.g5-1#c,2,host__designer.payload.g5-1__c.t2.mp3,Sarah,designer.payload,longform,4.493,-16.45,-3.07,yes,,main,
+host/designer.crew.g5-1#a,1,host__designer.crew.g5-1__a.t1.mp3,Sarah,designer.crew,longform,4.833,-16.44,-3.38,yes,,main,G6 (docs/narration-sources.md)
+host/designer.crew.g5-1#a,2,host__designer.crew.g5-1__a.t2.mp3,Sarah,designer.crew,longform,4.78,-16.43,-3.2,yes,,main,G6 (docs/narration-sources.md)
+host/designer.crew.g5-1#b,1,host__designer.crew.g5-1__b.t1.mp3,Chris,designer.crew,longform,7.602,-16.45,-1.77,yes,,main,
+host/designer.crew.g5-1#b,2,host__designer.crew.g5-1__b.t2.mp3,Chris,designer.crew,longform,7.105,-16.6,-1.73,yes,,main,
+host/designer.crew.g5-1#c,1,host__designer.crew.g5-1__c.t1.mp3,Sarah,designer.crew,longform,3.762,-16.42,-3.2,yes,,main,
+host/designer.crew.g5-1#c,2,host__designer.crew.g5-1__c.t2.mp3,Sarah,designer.crew,longform,3.997,-16.45,-3.39,yes,,main,
+host/designer.avionics.g5-1#a,1,host__designer.avionics.g5-1__a.t1.mp3,Sarah,designer.avionics,longform,4.31,-16.44,-3.02,yes,,main,G7 (docs/narration-sources.md)
+host/designer.avionics.g5-1#a,2,host__designer.avionics.g5-1__a.t2.mp3,Sarah,designer.avionics,longform,4.676,-16.44,-3.07,yes,,main,G7 (docs/narration-sources.md)
+host/designer.avionics.g5-1#b,1,host__designer.avionics.g5-1__b.t1.mp3,Chris,designer.avionics,longform,6.034,-16.44,-1.79,yes,,main,
+host/designer.avionics.g5-1#b,2,host__designer.avionics.g5-1__b.t2.mp3,Chris,designer.avionics,longform,6.87,-16.67,-1.72,yes,,main,
+host/designer.avionics.g5-1#c,1,host__designer.avionics.g5-1__c.t1.mp3,Sarah,designer.avionics,longform,5.93,-16.44,-3.2,yes,,main,
+host/designer.avionics.g5-1#c,2,host__designer.avionics.g5-1__c.t2.mp3,Sarah,designer.avionics,longform,5.669,-16.45,-3.38,yes,,main,
+host/designer.nose.g5-1#a,1,host__designer.nose.g5-1__a.t1.mp3,Sarah,designer.nose,longform,2.743,-16.45,-3.17,yes,,main,
+host/designer.nose.g5-1#a,2,host__designer.nose.g5-1__a.t2.mp3,Sarah,designer.nose,longform,3.056,-16.44,-3.28,yes,,main,
+host/designer.nose.g5-1#b,1,host__designer.nose.g5-1__b.t1.mp3,Chris,designer.nose,longform,5.016,-16.45,-1.68,yes,,main,
+host/designer.nose.g5-1#b,2,host__designer.nose.g5-1__b.t2.mp3,Chris,designer.nose,longform,5.016,-16.53,-1.81,yes,,main,
+host/designer.nose.g5-1#c,1,host__designer.nose.g5-1__c.t1.mp3,Sarah,designer.nose,longform,4.023,-16.43,-3.04,yes,,main,
+host/designer.nose.g5-1#c,2,host__designer.nose.g5-1__c.t2.mp3,Sarah,designer.nose,longform,3.788,-16.43,-3.31,yes,,main,
+host/designer.engines.g5-1#a,1,host__designer.engines.g5-1__a.t1.mp3,Sarah,designer.engines,longform,5.747,-16.45,-3.22,yes,,main,"Codex isp, twr"
+host/designer.engines.g5-1#a,2,host__designer.engines.g5-1__a.t2.mp3,Sarah,designer.engines,longform,5.851,-16.45,-3.18,yes,,main,"Codex isp, twr"
+host/designer.engines.g5-1#b,1,host__designer.engines.g5-1__b.t1.mp3,Chris,designer.engines,longform,5.016,-16.63,-1.63,yes,,main,
+host/designer.engines.g5-1#b,2,host__designer.engines.g5-1__b.t2.mp3,Chris,designer.engines,longform,4.963,-16.73,-1.86,yes,,main,
+host/designer.engines.g5-1#c,1,host__designer.engines.g5-1__c.t1.mp3,Sarah,designer.engines,longform,9.796,-16.44,-3.29,yes,,main,
+host/designer.engines.g5-1#c,2,host__designer.engines.g5-1__c.t2.mp3,Sarah,designer.engines,longform,9.509,-16.43,-2.69,yes,,main,
+host/designer.engines.g5-1#d,1,host__designer.engines.g5-1__d.t1.mp3,Chris,designer.engines,longform,4.258,-16.41,-2.27,yes,,main,
+host/designer.engines.g5-1#d,2,host__designer.engines.g5-1__d.t2.mp3,Chris,designer.engines,longform,4.206,-16.45,-1.56,yes,,main,
+host/designer.engines.g5-1#e,1,host__designer.engines.g5-1__e.t1.mp3,Sarah,designer.engines,longform,5.016,-16.43,-3.18,yes,,main,
+host/designer.engines.g5-1#e,2,host__designer.engines.g5-1__e.t2.mp3,Sarah,designer.engines,longform,5.198,-16.45,-3.08,yes,,main,
+host/designer.engines.g5-2#a,1,host__designer.engines.g5-2__a.t1.mp3,Sarah,designer.engines,longform,6.087,-16.44,-3.21,yes,,main,Codex isp
+host/designer.engines.g5-2#a,2,host__designer.engines.g5-2__a.t2.mp3,Sarah,designer.engines,longform,6.452,-16.44,-3.3,yes,,main,Codex isp
+host/designer.engines.g5-2#b,1,host__designer.engines.g5-2__b.t1.mp3,Chris,designer.engines,longform,4.963,-16.43,-2.0,yes,,main,
+host/designer.engines.g5-2#b,2,host__designer.engines.g5-2__b.t2.mp3,Chris,designer.engines,longform,4.859,-16.45,-1.92,yes,,main,
+host/designer.engines.g5-2#c,1,host__designer.engines.g5-2__c.t1.mp3,Sarah,designer.engines,longform,9.456,-16.44,-3.15,yes,,main,
+host/designer.engines.g5-2#c,2,host__designer.engines.g5-2__c.t2.mp3,Sarah,designer.engines,longform,9.691,-16.44,-3.18,yes,,main,
+host/designer.engines.g5-2#d,1,host__designer.engines.g5-2__d.t1.mp3,Chris,designer.engines,longform,2.821,-16.45,-2.25,yes,,main,
+host/designer.engines.g5-2#d,2,host__designer.engines.g5-2__d.t2.mp3,Chris,designer.engines,longform,2.873,-16.44,-2.58,yes,,main,
+host/designer.engines.g5-3#a,1,host__designer.engines.g5-3__a.t1.mp3,Sarah,designer.engines,longform,3.944,-16.44,-3.22,yes,,main,G8 (docs/narration-sources.md); NASA history; Soviet N1 history
+host/designer.engines.g5-3#a,2,host__designer.engines.g5-3__a.t2.mp3,Sarah,designer.engines,longform,4.18,-16.41,-3.32,yes,,main,G8 (docs/narration-sources.md); NASA history; Soviet N1 history
+host/designer.engines.g5-3#b,1,host__designer.engines.g5-3__b.t1.mp3,Chris,designer.engines,longform,5.46,-16.46,-2.22,yes,,main,
+host/designer.engines.g5-3#b,2,host__designer.engines.g5-3__b.t2.mp3,Chris,designer.engines,longform,5.616,-16.44,-2.08,yes,,main,
+host/designer.engines.g5-3#c,1,host__designer.engines.g5-3__c.t1.mp3,Sarah,designer.engines,longform,11.285,-16.44,-3.22,yes,,main,
+host/designer.engines.g5-3#c,2,host__designer.engines.g5-3__c.t2.mp3,Sarah,designer.engines,longform,11.651,-16.41,-3.27,yes,,main,
+host/designer.engines.g5-3#d,1,host__designer.engines.g5-3__d.t1.mp3,Chris,designer.engines,longform,6.583,-16.65,-1.79,yes,,main,
+host/designer.engines.g5-3#d,2,host__designer.engines.g5-3__d.t2.mp3,Chris,designer.engines,longform,5.878,-16.44,-1.76,yes,,main,
+host/designer.engines.g5-3#e,1,host__designer.engines.g5-3__e.t1.mp3,Sarah,designer.engines,longform,5.042,-16.44,-3.41,yes,,main,
+host/designer.engines.g5-3#e,2,host__designer.engines.g5-3__e.t2.mp3,Sarah,designer.engines,longform,5.094,-16.44,-3.34,yes,,main,
+host/designer.engines.g5-4#a,1,host__designer.engines.g5-4__a.t1.mp3,Sarah,designer.engines,longform,3.527,-16.43,-3.29,yes,,main,Codex cg-cp
+host/designer.engines.g5-4#a,2,host__designer.engines.g5-4__a.t2.mp3,Sarah,designer.engines,longform,3.527,-16.43,-3.48,yes,,main,Codex cg-cp
+host/designer.engines.g5-4#b,1,host__designer.engines.g5-4__b.t1.mp3,Chris,designer.engines,longform,5.878,-16.45,-2.19,yes,,main,
+host/designer.engines.g5-4#b,2,host__designer.engines.g5-4__b.t2.mp3,Chris,designer.engines,longform,6.165,-16.44,-2.24,yes,,main,
+host/designer.engines.g5-4#c,1,host__designer.engines.g5-4__c.t1.mp3,Sarah,designer.engines,longform,6.452,-16.43,-3.44,yes,,main,
+host/designer.engines.g5-4#c,2,host__designer.engines.g5-4__c.t2.mp3,Sarah,designer.engines,longform,6.087,-16.43,-3.37,yes,,main,
+cohost/designer.engines.tip.g5-1,1,cohost__designer.engines.tip.g5-1.t1.mp3,Chris,designer.engines.tip,tip,6.4,-16.44,-1.84,yes,,main,
+cohost/designer.engines.tip.g5-1,2,cohost__designer.engines.tip.g5-1.t2.mp3,Chris,designer.engines.tip,tip,6.922,-16.44,-2.19,yes,,main,
+cohost/designer.engines.tip.g5-2,1,cohost__designer.engines.tip.g5-2.t1.mp3,Chris,designer.engines.tip,tip,4.676,-16.43,-1.87,yes,,main,
+cohost/designer.engines.tip.g5-2,2,cohost__designer.engines.tip.g5-2.t2.mp3,Chris,designer.engines.tip,tip,4.545,-16.44,-2.11,yes,,main,
+cohost/designer.engines.tip.g5-3,1,cohost__designer.engines.tip.g5-3.t1.mp3,Chris,designer.engines.tip,tip,3.161,-16.45,-1.91,yes,,main,
+cohost/designer.engines.tip.g5-3,2,cohost__designer.engines.tip.g5-3.t2.mp3,Chris,designer.engines.tip,tip,3.527,-16.8,-2.0,yes,,main,
+cohost/designer.engines.tip.g5-4,1,cohost__designer.engines.tip.g5-4.t1.mp3,Chris,designer.engines.tip,tip,3.109,-16.42,-2.1,yes,,main,
+cohost/designer.engines.tip.g5-4,2,cohost__designer.engines.tip.g5-4.t2.mp3,Chris,designer.engines.tip,tip,3.161,-16.43,-2.19,yes,,main,
+host/designer.tanks.g5-1#a,1,host__designer.tanks.g5-1__a.t1.mp3,Sarah,designer.tanks,longform,6.269,-16.44,-3.26,yes,,main,G9 (docs/narration-sources.md); NASA Atlas history
+host/designer.tanks.g5-1#a,2,host__designer.tanks.g5-1__a.t2.mp3,Sarah,designer.tanks,longform,5.851,-16.44,-3.24,yes,,main,G9 (docs/narration-sources.md); NASA Atlas history
+host/designer.tanks.g5-1#b,1,host__designer.tanks.g5-1__b.t1.mp3,Chris,designer.tanks,longform,5.878,-16.69,-1.63,yes,,main,
+host/designer.tanks.g5-1#b,2,host__designer.tanks.g5-1__b.t2.mp3,Chris,designer.tanks,longform,5.669,-16.45,-2.04,yes,,main,
+host/designer.tanks.g5-1#c,1,host__designer.tanks.g5-1__c.t1.mp3,Sarah,designer.tanks,longform,12.382,-16.44,-3.12,yes,,main,
+host/designer.tanks.g5-1#c,2,host__designer.tanks.g5-1__c.t2.mp3,Sarah,designer.tanks,longform,11.651,-16.44,-3.33,yes,,main,
+host/designer.tanks.g5-1#d,1,host__designer.tanks.g5-1__d.t1.mp3,Chris,designer.tanks,longform,2.821,-16.44,-1.77,yes,,main,
+host/designer.tanks.g5-1#d,2,host__designer.tanks.g5-1__d.t2.mp3,Chris,designer.tanks,longform,2.952,-16.45,-2.56,yes,,main,
+host/designer.tanks.g5-2#a,1,host__designer.tanks.g5-2__a.t1.mp3,Sarah,designer.tanks,longform,4.415,-16.45,-3.4,yes,,main,G10 (docs/narration-sources.md); NASA Saturn V flight manual
+host/designer.tanks.g5-2#a,2,host__designer.tanks.g5-2__a.t2.mp3,Sarah,designer.tanks,longform,4.859,-16.44,-3.38,yes,,main,G10 (docs/narration-sources.md); NASA Saturn V flight manual
+host/designer.tanks.g5-2#b,1,host__designer.tanks.g5-2__b.t1.mp3,Chris,designer.tanks,longform,4.127,-16.44,-1.9,yes,,main,
+host/designer.tanks.g5-2#b,2,host__designer.tanks.g5-2__b.t2.mp3,Chris,designer.tanks,longform,3.892,-16.43,-1.95,yes,,main,
+host/designer.tanks.g5-2#c,1,host__designer.tanks.g5-2__c.t1.mp3,Sarah,designer.tanks,longform,9.012,-16.43,-3.26,yes,,main,
+host/designer.tanks.g5-2#c,2,host__designer.tanks.g5-2__c.t2.mp3,Sarah,designer.tanks,longform,9.012,-16.43,-3.13,yes,,main,
+host/designer.tanks.g5-2#d,1,host__designer.tanks.g5-2__d.t1.mp3,Chris,designer.tanks,longform,2.952,-16.61,-2.12,yes,,main,
+host/designer.tanks.g5-2#d,2,host__designer.tanks.g5-2__d.t2.mp3,Chris,designer.tanks,longform,2.769,-16.44,-2.32,yes,,main,
+host/designer.tanks.g5-3#a,1,host__designer.tanks.g5-3__a.t1.mp3,Sarah,designer.tanks,longform,6.113,-16.44,-3.13,yes,,main,data/propellants.json
+host/designer.tanks.g5-3#a,2,host__designer.tanks.g5-3__a.t2.mp3,Sarah,designer.tanks,longform,6.165,-16.44,-3.19,yes,,main,data/propellants.json
+host/designer.tanks.g5-3#b,1,host__designer.tanks.g5-3__b.t1.mp3,Chris,designer.tanks,longform,5.277,-16.73,-1.69,yes,,main,
+host/designer.tanks.g5-3#b,2,host__designer.tanks.g5-3__b.t2.mp3,Chris,designer.tanks,longform,5.851,-16.43,-1.85,yes,,main,
+host/designer.tanks.g5-3#c,1,host__designer.tanks.g5-3__c.t1.mp3,Sarah,designer.tanks,longform,5.198,-16.42,-3.14,yes,,main,
+host/designer.tanks.g5-3#c,2,host__designer.tanks.g5-3__c.t2.mp3,Sarah,designer.tanks,longform,5.433,-16.42,-3.21,yes,,main,
+host/designer.tanks.g5-3#d,1,host__designer.tanks.g5-3__d.t1.mp3,Chris,designer.tanks,longform,5.669,-16.43,-2.31,yes,,main,
+host/designer.tanks.g5-3#d,2,host__designer.tanks.g5-3__d.t2.mp3,Chris,designer.tanks,longform,5.251,-16.44,-2.07,yes,,main,
+host/designer.tanks.g5-4#a,1,host__designer.tanks.g5-4__a.t1.mp3,Sarah,designer.tanks,longform,4.545,-16.42,-3.22,yes,,main,standard practice
+host/designer.tanks.g5-4#a,2,host__designer.tanks.g5-4__a.t2.mp3,Sarah,designer.tanks,longform,4.624,-16.44,-3.02,yes,,main,standard practice
+host/designer.tanks.g5-4#b,1,host__designer.tanks.g5-4__b.t1.mp3,Chris,designer.tanks,longform,6.348,-16.43,-1.72,yes,,main,
+host/designer.tanks.g5-4#b,2,host__designer.tanks.g5-4__b.t2.mp3,Chris,designer.tanks,longform,6.687,-16.74,-1.79,yes,,main,
+host/designer.tanks.g5-4#c,1,host__designer.tanks.g5-4__c.t1.mp3,Sarah,designer.tanks,longform,5.851,-16.45,-3.3,yes,,main,
+host/designer.tanks.g5-4#c,2,host__designer.tanks.g5-4__c.t2.mp3,Sarah,designer.tanks,longform,5.747,-16.43,-3.15,yes,,main,
+cohost/designer.tanks.tip.g5-1,1,cohost__designer.tanks.tip.g5-1.t1.mp3,Chris,designer.tanks.tip,tip,4.075,-16.56,-1.81,yes,,main,
+cohost/designer.tanks.tip.g5-1,2,cohost__designer.tanks.tip.g5-1.t2.mp3,Chris,designer.tanks.tip,tip,3.997,-16.82,-1.8,yes,,main,
+cohost/designer.tanks.tip.g5-2,1,cohost__designer.tanks.tip.g5-2.t1.mp3,Chris,designer.tanks.tip,tip,4.545,-16.66,-1.63,yes,,main,
+cohost/designer.tanks.tip.g5-2,2,cohost__designer.tanks.tip.g5-2.t2.mp3,Chris,designer.tanks.tip,tip,4.441,-16.87,-1.76,yes,,main,
+cohost/designer.tanks.tip.g5-3,1,cohost__designer.tanks.tip.g5-3.t1.mp3,Chris,designer.tanks.tip,tip,4.833,-16.45,-1.98,yes,,main,
+cohost/designer.tanks.tip.g5-3,2,cohost__designer.tanks.tip.g5-3.t2.mp3,Chris,designer.tanks.tip,tip,4.441,-16.44,-1.89,yes,,main,
+cohost/designer.tanks.tip.g5-4,1,cohost__designer.tanks.tip.g5-4.t1.mp3,Chris,designer.tanks.tip,tip,3.84,-16.45,-2.6,yes,,main,
+cohost/designer.tanks.tip.g5-4,2,cohost__designer.tanks.tip.g5-4.t2.mp3,Chris,designer.tanks.tip,tip,3.762,-16.43,-1.77,yes,,main,
+host/designer.fins.g5-1#a,1,host__designer.fins.g5-1__a.t1.mp3,Sarah,designer.fins,longform,5.616,-16.44,-3.08,yes,,main,Codex cg-cp
+host/designer.fins.g5-1#a,2,host__designer.fins.g5-1__a.t2.mp3,Sarah,designer.fins,longform,5.094,-16.44,-3.04,yes,,main,Codex cg-cp
+host/designer.fins.g5-1#b,1,host__designer.fins.g5-1__b.t1.mp3,Chris,designer.fins,longform,4.127,-16.62,-1.77,yes,,main,
+host/designer.fins.g5-1#b,2,host__designer.fins.g5-1__b.t2.mp3,Chris,designer.fins,longform,4.18,-16.39,-1.62,yes,,main,
+host/designer.fins.g5-1#c,1,host__designer.fins.g5-1__c.t1.mp3,Sarah,designer.fins,longform,5.747,-16.43,-3.21,yes,,main,
+host/designer.fins.g5-1#c,2,host__designer.fins.g5-1__c.t2.mp3,Sarah,designer.fins,longform,5.46,-16.43,-3.24,yes,,main,
+host/designer.fins.g5-1#d,1,host__designer.fins.g5-1__d.t1.mp3,Chris,designer.fins,longform,4.415,-16.43,-2.11,yes,,main,
+host/designer.fins.g5-1#d,2,host__designer.fins.g5-1__d.t2.mp3,Chris,designer.fins,longform,4.31,-16.46,-2.27,yes,,main,
+host/designer.fins.g5-2#a,1,host__designer.fins.g5-2__a.t1.mp3,Sarah,designer.fins,longform,5.251,-16.44,-3.28,yes,,main,G11 (docs/narration-sources.md); NASA Saturn V
+host/designer.fins.g5-2#a,2,host__designer.fins.g5-2__a.t2.mp3,Sarah,designer.fins,longform,5.329,-16.44,-3.26,yes,,main,G11 (docs/narration-sources.md); NASA Saturn V
+host/designer.fins.g5-2#b,1,host__designer.fins.g5-2__b.t1.mp3,Chris,designer.fins,longform,5.695,-16.45,-2.29,yes,,main,
+host/designer.fins.g5-2#b,2,host__designer.fins.g5-2__b.t2.mp3,Chris,designer.fins,longform,5.46,-16.43,-1.68,yes,,main,
+host/designer.fins.g5-2#c,1,host__designer.fins.g5-2__c.t1.mp3,Sarah,designer.fins,longform,7.784,-16.44,-3.38,yes,,main,
+host/designer.fins.g5-2#c,2,host__designer.fins.g5-2__c.t2.mp3,Sarah,designer.fins,longform,7.602,-16.44,-3.3,yes,,main,
+cohost/designer.fins.tip.g5-1,1,cohost__designer.fins.tip.g5-1.t1.mp3,Chris,designer.fins.tip,tip,3.004,-16.95,-1.6,yes,,main,
+cohost/designer.fins.tip.g5-1,2,cohost__designer.fins.tip.g5-1.t2.mp3,Chris,designer.fins.tip,tip,3.187,-16.73,-1.71,yes,,main,
+cohost/designer.fins.tip.g5-2,1,cohost__designer.fins.tip.g5-2.t1.mp3,Chris,designer.fins.tip,tip,3.161,-16.44,-2.03,yes,,main,
+cohost/designer.fins.tip.g5-2,2,cohost__designer.fins.tip.g5-2.t2.mp3,Chris,designer.fins.tip,tip,3.474,-16.44,-1.86,yes,,main,
+cohost/designer.fins.tip.g5-3,1,cohost__designer.fins.tip.g5-3.t1.mp3,Chris,designer.fins.tip,tip,2.691,-16.44,-2.11,yes,,main,
+cohost/designer.fins.tip.g5-3,2,cohost__designer.fins.tip.g5-3.t2.mp3,Chris,designer.fins.tip,tip,2.691,-16.45,-1.87,yes,,main,
+cohost/designer.fins.tip.g5-4,1,cohost__designer.fins.tip.g5-4.t1.mp3,Chris,designer.fins.tip,tip,4.206,-16.65,-1.81,yes,,main,
+cohost/designer.fins.tip.g5-4,2,cohost__designer.fins.tip.g5-4.t2.mp3,Chris,designer.fins.tip,tip,3.892,-16.76,-1.83,yes,,main,
+host/designer.fairings.g5-2#a,1,host__designer.fairings.g5-2__a.t1.mp3,Sarah,designer.fairings,longform,3.344,-16.42,-3.43,yes,,main,aero
+host/designer.fairings.g5-2#a,2,host__designer.fairings.g5-2__a.t2.mp3,Sarah,designer.fairings,longform,3.344,-16.44,-3.45,yes,,main,aero
+host/designer.fairings.g5-2#b,1,host__designer.fairings.g5-2__b.t1.mp3,Chris,designer.fairings,longform,5.799,-16.71,-1.77,yes,,main,
+host/designer.fairings.g5-2#b,2,host__designer.fairings.g5-2__b.t2.mp3,Chris,designer.fairings,longform,6.165,-16.64,-1.8,yes,,main,
+host/designer.fairings.g5-2#c,1,host__designer.fairings.g5-2__c.t1.mp3,Sarah,designer.fairings,longform,5.669,-16.44,-3.15,yes,,main,
+host/designer.fairings.g5-2#c,2,host__designer.fairings.g5-2__c.t2.mp3,Sarah,designer.fairings,longform,5.695,-16.45,-3.27,yes,,main,
+cohost/designer.fairings.tip.g5-1,1,cohost__designer.fairings.tip.g5-1.t1.mp3,Chris,designer.fairings.tip,tip,4.18,-16.44,-1.75,yes,,main,
+cohost/designer.fairings.tip.g5-1,2,cohost__designer.fairings.tip.g5-1.t2.mp3,Chris,designer.fairings.tip,tip,3.84,-16.44,-2.15,yes,,main,
+cohost/designer.fairings.tip.g5-2,1,cohost__designer.fairings.tip.g5-2.t1.mp3,Chris,designer.fairings.tip,tip,2.508,-16.46,-2.08,yes,,main,
+cohost/designer.fairings.tip.g5-2,2,cohost__designer.fairings.tip.g5-2.t2.mp3,Chris,designer.fairings.tip,tip,2.456,-16.43,-1.86,yes,,main,
+cohost/designer.fairings.tip.g5-3,1,cohost__designer.fairings.tip.g5-3.t1.mp3,Chris,designer.fairings.tip,tip,2.926,-16.45,-2.0,yes,,main,
+cohost/designer.fairings.tip.g5-3,2,cohost__designer.fairings.tip.g5-3.t2.mp3,Chris,designer.fairings.tip,tip,2.873,-16.43,-2.01,yes,,main,
+cohost/designer.fairings.tip.g5-4,1,cohost__designer.fairings.tip.g5-4.t1.mp3,Chris,designer.fairings.tip,tip,3.892,-16.44,-1.82,yes,,main,
+cohost/designer.fairings.tip.g5-4,2,cohost__designer.fairings.tip.g5-4.t2.mp3,Chris,designer.fairings.tip,tip,3.997,-16.44,-2.05,yes,,main,
+host/designer.legs.g5-1#a,1,host__designer.legs.g5-1__a.t1.mp3,Sarah,designer.legs,longform,5.512,-16.43,-3.29,yes,,main,G12 (docs/narration-sources.md); NASA LM/Surveyor
+host/designer.legs.g5-1#a,2,host__designer.legs.g5-1__a.t2.mp3,Sarah,designer.legs,longform,5.512,-16.44,-3.16,yes,,main,G12 (docs/narration-sources.md); NASA LM/Surveyor
+host/designer.legs.g5-1#b,1,host__designer.legs.g5-1__b.t1.mp3,Chris,designer.legs,longform,5.851,-16.44,-1.93,yes,,main,
+host/designer.legs.g5-1#b,2,host__designer.legs.g5-1__b.t2.mp3,Chris,designer.legs,longform,4.362,-16.44,-2.22,yes,,main,
+host/designer.legs.g5-1#c,1,host__designer.legs.g5-1__c.t1.mp3,Sarah,designer.legs,longform,5.93,-16.44,-3.25,yes,,main,
+host/designer.legs.g5-1#c,2,host__designer.legs.g5-1__c.t2.mp3,Sarah,designer.legs,longform,5.93,-16.43,-3.28,yes,,main,
+host/designer.legs.g5-1#d,1,host__designer.legs.g5-1__d.t1.mp3,Chris,designer.legs,longform,3.527,-16.44,-1.81,yes,,main,
+host/designer.legs.g5-1#d,2,host__designer.legs.g5-1__d.t2.mp3,Chris,designer.legs,longform,3.944,-16.44,-2.44,yes,,main,
+host/color.recovery.g5-6#a,1,host__color.recovery.g5-6__a.t1.mp3,Sarah,color.recovery,color,3.788,-16.43,-3.03,yes,,main,
+host/color.recovery.g5-6#a,2,host__color.recovery.g5-6__a.t2.mp3,Sarah,color.recovery,color,3.944,-16.43,-3.18,yes,,main,
+host/color.recovery.g5-6#b,1,host__color.recovery.g5-6__b.t1.mp3,Chris,color.recovery,color,1.933,-16.95,-1.75,yes,,main,
+host/color.recovery.g5-6#b,2,host__color.recovery.g5-6__b.t2.mp3,Chris,color.recovery,color,1.985,-16.43,-1.6,yes,,main,
