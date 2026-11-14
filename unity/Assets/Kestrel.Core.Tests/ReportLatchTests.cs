@@ -59,11 +59,29 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
+        public void UndoOpen_LetsTheSameResultRetry_WhenShowCardNeverLanded()
+        {
+            var result = new object();
+            var latch = new ReportLatch();
+            latch.Arm(null);
+            Assert.IsTrue(latch.TryOpen(result, false, false, false));
+            Assert.IsTrue(latch.Reported);
+            latch.UndoOpen();
+            Assert.IsFalse(latch.Reported);
+            Assert.IsTrue(latch.TryOpen(result, false, false, false), "same result can open after a failed ShowCard");
+            latch.UndoOpen();
+            latch.UndoOpen(); // no-op when already clear
+            Assert.IsFalse(latch.Reported);
+        }
+
+        [Test]
         public void FailureHostRoutesEveryReportThroughTheLatch()
         {
             string host = File.ReadAllText(Path.Combine(Golden.Root, "unity", "Assets", "Kestrel.Game", "Failure", "FailureHost.cs"));
             StringAssert.Contains("latch.Arm(flight != null ? flight.Result : null);", host);
             StringAssert.Contains("latch.TryOpen(result, failed, flight.Running, RecoveryLog.Active)", host);
+            StringAssert.Contains("latch.UndoOpen()", host);
+            StringAssert.Contains("ShowCardOrUndo()", host);
             Assert.AreEqual(2, System.Text.RegularExpressions.Regex.Matches(host, @"latch\.Arm\(").Count, "Bind and ResetFlight both arm");
         }
     }
