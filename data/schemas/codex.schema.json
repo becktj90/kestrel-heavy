@@ -1,13 +1,25 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Kestrel Heavy in-game Codex",
-  "description": "Kid explanation plus an engineer paragraph. Numbers match the sim and the catalogs. No real company or vehicle names.",
+  "description": "Kid explanation plus an engineer paragraph about the sim. Numbers match the sim and the catalogs. Real names, history and dates go only in an entry's history list, each fact citing a ref id from refs. Nothing may tie the game to Blue Origin, its vehicles or sites (DECISIONS #101). Guards: tests/codex.test.cjs.",
   "type": "object",
   "additionalProperties": false,
   "required": ["version", "entries"],
   "properties": {
     "$schema": { "type": "string" },
     "version": { "const": 1 },
+    "refs": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["title", "url"],
+        "properties": {
+          "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "url": { "type": "string", "pattern": "^https://\\S+$" }
+        }
+      }
+    },
     "entries": {
       "type": "array",
       "minItems": 1,
@@ -25,6 +37,24 @@
             "minItems": 1,
             "maxItems": 8,
             "items": { "type": "string", "pattern": "^[A-Za-z0-9._/-]+$" }
+          },
+          "history": {
+            "type": "array",
+            "maxItems": 6,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["text", "refs"],
+              "properties": {
+                "text": { "type": "string", "minLength": 1, "maxLength": 240 },
+                "refs": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 4,
+                  "items": { "type": "string", "pattern": "^[a-z0-9-]+$" }
+                }
+              }
+            }
           }
         }
       }
