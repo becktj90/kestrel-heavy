@@ -62,8 +62,11 @@ namespace Kestrel.Game.Environment
         {
             Hooks++;
             var p = At(); bool r = Red();
-            CinematicEvents.HeatHaze(p.x, p.y, p.z, 0.6f, 5f, r);
-            CinematicEvents.CameraBeat(CameraBeat.Liftoff, 0.7f, r, 0.5f);   // FlightPresenter already shakes on liftoff
+            // Pad clear: overpressure ring + haze + a full-intensity beat. FlightPresenter also kicks
+            // its shake at alt > 1 m; ShakeMul stays below 1 so the two don't stack to a blur.
+            CinematicEvents.Shockwave(p.x, p.y, p.z, 0.22f, true, r, VehicleRadiusM);
+            CinematicEvents.HeatHaze(p.x, p.y, p.z, 0.85f, 6f, r);
+            CinematicEvents.CameraBeat(CameraBeat.Liftoff, 1f, r, 0.55f);
         }
 
         public void OnMaxQ(double q, double t)

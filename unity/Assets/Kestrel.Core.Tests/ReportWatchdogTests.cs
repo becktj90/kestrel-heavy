@@ -2,6 +2,10 @@
 // when Conclude never runs, the ascent was lost, or an open landing burn is still
 // holding RecoveryLog.Active. These cases fail before ReportWatchdog is armed
 // (Active stays true past the deadline); they pass once TryRelease fires.
+//
+// Follow-up: FailureHost used to pass latch.Reported / reported as "card up" and
+// skipped TryRelease entirely on the failure-playback branch, so a cardPending
+// wait on RecoveryLog.Active never Released (mission-done softlock again).
 using System.IO;
 using Kestrel.Core.Flight;
 using NUnit.Framework;
@@ -78,11 +82,32 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
+        public void LatchReportedWithoutACardStillReleases()
+        {
+            // The hole after #488: FailureHost passed reported || latch.Reported as cardUp,
+            // so a Begin() that left cardPending waiting on RecoveryLog.Active never Released.
+            RecoveryLog.Engage();
+            var dog = new ReportWatchdog();
+            Assert.IsFalse(dog.TryRelease(true, true, false, 0), "arms — card is not up");
+            Assert.IsTrue(dog.TryRelease(true, true, false, ReportWatchdog.ReleaseAfterSeconds));
+            Assert.IsFalse(RecoveryLog.Active, "no on-screen card → watchdog still frees the gate");
+        }
+
+        [Test]
         public void FailureHostAndSliceAppArmTheWatchdog()
         {
             string root = Golden.Root;
             string host = File.ReadAllText(Path.Combine(root, "unity", "Assets", "Kestrel.Game", "Failure", "FailureHost.cs"));
-            StringAssert.Contains("reportWatchdog.TryRelease(true, RecoveryLog.Active, reportedAlready, Time.unscaledTime)", host);
+            StringAssert.Contains("reportWatchdog.TryRelease(ascentOver, RecoveryLog.Active, cardUp, Time.unscaledTime)", host);
+            StringAssert.Contains("bool cardUp = CardIsUp()", host);
+            StringAssert.Contains("RetryShowCard()", host);
+            // Failure playback retries ShowCard even after UndoOpen cleared the latch (Codex P2).
+            StringAssert.Contains("else if (!cardUp && !RecoveryLog.Active)", host);
+            // Watchdog must run even while the failure show plays (cardPending / RecoveryLog wait).
+            int tryReleaseAt = host.IndexOf("reportWatchdog.TryRelease(ascentOver");
+            int playedBranch = host.IndexOf("if (played)");
+            Assert.Greater(tryReleaseAt, 0);
+            Assert.Greater(playedBranch, tryReleaseAt, "TryRelease runs before the played early-return");
             string app = File.ReadAllText(Path.Combine(root, "unity", "Assets", "Kestrel.Slice", "Runtime", "SliceApp.cs"));
             StringAssert.Contains("TickReportFailsafe()", app);
             StringAssert.Contains("PresentRecoveryIfAscentOver()", app);

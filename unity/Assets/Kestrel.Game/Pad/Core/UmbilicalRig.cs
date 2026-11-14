@@ -84,6 +84,9 @@ namespace Kestrel.Pad
             if (L == null) return best;
             foreach (var m in L.Members)
             {
+                // Closeout rooms and lightning wires are pad scenery; umbilicals hang from rail / tower steel.
+                if (m.ParentId != null && (m.ParentId.StartsWith("tower.room.", StringComparison.Ordinal) || m.ParentId == "pad.wires")) continue;
+                if (m.Id != null && m.Id.StartsWith("wire.", StringComparison.Ordinal)) continue;
                 float d = SegmentGap(p, m.A, m.B);
                 if (d < best) { best = d; nearest = m.Id; }
             }
