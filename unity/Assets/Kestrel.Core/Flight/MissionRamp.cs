@@ -159,11 +159,25 @@ namespace Kestrel.Core.Flight
             => MissionScore.RequiredDeltaV(TargetKind, ApoKm, PeriKm, C3Km2PerS2, latitudeDeg);
     }
 
+    /// <summary>data/campaign.json bankMigration: the old economy's starting bank and per-mission rewards (Kc).</summary>
+    public sealed class BankMigration
+    {
+        public int FromEconomy = 1;
+        public double StartingBankKc;
+        public readonly List<double> RewardKc = new List<double>();
+    }
+
     /// <summary>The campaign in data/campaign.json. Haven assists stay on MissionRamp.</summary>
     public sealed class Campaign
     {
         public int Version;
         public double StartingBankKc;
+        /// <summary>Economy scale (DECISIONS #87). 1 was the 2 M-240 M table; 2 prices each Starter default at 5-20% of its reward.</summary>
+        public int Economy = 1;
+        /// <summary>Range credit: a settled flight never leaves the bank below this many Kc. 0 means no floor.</summary>
+        public double RangeFloorKc;
+        /// <summary>How a bank saved under an older economy is rescaled on load. Null when the campaign has none.</summary>
+        public BankMigration Migration;
         public bool Timers, Energy, Ads;
         public readonly List<string> StarterUnlocks = new List<string>();
         public readonly List<ulong> Seeds = new List<ulong>();
@@ -174,7 +188,20 @@ namespace Kestrel.Core.Flight
 
         public static Campaign FromJson(JsonObject o)
         {
-            var c = new Campaign { Version = (int)o.Num("version", 1), StartingBankKc = o.Num("startingBankKc") };
+            var c = new Campaign
+            {
+                Version = (int)o.Num("version", 1),
+                StartingBankKc = o.Num("startingBankKc"),
+                Economy = (int)o.Num("economy", 1),
+                RangeFloorKc = o.Num("rangeFloorKc", 0),
+            };
+            var mig = o.Obj("bankMigration");
+            if (mig != null)
+            {
+                c.Migration = new BankMigration { FromEconomy = (int)mig.Num("fromEconomy", 1), StartingBankKc = mig.Num("startingBankKc") };
+                var oldRewards = mig.Arr("rewardKc");
+                if (oldRewards != null) foreach (var x in oldRewards) if (x is double d) c.Migration.RewardKc.Add(d);
+            }
             var dark = o.Obj("darkPatterns");
             if (dark != null) { c.Timers = dark.Bool("timers"); c.Energy = dark.Bool("energy"); c.Ads = dark.Bool("ads"); }
             var starter = o.Arr("starterUnlocks");
