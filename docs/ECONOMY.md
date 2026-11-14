@@ -69,11 +69,11 @@ On the Starter screen a **Build** row (Shop / Base / Safe) picks the manufacturi
 
 Career, designs, the mid-design draft, settings, and the credits wallet are files under `Application.persistentDataPath/saves` (`kh.save.v1.*`). On WebGL that folder is IndexedDB. A write, a pause, and quit call `PlayerPrefs.Save` and `FS.syncfs`, so closing the tab keeps them. The draft is not one of the 8 design slots.
 
-# Kc career bank (economy 2, DECISIONS #87)
+# Kc career bank (economy 2, DECISIONS #87 + #100)
 
-Hardware cost matters, gently. Kc settles each campaign flight: a pass pays the mission reward, minus the rocket's hardware cost (the designer strip's recurring quote, `CostModel.PriceDesign`), plus the reuse refund. A miss pays no reward and still pays for the hardware. Kc is never bought, never timed, and never blocks a launch.
+Hardware cost matters, gently — Poly Bridge style. The per-mission budget is a hard spend cap: an over-budget design cannot launch, and the pad says how far over it is. A pass pays the fixed mission reward, plus an **unspent-budget bonus** equal to `(budget − cost)` when under budget, minus the rocket's hardware cost (the designer strip's recurring quote, `CostModel.PriceDesign`), plus the reuse refund. A miss pays no reward and no bonus and still pays for the hardware. Kc is never bought and never timed.
 
-Numbers live in `data/campaign.json` (`economy: 2`). Each mission's reward equals its budget, and the budget is still the pass gate for cost (`MissReason` "budget"). Each mission's **Starter default** is its campaign winner (`data/golden/campaign-winners.json`); its hardware is about 11% of the reward, and `EconomyBalanceTests` holds every mission inside 5–20%.
+Numbers live in `data/campaign.json` (`economy: 2`). Each mission's reward equals its budget, so a flight at the cap breaks even on the mission purse before recovery, and coming in under budget pays the leftover as the unspent bonus on top of that reward. Each mission's **Starter default** is its campaign winner (`data/golden/campaign-winners.json`); its hardware is about 11% of the reward, and `EconomyBalanceTests` holds every mission inside 5–20%.
 
 | Mission | Starter default (Kc) | Reward = budget (Kc) | Default / reward | Dearest Starter setting (Kc) |
 |---------|------:|------:|------:|------:|
@@ -98,7 +98,7 @@ Numbers live in `data/campaign.json` (`economy: 2`). Each mission's reward equal
 | KH-19 Keel Reuse | 48,517 | 420,000 | 11.6% | 83,220 |
 | KH-20 Far Hold | 26,506 | 230,000 | 11.5% | 42,672 |
 
-Every Starter setting (manufacturing grade, fuel, stages, boosters) stays under the budget, so the budget never fails a Starter rocket. The full designer can still build past it; that is the choice the budget shapes.
+Every Starter setting (manufacturing grade, fuel, stages, boosters) stays under the budget, so Starter always launches. The full designer can still assemble an over-budget stack; Launch stays locked until the quote fits.
 
 Open contracts after KH-20 follow the same rule: a cell's budget (and reward) in `data/golden/contracts-viable.json` is ten times its cheapest flown design, rounded up to 5,000 Kc (about 10%).
 
