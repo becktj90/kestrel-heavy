@@ -4,6 +4,7 @@
 // Motion follows motion-spec.md where cheap: staggered intro by class toggle + USS transition, :active press,
 // :focus ring. Reduce Motion: no intro, no transitions (root gets kh-mm-reduce).
 using System;
+using System.Linq;
 using Kestrel.Core.Features;
 using Kestrel.Core.Flight;
 using Kestrel.Core.Save;
@@ -39,7 +40,7 @@ namespace Kestrel.Game.Shell
 
         /// <summary>Builds the overlay. <paramref name="safe"/> holds the controls (safe-area inset);
         /// <paramref name="full"/> holds the full-bleed bars and grain. Returns the root parented in <paramref name="safe"/>.</summary>
-        public static VisualElement Build(VisualElement full, VisualElement safe, Action launch, Action design, Action missions, bool reduceMotion, string missionLine = null)
+        public static VisualElement Build(VisualElement full, VisualElement safe, Action launch, Action design, Action missions, bool reduceMotion, string missionLine = null, Action testFlight = null)
         {
             MainMenuLayout.HeroLift = 0f;
             var root = new VisualElement { name = RootName, pickingMode = PickingMode.Ignore };
@@ -110,6 +111,9 @@ namespace Kestrel.Game.Shell
             root.Add(launchKey);
             var designKey = DesignBar(design);
             root.Add(designKey);
+            // Test Flight (DECISIONS #100): a full-width tile under LAUNCH / Design first, over the MISSIONS row. Only
+            // built when the game turns it on (HomeFeatures.TestFlightTile), so a Home without it has the old tree.
+            if (HomeFeatures.TestFlightTile && testFlight != null) root.Add(Tile(MainMenuCopy.TestFlight, testFlight));
             var grid = new VisualElement { name = "mm-grid", pickingMode = PickingMode.Ignore };
             grid.AddToClassList("kh-mm-grid");
             grid.style.flexShrink = 0;
@@ -222,6 +226,8 @@ namespace Kestrel.Game.Shell
         // ---- Starter Home (feat(home-simple)) ------------------------------------------------------
 
         /// <summary>Home elements each home.* flag hides (Kestrel.Core.Features.HomeFeatures). Starter: all hidden.</summary>
+        /// <summary>Test Flight's Home tile (DECISIONS #100).</summary>
+        public const string TestFlightId = UiIds.HomeTestFlight;
         public const string DesignId = UiIds.HomeDesign, CodexId = UiIds.HomeCodex, ThrumId = UiIds.HomeThrum, StatsId = "mm-stats";
         public const string CtaContinueClass = "kh-mm-cta-continue";
 
@@ -407,7 +413,7 @@ namespace Kestrel.Game.Shell
                 H = b.H * sy,
             };
             frame.Title = Sc(frame.Title); frame.Stats = Sc(frame.Stats);
-            frame.Launch = Sc(frame.Launch); frame.Design = Sc(frame.Design);
+            frame.Launch = Sc(frame.Launch); frame.Design = Sc(frame.Design); frame.TestFlight = Sc(frame.TestFlight);
             frame.Missions = Sc(frame.Missions); frame.Codex = Sc(frame.Codex);
             frame.Menu = Sc(frame.Menu); frame.Hint = Sc(frame.Hint);
             root.style.paddingTop = 0;
@@ -418,6 +424,7 @@ namespace Kestrel.Game.Shell
             Reparent(root, "mm-stats");
             Reparent(root, "home-primary");
             Reparent(root, "home-design");
+            Reparent(root, TestFlightId);
             Reparent(root, "mm-grid");
             Reparent(root, "home-thrum");
             Pin(root.Q("mm-title"), frame.Title);
@@ -444,6 +451,7 @@ namespace Kestrel.Game.Shell
             VisualElement slot = scroll ? scroller : root;
             PlaceAction(root, slot, "home-primary", frame.Launch, scroll, sx, sy);
             PlaceAction(root, slot, "home-design", frame.Design, scroll, sx, sy);
+            PlaceTestFlight(root, slot, frame.TestFlight, scroll, sx, sy);
             var grid = root.Q("mm-grid");
             if (grid != null)
             {
@@ -694,6 +702,7 @@ namespace Kestrel.Game.Shell
             Reparent(root, "mm-stats");
             Reparent(root, "home-primary");
             Reparent(root, "home-design");
+            Reparent(root, TestFlightId);
             Reparent(root, "mm-grid");
             Reparent(root, "home-thrum");
             var scroller = root.Q("mm-wide-scroll");
@@ -735,6 +744,7 @@ namespace Kestrel.Game.Shell
                 grid.style.flexWrap = StyleKeyword.Null;
             }
             foreach (var it in MainMenuCopy.Tiles) Drop(root.Q("home-" + it.Id));
+            Drop(root.Q(TestFlightId));
             ClearWideTitle(root);
         }
 
@@ -1870,6 +1880,23 @@ namespace Kestrel.Game.Shell
             note.BringToFront();
         }
 
+        /// <summary>The tiles the phone column sizes: the MISSIONS row, then Test Flight's tile when it was built.</summary>
+        static readonly MainMenuCopy.Item[] PhoneTiles = MainMenuCopy.Tiles.Concat(new[] { MainMenuCopy.TestFlight }).ToArray();
+
+        /// <summary>Wide web: Test Flight's tile in its own box (WebHomeLayout), or a row in the scroll list.</summary>
+        static void PlaceTestFlight(VisualElement root, VisualElement host, HudBox box, bool scroll, float sx, float sy)
+        {
+            var e = root.Q(TestFlightId);
+            if (e == null) return;
+            if (!scroll && !box.Live) { e.style.display = DisplayStyle.None; return; }
+            e.style.display = DisplayStyle.Flex;
+            PlaceAction(root, host, TestFlightId, box, scroll, sx, sy);
+            e.style.paddingLeft = 10f * sx;
+            e.style.paddingRight = 10f * sx;
+            e.style.paddingTop = 10f * sy;
+            e.style.paddingBottom = 10f * sy;
+        }
+
         static Button Tile(MainMenuCopy.Item it, Action pressed)
         {
             bool open = it.Live || pressed != null;
@@ -1877,11 +1904,11 @@ namespace Kestrel.Game.Shell
             b.AddToClassList("kh-button"); b.AddToClassList("kh-mm-tile"); b.AddToClassList("kh-mm-anim");
             if (open) b.AddToClassList("kh-mm-tile--focus"); else b.AddToClassList("kh-mm-tile--soon");
             var head = new VisualElement { pickingMode = PickingMode.Ignore }; head.AddToClassList("kh-mm-tile-head");
-            var icon = new HomeGlyph(it.Id == "codex" ? "book" : "orbit");
+            var icon = new HomeGlyph(it.Id == "codex" ? "book" : it.Id == MainMenuCopy.TestFlight.Id ? "flask" : "orbit");
             // The glyph trails the name so "Missions" and "2 of 20 flown" start at the same tile inset (Trevor's zoom).
             // Same row budget as before (TileIcon stays reserved), so no caption gains a line on a 308-wide phone panel.
             icon.style.width = 18; icon.style.height = 18; icon.style.marginLeft = 6; icon.style.marginRight = 0; icon.style.flexShrink = 0;
-            var name = new Label(it.Id == "codex" ? "Codex" : "Missions") { pickingMode = PickingMode.Ignore }; name.AddToClassList("kh-mm-tile-name");
+            var name = new Label(it.Id == "codex" ? "Codex" : it.Id == MainMenuCopy.TestFlight.Id ? it.Label : "Missions") { pickingMode = PickingMode.Ignore }; name.AddToClassList("kh-mm-tile-name");
             name.style.flexGrow = 1; name.style.flexShrink = 1;
             head.Add(name); head.Add(icon);
             if (it.Live)
@@ -1970,7 +1997,7 @@ namespace Kestrel.Game.Shell
                 hintLine.style.whiteSpace = WhiteSpace.Normal;
                 hintLine.style.textOverflow = TextOverflow.Clip;
             }
-            foreach (var it in MainMenuCopy.Tiles)
+            foreach (var it in PhoneTiles)
             {
                 var b = root.Q("home-" + it.Id); if (b == null) continue;
                 b.style.height = z.TileH; b.style.minHeight = z.TileH; b.style.flexShrink = 0;
