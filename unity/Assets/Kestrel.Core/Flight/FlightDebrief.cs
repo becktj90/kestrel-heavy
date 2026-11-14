@@ -46,6 +46,8 @@ namespace Kestrel.Core.Flight
         public double GLimit;
         public long CostMinor;
         public long RecoveredHardwareMinor;
+        /// <summary>The strap-on boosters landed well (KH-10, KH-19), so their hardware joins the reuse refund.</summary>
+        public bool BoostersHome;
         public string ArticleKey;
         public string DesignId;
         public ulong Seed;
@@ -129,6 +131,9 @@ namespace Kestrel.Core.Flight
         public bool TriedSettle;
         public bool WroteCareer;
         public long RewardMinor, CostMinor, RefundMinor, DeltaMinor, BankMinor;
+        /// <summary>DECISIONS #87: what the range covered so the bank stays at the campaign floor. Part of DeltaMinor.</summary>
+        public long RangeCreditMinor;
+        public double RangeCreditKc;
         public double RewardKc, CostKc, RefundKc, DeltaKc, BankKc;
         /// <summary>Credits this flight paid. Zero on a miss, a free build, or when no wallet is attached.</summary>
         public long CreditsEarned;
@@ -357,6 +362,7 @@ namespace Kestrel.Core.Flight
                 debrief.EconomySettled = settled.accepted;
                 debrief.RewardMinor = settled.rewardMinor;
                 debrief.RefundMinor = settled.refundMinor;
+                debrief.RangeCreditMinor = settled.rangeCreditMinor;
                 debrief.DeltaMinor = settled.deltaMinor;
                 debrief.BankMinor = settled.accepted ? settled.bankMinor : store.Career.BankMinor;
                 if (settled.accepted) debrief.CostMinor = settled.costMinor;
@@ -388,6 +394,7 @@ namespace Kestrel.Core.Flight
 
             debrief.RewardKc = debrief.RewardMinor / (double)minorPerKc;
             debrief.RefundKc = debrief.RefundMinor / (double)minorPerKc;
+            debrief.RangeCreditKc = debrief.RangeCreditMinor / (double)minorPerKc;
             debrief.DeltaKc = debrief.DeltaMinor / (double)minorPerKc;
             debrief.BankKc = debrief.BankMinor / (double)minorPerKc;
             if (debrief.EconomySettled)
@@ -578,10 +585,12 @@ namespace Kestrel.Core.Flight
         {
             if (free) return "Free build. No Kc, and no unlocks. Medals still count.";
             if (facts == null || !facts.EconomyKnown) return "Kc waits until the build cost is known.";
+            // DECISIONS #87: when the range covered part of the bill, the card says so in the same plain words.
+            string range = d.RangeCreditMinor > 0 ? " Range credit " + Kc(d.RangeCreditKc) + "." : "";
             if (d.EconomySettled && d.Passed)
-                return "Reward " + Kc(d.RewardKc) + ". Hardware " + Kc(d.CostKc) + ". Recovery " + Kc(d.RefundKc) + ". Bank " + Kc(d.BankKc) + ".";
+                return "Reward " + Kc(d.RewardKc) + ". Hardware " + Kc(d.CostKc) + ". Recovery " + Kc(d.RefundKc) + "." + range + " Bank " + Kc(d.BankKc) + ".";
             if (d.EconomySettled)
-                return "No reward. Hardware " + Kc(d.CostKc) + ". Bank " + Kc(d.BankKc) + ".";
+                return "No reward. Hardware " + Kc(d.CostKc) + "." + range + " Bank " + Kc(d.BankKc) + ".";
             if (d.TriedSettle)
                 return "Stars saved. Kc was settled the first time this mission opened.";
             return "Kc is not posted from this screen.";

@@ -40,8 +40,8 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual(0.6, m1.Diameter);
             Assert.AreEqual("apogee", m1.Target.Kind);
             Assert.AreEqual(10, m1.Target.ApoKm);
-            Assert.AreEqual(2000000, m1.BudgetKc);
-            Assert.AreEqual(2000000, m1.RewardKc);
+            Assert.AreEqual(40000, m1.BudgetKc);
+            Assert.AreEqual(40000, m1.RewardKc);
             Assert.IsTrue(m1.Gentle);
             Assert.AreEqual(0, m1.Requirements.Count);
             Assert.AreEqual(0, m1.BonusGoals.Count);
