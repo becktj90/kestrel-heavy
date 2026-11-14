@@ -23,6 +23,9 @@ namespace Kestrel.Game.Guide
         /// sheet column's left and width in panel pixels, so a control beside the sheet does not lift it. 0 keeps the menu footer.</summary>
         public static System.Func<float, float, float> ClearBottomPanel;
 
+        /// <summary>Panel x the sheet must stay left of, so a right-hand action column does not crush it into the wordmark. 0 means no cap.</summary>
+        public static System.Func<float, float, float> SheetStopX;
+
         /// <summary>Home sets this while it is up: true keeps the corner pop off the menu (Starter Home, home.thrum off).</summary>
         public static System.Func<bool> HideOnMenu;
 
@@ -434,16 +437,48 @@ namespace Kestrel.Game.Guide
             float origin = root != null ? root.worldBound.xMin : 0f;
             float left = origin + screen.ColumnX * panelPerPoint;
             float width = screen.ColumnWidth * panelPerPoint;
-            float px;
-            try { px = ClearBottomPanel(left, width); }
-            catch (System.Exception) { px = 0f; }
-            if (float.IsNaN(px) || px < 1f) return;
-            float pt = px / panelPerPoint + 8f;
-            // Leave the sheet on screen, under the title. A control in the header must not shove it above y=0.
-            float maxFooter = screen.Height - screen.DockTop - 8f;
-            if (maxFooter < 0f) maxFooter = 0f;
-            if (pt > maxFooter) pt = maxFooter;
+            float px = ReadClearance(left, width);
+            float pt = px > 1f ? px / panelPerPoint + 8f : 0f;
+            float room = screen.Height - screen.DockTop - pt;
+            // A right-hand card just under the wordmark would squash the sheet into a sliver. Stop short of that card
+            // and dock in the open band instead. A phone column has no card beside it, so it keeps the lift.
+            bool narrowed = false;
+            if (room < 110f && SheetStopX != null)
+            {
+                float stop;
+                try { stop = SheetStopX(left, width); }
+                catch (System.Exception) { stop = 0f; }
+                float localStop = panelPerPoint > 0f ? (stop - origin) / panelPerPoint : 0f;
+                float colLeft = screen.ColumnX;
+                if (localStop > colLeft + 220f)
+                {
+                    narrowed = true;
+                    float newW = Mathf.Min(screen.ColumnWidth, localStop - colLeft - 8f);
+                    float safeLeft = colLeft - GuidePacing.SideMarginPt;
+                    if (safeLeft < 0f) safeLeft = 0f;
+                    float safeRight = screen.Width - (colLeft + newW) - GuidePacing.SideMarginPt;
+                    if (safeRight < 0f) safeRight = 0f;
+                    screen = new GuideScreen(screen.Width, screen.Height, screen.SafeTop, screen.SafeBottom, safeLeft, safeRight, screen.Header, screen.Compact, 0f);
+                    left = origin + screen.ColumnX * panelPerPoint;
+                    width = screen.ColumnWidth * panelPerPoint;
+                    px = ReadClearance(left, width);
+                    pt = px > 1f ? px / panelPerPoint + 8f : 0f;
+                    room = screen.Height - screen.DockTop - pt;
+                }
+            }
+            if (narrowed && room < 110f) return;
             if (pt > screen.Footer) screen = screen.WithFooter(pt);
+        }
+
+        float ReadClearance(float left, float width)
+        {
+            if (ClearBottomPanel == null) return 0f;
+            try
+            {
+                float px = ClearBottomPanel(left, width);
+                return float.IsNaN(px) || px < 0f ? 0f : px;
+            }
+            catch (System.Exception) { return 0f; }
         }
 
         void ApplyScreen()

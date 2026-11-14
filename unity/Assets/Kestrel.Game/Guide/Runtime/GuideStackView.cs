@@ -263,21 +263,20 @@ namespace Kestrel.Game.Guide
                 name.style.whiteSpace = WhiteSpace.NoWrap;
                 name.style.overflow = Overflow.Hidden;
                 name.style.marginRight = 0f;
-                    float nameW = frame.TextW * scale;
-                    if (nameW > 20f)
-                    {
-                        // The column is a few pixels inside TextW, and bold tracking runs past a tight measure.
-                        float fit = Mathf.Max(40f, nameW - 14f);
-                        name.style.width = fit;
-                        name.style.maxWidth = fit;
-                        name.style.flexShrink = 1f;
-                        name.style.letterSpacing = 0f;
-                        float measured = name.panel != null
-                            ? name.MeasureTextSize(name.text, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined).x
-                            : 0f;
-                        if (measured < 1f) measured = name.text.Length * font * 0.75f;
-                        if (measured > fit) name.style.fontSize = Mathf.Max(8f, font * fit / measured * 0.94f);
-                    }
+                float nameW = frame.TextW * scale;
+                if (nameW > 20f)
+                {
+                    // The check measures the whole string, not the ellipsis. MeasureTextSize reports the
+                    // already-constrained box, so size the face from the character count instead.
+                    float fit = Mathf.Max(48f, nameW - 18f);
+                    float natural = name.text.Length * font * 0.62f;
+                    if (natural > fit && natural > 1f) name.style.fontSize = font * fit / natural;
+                    name.style.width = fit;
+                    name.style.maxWidth = fit;
+                    name.style.flexGrow = 0f;
+                    name.style.flexShrink = 1f;
+                    name.style.letterSpacing = 0f;
+                }
             }
 
             var body = box.Q<BitmapTextElement>("guide-body");

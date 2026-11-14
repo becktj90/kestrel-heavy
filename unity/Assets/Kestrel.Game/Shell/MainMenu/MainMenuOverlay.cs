@@ -183,9 +183,16 @@ namespace Kestrel.Game.Shell
             // The Thrum corner pop rests under the gear and the wordmark while Home is up (phone column only).
             GuideBoxDriver.ClearTopPanel = () => PopClearTop(root, full);
             GuideBoxDriver.ClearBottomPanel = (left, width) => PopClearBottom(root, left, width);
+            GuideBoxDriver.SheetStopX = (left, width) => PopSheetStopX(root, left, width);
             // Starter Home (home.thrum off) has no Thrum: his corner pop stays off Home too, so nothing floats over the rocket.
             GuideBoxDriver.HideOnMenu = () => !HomeFeatures.Current().Thrum;
-            root.RegisterCallback<DetachFromPanelEvent>(_ => { GuideBoxDriver.ClearTopPanel = null; GuideBoxDriver.ClearBottomPanel = null; GuideBoxDriver.HideOnMenu = null; });
+            root.RegisterCallback<DetachFromPanelEvent>(_ =>
+            {
+                GuideBoxDriver.ClearTopPanel = null;
+                GuideBoxDriver.ClearBottomPanel = null;
+                GuideBoxDriver.SheetStopX = null;
+                GuideBoxDriver.HideOnMenu = null;
+            });
             launchKey.RegisterCallback<GeometryChangedEvent>(_ =>
             {
                 float h = full.resolvedStyle.height; if (h <= 0f) return;
@@ -382,6 +389,27 @@ namespace Kestrel.Game.Shell
             }
             float clear = bottom - top;
             return float.IsNaN(clear) || clear < 0f ? 0f : clear;
+        }
+
+        /// <summary>Left edge, in panel pixels, of the first control to the right of the sheet. 0 when the column is full width.</summary>
+        public static float PopSheetStopX(VisualElement root, float columnLeft, float columnWidth)
+        {
+            if (root == null || root.panel == null || columnWidth < 80f) return 0f;
+            float header = root.worldBound.yMin;
+            var title = root.Q("mm-title");
+            if (title != null && title.worldBound.height > 1f) header = Mathf.Max(header, title.worldBound.yMax);
+            float stop = float.PositiveInfinity;
+            foreach (var id in new[] { "mm-stats", "home-primary", "home-design", UiIds.HomeTestFlight, "home-missions", "home-codex", "mm-grid" })
+            {
+                var e = root.Q(id);
+                if (e == null || e.resolvedStyle.display == DisplayStyle.None) continue;
+                var b = e.worldBound;
+                if (b.height < 1f || float.IsNaN(b.xMin)) continue;
+                if (b.yMax < header - 1f) continue;
+                if (b.xMin <= columnLeft + 48f) continue;
+                if (b.xMin < stop) stop = b.xMin;
+            }
+            return float.IsInfinity(stop) ? 0f : stop;
         }
 
         /// <summary>Landscape web: the wordmark sits on the hero, and the action cards sit in a column
