@@ -84,30 +84,32 @@ namespace Kestrel.Core.Tests
             Assert.IsFalse(DarkPatterns.Timers);
             Assert.IsFalse(DarkPatterns.Energy);
             Assert.IsFalse(DarkPatterns.Ads);
-            Assert.AreEqual(2_000_000, campaign.StartingBankKc);
+            Assert.AreEqual(100_000, campaign.StartingBankKc);
+            Assert.AreEqual(2, campaign.Economy);
+            Assert.AreEqual(60_000, campaign.RangeFloorKc);
             CollectionAssert.AreEqual(new[] { "core-stage", "engines", "tanks", "fairing" }, campaign.StarterUnlocks);
             CollectionAssert.AreEqual(new ulong[] { 1, 2, 3, 4, 5 }, campaign.Seeds);
 
-            Expect(1, "First Hop", "kid-box", 50, 0.2, "apogee", 10, 0, 2e6, new[] { "fins", "nose" }, true);
-            Expect(2, "Edge of Space", "kid-box", 100, 0.2, "apogee", 100, 0, 5e6, new[] { "stage-2" }, true);
-            Expect(3, "Tiny Orbit", "cubesat", 20, 0.05, "circular", 200, 200, 15e6, new[] { "nozzle-expansion" }, true);
-            Expect(4, "Weather Eye", "leo-sat", 2500, 12, "circular", 500, 500, 40e6, new[] { "pc", "throttle" }, false);
-            Expect(5, "Heavy Lifter", "leo-sat", 12000, 40, "circular", 400, 400, 90e6, new[] { "crossfeed" }, false);
-            Expect(6, "Come Back", "leo-sat", 8000, 30, "circular", 200, 200, 70e6, new[] { "legs", "grid-fins" }, false);
-            Expect(7, "Haven at Sea", "gto-comsat", 5500, 60, "ellipse", 35786, 200, 110e6, new[] { "insulation" }, false);
-            Expect(8, "Crew Day", "crew-capsule", 12000, 25, "circular", 400, 400, 160e6, new[] { "redundant-avionics" }, false);
-            Expect(9, "Moon Shot", "lunar-probe", 3000, 15, "c3", 0, 200, 180e6, new[] { "hydrolox-upper" }, false);
-            Expect(10, "Big Reuse", "gto-comsat", 7000, 70, "ellipse", 35786, 200, 120e6, new string[0], false);
-            Expect(11, "Dawn Ledger", "weather-sat", 2200, 8, "circular", 550, 550, 80e6, new string[0], false);
-            Expect(12, "Glass Meridian", "space-telescope", 1800, 10, "circular", 600, 600, 100e6, new string[0], false);
-            Expect(13, "Flock Yard", "cubesat-dispenser", 480, 1.2, "circular", 550, 550, 90e6, new string[0], false);
-            Expect(14, "Harbor Trunk", "cargo-capsule", 10000, 35, "circular", 400, 400, 130e6, new string[0], false);
-            Expect(15, "Relay West", "geo-relay", 6200, 50, "ellipse", 35786, 200, 140e6, new string[0], false);
-            Expect(16, "Second Watch", "crew-capsule", 12000, 25, "circular", 500, 500, 180e6, new string[0], false);
-            Expect(17, "Lumen Down", "lunar-lander", 4000, 18, "c3", 0, 200, 190e6, new string[0], false);
-            Expect(18, "Nightjar", "lunar-probe", 2500, 15, "c3", 0, 200, 200e6, new string[0], false);
-            Expect(19, "Keel Reuse", "gto-comsat", 7500, 70, "ellipse", 35786, 200, 210e6, new string[0], false);
-            Expect(20, "Far Hold", "lunar-probe", 3200, 16, "c3", 0, 200, 240e6, new string[0], false);
+            Expect(1, "First Hop", "kid-box", 50, 0.2, "apogee", 10, 0, 40_000, new[] { "fins", "nose" }, true);
+            Expect(2, "Edge of Space", "kid-box", 100, 0.2, "apogee", 100, 0, 45_000, new[] { "stage-2" }, true);
+            Expect(3, "Tiny Orbit", "cubesat", 20, 0.05, "circular", 200, 200, 70_000, new[] { "nozzle-expansion" }, true);
+            Expect(4, "Weather Eye", "leo-sat", 2500, 12, "circular", 500, 500, 140_000, new[] { "pc", "throttle" }, false);
+            Expect(5, "Heavy Lifter", "leo-sat", 12000, 40, "circular", 400, 400, 210_000, new[] { "crossfeed" }, false);
+            Expect(6, "Come Back", "leo-sat", 8000, 30, "circular", 200, 200, 200_000, new[] { "legs", "grid-fins" }, false);
+            Expect(7, "Haven at Sea", "gto-comsat", 5500, 60, "ellipse", 35786, 200, 280_000, new[] { "insulation" }, false);
+            Expect(8, "Crew Day", "crew-capsule", 12000, 25, "circular", 400, 400, 220_000, new[] { "redundant-avionics" }, false);
+            Expect(9, "Moon Shot", "lunar-probe", 3000, 15, "c3", 0, 200, 210_000, new[] { "hydrolox-upper" }, false);
+            Expect(10, "Big Reuse", "gto-comsat", 7000, 70, "ellipse", 35786, 200, 380_000, new string[0], false);
+            Expect(11, "Dawn Ledger", "weather-sat", 2200, 8, "circular", 550, 550, 150_000, new string[0], false);
+            Expect(12, "Glass Meridian", "space-telescope", 1800, 10, "circular", 600, 600, 200_000, new string[0], false);
+            Expect(13, "Flock Yard", "cubesat-dispenser", 480, 1.2, "circular", 550, 550, 165_000, new string[0], false);
+            Expect(14, "Harbor Trunk", "cargo-capsule", 10000, 35, "circular", 400, 400, 215_000, new string[0], false);
+            Expect(15, "Relay West", "geo-relay", 6200, 50, "ellipse", 35786, 200, 330_000, new string[0], false);
+            Expect(16, "Second Watch", "crew-capsule", 12000, 25, "circular", 500, 500, 230_000, new string[0], false);
+            Expect(17, "Lumen Down", "lunar-lander", 4000, 18, "c3", 0, 200, 235_000, new string[0], false);
+            Expect(18, "Nightjar", "lunar-probe", 2500, 15, "c3", 0, 200, 200_000, new string[0], false);
+            Expect(19, "Keel Reuse", "gto-comsat", 7500, 70, "ellipse", 35786, 200, 420_000, new string[0], false);
+            Expect(20, "Far Hold", "lunar-probe", 3200, 16, "c3", 0, 200, 230_000, new string[0], false);
             Assert.AreEqual("achievable", campaign.Mission(10).Band);
             Assert.AreEqual("hard", campaign.Mission(16).Band);
             Assert.AreEqual("hard", campaign.Mission(20).Band);
@@ -189,7 +191,7 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual(0, CostModel.ReuseRefundMinor(0, 0));
 
             var career = Career.Start(campaign, perKc);
-            Assert.AreEqual(Career.KcToMinor(2_000_000, perKc), career.BankMinor);
+            Assert.AreEqual(Career.KcToMinor(100_000, perKc), career.BankMinor);
             Assert.IsTrue(career.HasUnlock("engines"));
             Assert.IsFalse(career.HasUnlock("fins"));
             Assert.IsTrue(career.MissionOpen(1));
@@ -197,7 +199,7 @@ namespace Kestrel.Core.Tests
 
             var skipped = career.Settle(2, true, 1, 1, "core");
             Assert.IsFalse(skipped.accepted);
-            Assert.AreEqual(Career.KcToMinor(2_000_000, perKc), career.BankMinor);
+            Assert.AreEqual(Career.KcToMinor(100_000, perKc), career.BankMinor);
 
             long cost = 1_000;
             long hardware = 5_000;

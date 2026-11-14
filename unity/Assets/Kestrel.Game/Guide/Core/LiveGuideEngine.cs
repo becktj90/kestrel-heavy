@@ -17,6 +17,7 @@ namespace Kestrel.Game.Guide
     /// A voice path is attached only when a clip file exists under assets/narration/guide.</summary>
     public sealed class LiveGuideEngine : IGuideEngine, IGuideReport
     {
+        public string RepoRoot => repoRoot;
         readonly CoreScript script;
         readonly CoreState state;
         readonly string repoRoot;
@@ -143,12 +144,18 @@ namespace Kestrel.Game.Guide
             return streak;
         }
 
-        public void Welcome()
+        public void Welcome() => OpeningIntroSequence.Queue(this);
+
+        public void OfferBeat(GuideBeat beat)
         {
-            if (state.FirstRunDone) return;
-            for (int n = 1; n <= 5; n++)
-                Offer("guide.first", n.ToString(), null, "home", false);
+            if (beat == null || state.FirstRunDone) return;
+            PushSettings();
+            if (IndexOf(beat.Id) >= 0) return;
+            beat.FromEngine = true;
+            queued.Add(beat);
         }
+
+        public void SkipWelcome() => OpeningIntroSequence.MarkSkipped(state);
 
         public void Complete(string beatId) => Finish(beatId, true);
 
@@ -182,14 +189,7 @@ namespace Kestrel.Game.Guide
             int at = IndexOf(beatId);
             if (at >= 0) queued.RemoveAt(at);
             if (seen && !string.IsNullOrEmpty(beatId)) state.MarkSeen(beatId);
-            if (WelcomeDone()) state.FirstRunDone = true;
-        }
-
-        bool WelcomeDone()
-        {
-            for (int n = 1; n <= 5; n++)
-                if (!state.HasSeen("first." + n)) return false;
-            return true;
+            if (OpeningIntroSequence.IsComplete(state)) state.FirstRunDone = true;
         }
 
         int IndexOf(string beatId)

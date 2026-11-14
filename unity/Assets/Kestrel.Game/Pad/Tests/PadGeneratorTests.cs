@@ -49,6 +49,16 @@ namespace Kestrel.Pad.Tests
             Assert.That(PadGenerator.ArchetypeFor("pad.tower", true), Is.EqualTo(PadArchetype.TowerStrongback));
         }
 
+        [Test]
+        public void LiquidTowerGetsStrongbackAndMastWires()
+        {
+            var L = PadGenerator.Generate(2, PadArchetype.TowerStrongback, Heavy);
+            Assert.That(L.Graph.Contains("strongback"), Is.True);
+            Assert.That(L.Graph.Query(ElementCategory.Structure, "lightning-mast").Count, Is.GreaterThanOrEqualTo(2));
+            Assert.That(L.Graph.Contains("pad.wires"), Is.True);
+            Assert.That(L.Members.Any(m => m.Id.StartsWith("wire.ring.")), Is.True);
+        }
+
         [TestCase(30f, 1.6f)] [TestCase(70f, 2.5f)] [TestCase(120f, 5f)]
         public void TowerClearsVehicleAndOvertopsIt(float h, float r)
         {
@@ -57,6 +67,8 @@ namespace Kestrel.Pad.Tests
             Assert.That(L.Tower.NearFaceZ - r, Is.EqualTo(6f).Within(1e-3f));
             foreach (var m in L.Members)
             {
+                // Lightning catenaries intentionally fly over the stack (PAD_DETAIL_GRAMMAR §2).
+                if (m.ParentId == "pad.wires") continue;
                 // nothing but arms may enter the vehicle cylinder (+0.5 m)
                 foreach (var p in new[] { m.A, m.B })
                     Assert.That(p.X * p.X + p.Z * p.Z, Is.GreaterThan((r + 0.5f) * (r + 0.5f)).Or.LessThan(-1f), m.Id);
@@ -126,9 +138,9 @@ namespace Kestrel.Pad.Tests
             Assert.That(g.Query(ElementCategory.SwingArm).Count, Is.EqualTo(L.Arms.Count));
             Assert.That(g.PathTo("tower.l03.col.ne"), Is.EqualTo(new[] { "pad", "tower", "tower.l03", "tower.l03.col.ne" }));
             Assert.That(g.Parent("tower.l03").Id, Is.EqualTo("tower"));
-            // pad + tower, plus the D3 deck/trench subtree and the free-standing lightning masts (both hang off pad).
+            // pad + tower, plus the D3 deck/trench subtree, lightning masts and catenary wires (all hang off pad).
             int aside = 0;
-            foreach (var id in new[] { "pad.deck", "pad.trench", "pad.deluge", "pad.farm" })
+            foreach (var id in new[] { "pad.deck", "pad.trench", "pad.deluge", "pad.farm", "pad.wires" })
                 if (g.Contains(id)) aside += 1 + g.Descendants(id).Count();
             int masts = g.Query(ElementCategory.Structure, "lightning-mast").Count;
             Assert.That(masts, Is.GreaterThan(0));
