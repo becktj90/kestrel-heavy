@@ -9,7 +9,7 @@ namespace Kestrel.Game.Audio.Tests
         {
             Assert.IsTrue(SfxCatalog.TryResolve("liftoff", out var liftoff));
             Assert.AreEqual("liftoff", liftoff.File);
-            Assert.AreEqual(0.72f, liftoff.Volume);
+            Assert.AreEqual(0.88f, liftoff.Volume);
             Assert.IsTrue(liftoff.Critical);
             Assert.IsFalse(liftoff.Air);
 

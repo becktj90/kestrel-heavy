@@ -462,11 +462,12 @@ namespace Kestrel.Game.Guide.Tests
         }
 
         [Test]
-        public void FirstRunIsFiveCards()
+        public void FirstRunIsFourOpeningBeats()
         {
             var beat = MockGuideEngine.FirstRun();
-            Assert.AreEqual(5, GuidePages.Of(beat, false).Length);
+            Assert.AreEqual(4, GuidePages.Of(beat, false).Length);
             Assert.That(beat.Cards[0].Kid, Does.Contain("I talk to wrenches."));
+            Assert.That(beat.Cards[3].Kid, Does.Contain("KH-1"));
         }
     }
 

@@ -68,7 +68,10 @@ namespace Kestrel.Slice.DesignerV3
                 {
                     double ratio = r.maxQ_kPa.Value / r.qLim_kPa.Value;
                     qState = ratio > 1 ? CellState.Bad : ratio > 0.85 ? CellState.Warn : CellState.Good;
-                    qVal += " / " + r.qLim_kPa.Value.ToString("0.0", Inv);
+                    // Playthrough 2026-11-11: "49.3 kPa / 83.6" overran the cost cell. Whole kPa for both, the unit once,
+                    // and a decimal only when the two would read equal (FlightDebrief.PairText).
+                    FlightDebrief.PairText(r.maxQ_kPa.Value, r.qLim_kPa.Value, out var q, out var lim);
+                    qVal = q + " / " + lim + " kPa";
                 }
             }
             list.Add(new StripCell("q", "Max-Q", qVal, qState));
