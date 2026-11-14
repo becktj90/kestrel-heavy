@@ -502,7 +502,7 @@ namespace Kestrel.Capture.Tests
                 // Two-tap confirm (Hangar-style): first tap arms, second restarts.
                 Click(Find(UiIds.PauseRestart));
                 yield return null;
-                Assert.That(Find(UiIds.PauseRestart).text, Does.Contain("Tap again"));
+                Assert.That(((Button)Find(UiIds.PauseRestart)).text, Does.Contain("Tap again"));
                 Click(Find(UiIds.PauseRestart));
                 for (int i = 0; i < 6; i++) yield return null;
                 Assert.IsFalse(NavIds.Shown(Find("screen-pause")), "Restart closes the pause menu");

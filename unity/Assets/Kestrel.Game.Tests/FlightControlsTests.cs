@@ -91,7 +91,7 @@ namespace Kestrel.Game.Tests
                     Assert.IsNotEmpty(b.tooltip, b.name);
                 Assert.IsFalse(driver.Held);
                 int restarts = 0, exits = 0;
-                Object.DestroyImmediate(chrome);
+                UnityEngine.Object.DestroyImmediate(chrome);
                 // Re-bind on a fresh HUD so Restart/Exit wire to the confirm counters.
                 hud = new VisualElement { name = UiIds.ScreenFlight };
                 chrome = go.AddComponent<FlightChrome>();
@@ -121,7 +121,7 @@ namespace Kestrel.Game.Tests
                 var chase = ChaseCamera.DesiredOffset(Vector3.up, 50f, 0f);
                 Assert.AreEqual(chase, chrome.Frame(chase));
             }
-            finally { Object.DestroyImmediate(go); }
+            finally { UnityEngine.Object.DestroyImmediate(go); }
         }
 
         static void Press(Button button)
