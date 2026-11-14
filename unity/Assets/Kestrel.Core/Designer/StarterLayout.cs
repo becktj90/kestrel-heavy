@@ -184,6 +184,12 @@ namespace Kestrel.Core.Designer
                     f.GapPt = CompactGap; f.SheetPadPt = CompactPad; f.LaunchPt = CompactLaunchH;
                 }
             }
+            else if (!f.Wide && i.LandingVisible)
+            {
+                f.GapPt = 6f;
+                f.SheetPadPt = 10f;
+                f.LaunchPt = 48f;
+            }
 
             // Corner controls: Back top-left like every screen (WebDesignerLayout.Home), Reset top-right, left of the page EXIT.
             f.Back = Box(left, st + Edge, CornerW, CornerH);

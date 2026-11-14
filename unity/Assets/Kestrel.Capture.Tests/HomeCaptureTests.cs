@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Kestrel.Core.Features;
+using Kestrel.Core.Guide;
 using Kestrel.Core.Ui;
 using Kestrel.Game.Guide;
 using Kestrel.Game.Shell;
@@ -149,6 +150,13 @@ namespace Kestrel.Capture.Tests
                 yield return null;
             }
             CaptureCamera.Clear();
+            GuideSession.Bind(null);
+            string saves = Path.Combine(Application.persistentDataPath, "saves");
+            Directory.CreateDirectory(saves);
+            var guide = GuideState.Fresh(false, false);
+            guide.FirstRunDone = true;
+            foreach (var id in OpeningIntroSequence.BeatIds) guide.MarkSeen(id);
+            File.WriteAllText(Path.Combine(saves, GuideState.SaveKey + ".json"), guide.ToJson());
             SceneManager.LoadScene(SceneFlow.BootScene, LoadSceneMode.Single);
             // Until Boot's SceneFlow has settled on Home and the shell holds the Home root (FlightCapture.BootToCount's
             // signal), then a few frames for layout (HeroLift re-lays out on GeometryChanged). With IntroPlayed set Home
