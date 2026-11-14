@@ -273,7 +273,9 @@ namespace Kestrel.Core.Guide
                 if (all && letters >= 4)
                 {
                     string word = text.Substring(start, i - start);
-                    if (word != "SKIP" && word != "MECO" && word != "SECO" && word != "RTLS") return true;
+                    if (word == "SKIP" || word == "MECO" || word == "SECO" || word == "RTLS"
+                        || word == "LAUNCH" || word == "MISSIONS") continue;
+                    return true;
                 }
             }
             return false;
