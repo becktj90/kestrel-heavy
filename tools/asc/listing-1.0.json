@@ -10,7 +10,8 @@
   "categories": {
     "primaryCategory": "GAMES",
     "primarySubcategoryOne": "GAMES_SIMULATION",
-    "primarySubcategoryTwo": "GAMES_ARCADE"
+    "secondaryCategory": "GAMES",
+    "secondarySubcategoryOne": "GAMES_ARCADE"
   },
   "contentRightsDeclaration": "USES_THIRD_PARTY_CONTENT",
   "version": {
