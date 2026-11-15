@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Kestrel.Core.Designer;
 using Kestrel.Core.Economy;
+using Kestrel.Core.Feel;
 using Kestrel.Core.Features;
 using Kestrel.Core.Flight;
 using Kestrel.Core.Hangar;
@@ -52,6 +53,11 @@ namespace Kestrel.Slice
         float reasonFont = 14f;
         LaunchSequence sequence; bool counting;
         readonly LiftoffHandoff handoff = new LiftoffHandoff();
+        // DECISIONS #100 "Release the clamps": the hold-down gauge on the count clock (clampT keeps running past T-0
+        // while the count holds at zero), its card block, and the liftoff haptic envelope.
+        ClampRelease clamp; double clampT; ClampGaugeView clampView; bool clampHesitated, wasAscending;
+        LiftoffHaptics liftoffHaptics;
+        readonly List<Kestrel.Core.Feel.HapticPulse> hapticPulses = new List<Kestrel.Core.Feel.HapticPulse>();
         bool ascentErrorLogged;
         double requiredMps, spareMps, hopGoalM; double? maxQKpa; string orbitLabel = "";
         // Arcade P1: "Short on speed" reads the live spare (Δv on board against the Δv still needed), held below zero for
@@ -70,6 +76,10 @@ namespace Kestrel.Slice
                 Screen.orientation = ScreenOrientation.Portrait;
             Debug.Log("[Count] boot");
             handoff.Transitioned += line => Debug.Log("[Count] " + line);
+            // DECISIONS #100: after T-0 the ascent waits for the hold-down release (no clamp: starts at T-0 as before).
+            handoff.ReleaseGate = () => clamp == null || clamp.LiftoffDue(clampT);
+            SliceData.InstallLiftoffTuning();
+            liftoffHaptics = new LiftoffHaptics(LiftoffTuning.Active.Haptics);
             // #416 item 9: the first liftoff marks the player as flown; every later count opens at T-5.
             handoff.Transitioned += _ => { if (handoff.Phase == "ascending" && PlayerPrefs.GetInt(FlownPref, 0) == 0) { PlayerPrefs.SetInt(FlownPref, 1); PlayerPrefs.Save(); } };
             bodyMat = Resources.Load<Material>("Materials/KH_Body");
@@ -1618,6 +1628,9 @@ namespace Kestrel.Slice
             handoff.Reset();
             ascentErrorLogged = false;
             counting = false; sequence = null;
+            clamp = null; clampT = 0; clampHesitated = false; wasAscending = false;
+            clampView?.Detach();
+            flight?.Sink?.SetFlightState(0f, 0f, 0f);   // a count left mid-spool must not leave the roar on
             CountVoice()?.EndCount();
             if (flight != null) { flight.ResetToPad(); flight.enabled = false; }
             if (cam != null) cam.ResetProjectionMatrix();
@@ -1744,6 +1757,7 @@ namespace Kestrel.Slice
             handoff.Enter(OpenSequence(), LiftoffHandoff.OpenFor(PlayerPrefs.GetInt(FlownPref, 0)));
             sequence = handoff.Sequence;
             counting = handoff.Counting;
+            ArmClamp();
             ascentErrorLogged = false;
             BeginCountNarration();
             var gates = LiveBlockers();
@@ -1786,12 +1800,102 @@ namespace Kestrel.Slice
         void SkipCount()
         {
             if (handoff.Ascending) return;
+            clamp?.Skip(clampT);
             handoff.Skip(TryAscend, LiveBlockers());
             sequence = handoff.Sequence;
             counting = handoff.Counting;
             NoteAscentError();
             if (skipCount != null) skipCount.EnableInClassList("hidden", handoff.Ascending);
         }
+
+        /// <summary>
+        /// DECISIONS #100: a fresh hold-down release for this count. Auto-assist (the Simple-depth default, the kid path)
+        /// gets the forgiving window and the auto-release at T-0, today's timing; with it off the player owns the release
+        /// and nobody tapping means a late auto-release. No count (no timeline): no clamp, the ascent starts at once.
+        /// </summary>
+        void ArmClamp()
+        {
+            clamp = null; clampHesitated = false; wasAscending = handoff.Ascending;
+            liftoffHaptics?.Reset();
+            if (!counting || sequence == null) return;
+            bool forgiving = true; double twr = double.NaN;
+            try
+            {
+                bool engineer = EngineerEnabled || ExperienceSettings.IsEngineer(PlayerPrefs.HasKey, k => PlayerPrefs.GetInt(k, 0));
+                forgiving = Kestrel.Core.Designer.Stepper.StepperProgress.Read(session.Design)
+                    .AutoAssistOn(engineer ? Kestrel.Core.Designer.Stepper.DesignerDepth.Engineer : Kestrel.Core.Designer.Stepper.DesignerDepth.Simple);
+                var quick = Readout.Quick(session.catalog, session.Design);
+                if (quick != null) twr = quick.liftoffTWR;
+            }
+            catch (System.Exception e) { Debug.LogWarning("[Count] clamp: " + e.Message); }
+            clamp = new ClampRelease(LiftoffTuning.Active.Clamps, forgiving, twr);
+            clampT = sequence.Time;
+            FlightHaptics.Prepare();
+        }
+
+        /// <summary>The Release button. An early tap is held by the sequencer; the gauge says why.</summary>
+        void OnClampTap()
+        {
+            if (clamp == null || handoff.Ascending || chrome != null && chrome.Paused) return;
+            if (clamp.Tap(clampT) && clamp.Outcome == ClampOutcome.Early)
+            {
+                clampHesitated = true;
+                bool reduced = hangarCam != null && hangarCam.ReduceMotion;
+                Kestrel.Kit.CinematicEvents.CameraBeat(Kestrel.Kit.CameraBeat.Ignition, 0.35f, reduced);
+            }
+            Debug.Log("[Count] clamp " + clamp.Outcome + " t=" + clampT.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture));
+        }
+
+        /// <summary>
+        /// The pad half of the liftoff moment, every count and flight frame: the spooling engines feed the plume, the
+        /// deluge/steam and the engine roar (presentation only: the sim is not running yet), the early-tap settle, and
+        /// the haptic envelope (rumble, kick, hesitation, Max-Q buzz).
+        /// </summary>
+        void TickLiftoffFeel()
+        {
+            try
+            {
+                bool ascending = handoff.Ascending && flight != null && flight.Sim != null;
+                bool liftoffNow = ascending && !wasAscending;
+                wasAscending = ascending;
+                double thrust = 0;
+                bool spooling = false;
+                if (!ascending && clamp != null && !handoff.Closed)
+                {
+                    thrust = clamp.Thrust01(clampT);
+                    spooling = clamp.Phase(clampT) != ClampPhase.Idle;
+                    if (padLights != null) padLights.SetPlume((float)thrust, 0f);
+                    if (flight != null)
+                    {
+                        if (flight.Plume != null) flight.Plume.Apply(thrust, Atmosphere.P0, 0);
+                        flight.Sink?.SetFlightState(0f, 0f, (float)thrust);
+                        if (flight.Vehicle != null && !flight.Running)
+                            flight.Vehicle.localPosition = new Vector3(0f, -(float)clamp.SettleM(clampT), 0f);
+                    }
+                }
+                double qShare = 0;
+                if (ascending && maxQKpa.HasValue && maxQKpa.Value > 0.1) qShare = flight.DynPressure / (maxQKpa.Value * 1000.0);
+                hapticPulses.Clear();
+                liftoffHaptics?.Step(Time.unscaledDeltaTime, new Kestrel.Core.Feel.LiftoffHapticInput
+                {
+                    Enabled = FlightHaptics.Enabled,
+                    Spooling = spooling,
+                    Thrust01 = thrust,
+                    HesitatedNow = clampHesitated,
+                    LiftoffNow = liftoffNow,
+                    QShare = flight != null && flight.Lost ? 0 : qShare,
+                }, hapticPulses);
+                clampHesitated = false;
+                FlightHaptics.Play(hapticPulses);
+            }
+            catch (System.Exception e) { Debug.LogException(e); }
+        }
+
+        // Capture hooks (DECISIONS #100): the clamp, its clock, the card block, and a tap the way the button does it.
+        public ClampRelease ClampForCapture => clamp;
+        public double ClampClockForCapture => clampT;
+        public ClampGaugeView ClampViewForCapture => clampView;
+        public void TapReleaseForCapture() => OnClampTap();
 
         /// <summary>
         /// Start the sim, then the HUD. False or a throw leaves the handoff short of ascent so the next frame tries again.
@@ -1824,6 +1928,8 @@ namespace Kestrel.Slice
             flight.Calls = flightCalls;
             flight.Launch(design, hook);
             if (flight.Sim == null) return false;
+            // DECISIONS #100: the player's own clamp tap earns timing credit on the existing medal; it changes no command.
+            if (clamp != null && hook != null && hook.Director != null) hook.Director.CreditClampRelease(clamp.Grade, clamp.Touched);
             PresentAscent(engineer);
             return flight.Sim != null;
         }
@@ -2038,6 +2144,7 @@ namespace Kestrel.Slice
                     // act on the pad before T-0 (the live build left the camera frozen, so Follow did nothing).
                     try { StepFlightCamera(FlightJuice.BaseFov, 0.0); }
                     catch (System.Exception e) { Debug.LogException(e); }
+                    TickLiftoffFeel();
                     return;
                 }
             }
@@ -2062,7 +2169,8 @@ namespace Kestrel.Slice
             // floating-origin rebase and moves ~800 m/s at max-Q (see ChaseCamera).
             double qLim = maxQKpa.HasValue ? maxQKpa.Value * 1000.0 : 0;
             bool reduced = hangarCam != null && hangarCam.ReduceMotion;
-            if (juice != null) juice.Present(flight, rocketHeight, qLim, reduced, Time.deltaTime);
+            if (juice != null) { juice.LiftoffHapticsOwned = true; juice.Present(flight, rocketHeight, qLim, reduced, Time.deltaTime); }
+            TickLiftoffFeel();
             StepFlightCamera(juice != null ? juice.Fov : FlightJuice.BaseFov, flight.Altitude, juice);
             if (flight.Plume != null) flight.Plume.SetHeightAboveDeck((float)flight.Altitude);
             staging?.Present();
@@ -2162,6 +2270,14 @@ namespace Kestrel.Slice
         {
             if (handoff.Closed) return;
             double dt = HoldCountForCapture ? 0 : LiftoffHandoff.FrameDt(UnityEngine.Time.deltaTime, UnityEngine.Time.unscaledDeltaTime);
+            if (clamp != null && !handoff.Ascending)
+            {
+                // The clamp clock is the count's own; past T-0 it keeps running while the count holds at zero.
+                clampT = handoff.Counting && sequence != null ? sequence.Time + dt : clampT + dt;
+                clamp.Step(clampT);
+                // A clean tap (or an early one, once its hold ends) before T-0 starts the ascent now: the rest of the count is skipped.
+                if (clamp.LiftoffDue(clampT) && handoff.Counting) handoff.Skip(TryAscend, LiveBlockers());
+            }
             handoff.Tick(dt, TryAscend, LiveBlockers());
             sequence = handoff.Sequence;
             counting = handoff.Counting;
@@ -2215,6 +2331,7 @@ namespace Kestrel.Slice
         /// <summary>Liftoff: the count card and the COUNT tag go back to the Slice.uxml tree before AscentHud adopts it.</summary>
         void UndressCount()
         {
+            clampView?.Detach();
             var cast = hVerdict != null ? hVerdict.parent : null;
             if (CountdownChrome.Dressed(hud != null ? hud.Q("webcast") : cast))
                 CountdownChrome.Undress(hud.Q("webcast"), hVerdict, hPulse, hCallout, skipCount);
@@ -2344,6 +2461,8 @@ namespace Kestrel.Slice
             var cast = hud != null ? hud.Q("webcast") : hVerdict.parent;
             bool skipShown = skipCount != null && !skipCount.ClassListContains("hidden");
             CountdownChrome.Dress(cast, hVerdict, hPulse, hCallout, skipCount, upp, CountCardWidthPt(upp), skipShown);
+            if (clampView == null) clampView = new ClampGaugeView(OnClampTap);
+            clampView.Paint(cast, clamp, clampT, upp, CountCardWidthPt(upp));
         }
 
         /// <summary>The clock's .hud-big face in panel units (Slice.uss); on a scaled-up iPad panel the header clock keeps at least this.</summary>

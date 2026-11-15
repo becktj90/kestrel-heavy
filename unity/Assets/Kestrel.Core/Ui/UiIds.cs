@@ -51,6 +51,8 @@ namespace Kestrel.Core.Ui
         public const string SettingsCommentary = "settings-commentary";
         /// <summary>Time warp: Auto / Off (kh.flight.timewarp). Tap flips.</summary>
         public const string SettingsTimeWarp = "settings-time-warp";
+        /// <summary>Haptics: On / Off (kh.hangar.haptics, the Hangar switch; DECISIONS #100 flight haptics too). Tap flips.</summary>
+        public const string SettingsHaptics = "settings-haptics";
 
         // ---- sub-screens reachable from Home, and their ways out ---------------------------------
         public const string CodexBack = "codex-back";
@@ -66,7 +68,7 @@ namespace Kestrel.Core.Ui
         public static readonly string[] SettingsControls =
         {
             SettingsMusic, SettingsSound, SettingsVoice, SettingsSubtitles, SettingsSandbox, SettingsReduceMotion,
-            SettingsCodex, SettingsFullDesigner, SettingsCornerCharacter, SettingsCommentary, SettingsTimeWarp, SettingsClose,
+            SettingsCodex, SettingsFullDesigner, SettingsCornerCharacter, SettingsCommentary, SettingsTimeWarp, SettingsHaptics, SettingsClose,
         };
     }
 }

@@ -21,6 +21,9 @@ namespace Kestrel.Slice
         public string Call => presenter.Call;
         public string Line => presenter.Line;
         public string Band => presenter.Band;
+        /// <summary>DECISIONS #100: the liftoff haptic envelope (SliceApp, LiftoffHaptics) owns the liftoff kick and the
+        /// Max-Q buzz, so the presenter's own taps for those two cues stand down (staging and breakup still tap).</summary>
+        public bool LiftoffHapticsOwned { get; set; }
 
         public void Arm(Transform world, Material shardSource)
         {
@@ -77,7 +80,8 @@ namespace Kestrel.Slice
             if (flight.HasAttitude && !double.IsNaN(presenter.Pitch) && flight.Vehicle != null)
                 flight.Vehicle.localRotation = Quaternion.Euler(0f, 0f, (float)presenter.Pitch - 90f);
 
-            if (presenter.HapticMs > 0)
+            bool owned = LiftoffHapticsOwned && (presenter.HapticCue == "liftoff" || presenter.HapticCue == "maxq");
+            if (presenter.HapticMs > 0 && !owned)
                 HangarNative.Play(presenter.HapticHard ? Haptic.Warning : Haptic.Snap, new[] { presenter.HapticMs });
 
             debris?.Sync(presenter.Debris, flight.OriginX, flight.OriginY);

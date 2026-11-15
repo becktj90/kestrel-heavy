@@ -46,6 +46,22 @@ namespace Kestrel.Core.Flight
         string lastLine;
         bool releasedHold;
 
+        /// <summary>
+        /// DECISIONS #100 hold-down release: after T-0 the ascent starts only once this returns true (the clamps are
+        /// released). Null, a throw or no gate starts at T-0 as before. <see cref="Skip"/> never waits on it.
+        /// </summary>
+        public Func<bool> ReleaseGate { get; set; }
+
+        /// <summary>T-0 is reached and the ascent waits on <see cref="ReleaseGate"/>.</summary>
+        public bool HeldByGate { get; private set; }
+
+        bool GateOpen()
+        {
+            if (ReleaseGate == null) return true;
+            try { return ReleaseGate(); }
+            catch (Exception) { return true; }
+        }
+
         public void Reset()
         {
             Sequence = null;
@@ -55,6 +71,7 @@ namespace Kestrel.Core.Flight
             StartAttempts = 0;
             LastError = null;
             releasedHold = false;
+            HeldByGate = false;
             Move("boot", null);
         }
 
@@ -70,6 +87,7 @@ namespace Kestrel.Core.Flight
             StartAttempts = 0;
             LastError = null;
             releasedHold = false;
+            HeldByGate = false;
             if (sequence != null && !sequence.Liftoff)
             {
                 if (openAt > 0) openAt = 0;
@@ -114,6 +132,8 @@ namespace Kestrel.Core.Flight
                     Move("committed", null);
                 }
             }
+            if (!GateOpen()) { HeldByGate = true; return; }
+            HeldByGate = false;
             TryStart(startAscent);
         }
 
@@ -128,6 +148,7 @@ namespace Kestrel.Core.Flight
                 if (!Sequence.Liftoff) Sequence.Step(1e6);
             }
             Counting = false;
+            HeldByGate = false;
             Move("committed", "skip");
             TryStart(startAscent);
         }

@@ -1,0 +1,28 @@
+{
+  "about": "Liftoff juice tunables (DECISIONS #100). Pure presentation and timing: none of these change the flown trajectory. Loaded by Kestrel.Core.Flight.LiftoffTuning; the compiled defaults match this file (LiftoffTuningTests).",
+  "clamps": {
+    "ignitionS": -3.0,
+    "standard": { "greenBeforeS": 0.6, "greenAfterS": 0.9 },
+    "forgiving": { "greenBeforeS": 1.2, "greenAfterS": 0.0 },
+    "gaugeGreenFrom": 0.78,
+    "earlyHesitateS": 0.4,
+    "earlySettleM": 0.08
+  },
+  "haptics": {
+    "rumbleMinHz": 10,
+    "rumbleMaxHz": 26,
+    "rumbleMinIntensity": 0.15,
+    "rumbleMaxIntensity": 0.7,
+    "kickIntensity": 1.0,
+    "kickEchoIntensity": 0.6,
+    "kickEchoS": 0.07,
+    "kickTailIntensity": 0.35,
+    "kickTailS": 0.16,
+    "hesitateIntensity": 0.45,
+    "buzzFromQ": 0.8,
+    "buzzHz": 20,
+    "buzzMinIntensity": 0.2,
+    "buzzMaxIntensity": 0.6,
+    "buzzMaxS": 8
+  }
+}

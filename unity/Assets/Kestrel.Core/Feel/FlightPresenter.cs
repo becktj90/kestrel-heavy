@@ -28,6 +28,8 @@ namespace Kestrel.Core.Feel
         public int Stage = -1;
         public int HapticMs;
         public bool HapticHard;
+        /// <summary>The cue that set <see cref="HapticMs"/> this frame ("liftoff", "maxq", "stage", "breakup"), else null.</summary>
+        public string HapticCue;
         public bool Began, Lost, QCue;
         public string Band = "nominal";
         public string Call = "NOMINAL";
@@ -58,6 +60,7 @@ namespace Kestrel.Core.Feel
         {
             HapticMs = 0;
             HapticHard = false;
+            HapticCue = null;
             if (double.IsNaN(dt) || dt < 0) dt = 0;
             if (dt > 0.1) dt = 0.1;
 
@@ -143,6 +146,7 @@ namespace Kestrel.Core.Feel
             if (c.Flash > Flash) Flash = c.Flash;
             HapticMs = (int)c.HapticMs;
             HapticHard = c.Hard;
+            HapticCue = name;
         }
 
         static double CueAngle(string name)

@@ -1385,6 +1385,8 @@ namespace Kestrel.Game.Shell
             var subtitles = SettingButton(UiIds.SettingsSubtitles, "Subtitles");
             var sandbox = SettingButton(UiIds.SettingsSandbox, "Sandbox");
             var motion = SettingButton(UiIds.SettingsReduceMotion, "Reduce motion");
+            // DECISIONS #100: one Haptics switch for the Hangar taps and the liftoff rumble, kick and Max-Q buzz (kh.hangar.haptics).
+            var haptics = SettingButton(UiIds.SettingsHaptics, "Haptics");
             var fullDesigner = SettingButton(FullDesignerId, "Show full designer");
             var cornerCharacter = SettingButton(UiIds.SettingsCornerCharacter, CornerCharacterLabel);
             motion.tooltip = "Reduce motion. Holds the menu still.";
@@ -1440,6 +1442,12 @@ namespace Kestrel.Game.Shell
                 PaintCaption(cornerCharacter, CornerCharacterLabel, on);
                 cornerCharacter.tooltip = CornerCharacterLabel + ". " + CornerCharacterNote + (on ? " On." : " Off.");
             }
+            void PaintHaptics()
+            {
+                bool on = Kestrel.Core.Feel.LiftoffHaptics.On(PlayerPrefs.HasKey, k => PlayerPrefs.GetInt(k, 1));
+                PaintCaption(haptics, "Haptics", on);
+                haptics.tooltip = on ? "Haptics: On. Taps in the Hangar, the rumble and kick at liftoff." : "Haptics: Off.";
+            }
             void PaintMotion()
             {
                 bool on = PlayerPrefs.GetInt(MainMenuLayout.ReduceMotionPref, 0) != 0;
@@ -1474,6 +1482,13 @@ namespace Kestrel.Game.Shell
                 PlayerPrefs.Save();
                 PaintMotion();
             };
+            haptics.clicked += () =>
+            {
+                bool on = Kestrel.Core.Feel.LiftoffHaptics.On(PlayerPrefs.HasKey, k => PlayerPrefs.GetInt(k, 1));
+                PlayerPrefs.SetInt(Kestrel.Core.Feel.LiftoffHaptics.Pref, on ? 0 : 1);
+                PlayerPrefs.Save();
+                PaintHaptics();
+            };
             fullDesigner.clicked += () =>
             {
                 bool next = !Kestrel.Core.Features.ExperienceSettings.ShowFullDesigner(PlayerPrefs.HasKey, k => PlayerPrefs.GetInt(k, 0));
@@ -1495,6 +1510,7 @@ namespace Kestrel.Game.Shell
             PaintCornerCharacter();
             PaintSandbox();
             PaintMotion();
+            PaintHaptics();
             PaintTimeWarp();
 
             list.Add(music);
@@ -1507,6 +1523,7 @@ namespace Kestrel.Game.Shell
             list.Add(subtitles);
             list.Add(sandbox);
             list.Add(motion);
+            list.Add(haptics);
             {
                 // Starter Home: Codex leaves the tiles and lives here (PHASED_DESIGNER_PLAN, Phase 1) while home.codexTile is off.
                 var codex = SettingButton(UiIds.SettingsCodex, "Codex");
@@ -1676,6 +1693,7 @@ namespace Kestrel.Game.Shell
                 PaintSubs();
                 PaintSandbox();
                 PaintMotion();
+                PaintHaptics();
                 PaintFullDesigner();
                 PaintCornerCharacter();
                 ApplySettingsFeatures(full);

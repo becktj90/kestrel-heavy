@@ -45,6 +45,19 @@ namespace Kestrel.Slice
 
         public static Catalog Catalog => catalog ??= Load();
 
+        static bool liftoffTried;
+
+        /// <summary>DECISIONS #100: data/liftoff.json into LiftoffTuning.Active (once). Missing or unreadable keeps the compiled defaults.</summary>
+        public static void InstallLiftoffTuning()
+        {
+            if (liftoffTried) return;
+            liftoffTried = true;
+            var text = Optional("liftoff");
+            if (text == null) return;
+            try { LiftoffTuning.Active = LiftoffTuning.FromJson(MiniJson.ParseObject(text)); }
+            catch (System.Exception e) { Debug.LogWarning("[Count] liftoff.json unreadable, using defaults: " + e.Message); }
+        }
+
         static string T(string n)
         {
             var a = Resources.Load<TextAsset>("KestrelData/" + n);

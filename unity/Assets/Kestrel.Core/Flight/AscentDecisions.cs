@@ -693,9 +693,28 @@ namespace Kestrel.Core.Flight
         }
         public bool IsDone(AscentCall kind) => Find(kind, Phase.Done) != null;
 
+        /// <summary>DECISIONS #100: the player's own hold-down release tap (Perfect in the green, Good when early).</summary>
+        public AscentGrade ClampGrade { get; private set; }
+
+        /// <summary>
+        /// DECISIONS #100: credit the "Release the clamps" tap, graded on the pad before this director flew. Only a tap
+        /// counts (an auto-release, a late release or Skip count adds nothing, so an untouched flight's medal is
+        /// unchanged). Once per flight: a second call is ignored. It changes no command: the flight is the same.
+        /// </summary>
+        public bool CreditClampRelease(AscentGrade grade, bool touched)
+        {
+            if (!touched || ClampGrade != AscentGrade.None) return false;
+            if (grade != AscentGrade.Perfect && grade != AscentGrade.Good) return false;
+            ClampGrade = grade;
+            playerFlew = true;
+            return true;
+        }
+
         public AscentFlightScore Score()
         {
             int perfect = 0, good = 0, late = 0;
+            if (ClampGrade == AscentGrade.Perfect) perfect++;
+            else if (ClampGrade == AscentGrade.Good) good++;
             bool stagingLate = false, stagingOk = !vehicle.CanStage;
             for (int i = 0; i < calls.Count; i++)
             {

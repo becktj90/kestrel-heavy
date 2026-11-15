@@ -29,6 +29,14 @@ namespace Kestrel.Core.Ui
         public const string FlightExit = "flight-exit";
         /// <summary>Webcast "Skip count" during the countdown.</summary>
         public const string FlightSkipCount = "flight-skip-count";
+        /// <summary>DECISIONS #100: the hold-down release block in the count card (from ignition to liftoff), its
+        /// status line, T/W readout, gauge and the big Release button. Not in <see cref="FlightControls"/>: the
+        /// ascent HUD never builds it.</summary>
+        public const string FlightClamp = "flight-clamp";
+        public const string FlightClampStatus = "flight-clamp-status";
+        public const string FlightClampTwr = "flight-clamp-twr";
+        public const string FlightClampGauge = "flight-clamp-gauge";
+        public const string FlightClampRelease = "flight-clamp-release";
 
         /// <summary>Ascent dock: flight notes, decision prompt, assist and pitch nudges.</summary>
         public const string FlightInfo = "flight-info";
