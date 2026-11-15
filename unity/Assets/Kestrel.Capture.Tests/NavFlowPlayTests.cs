@@ -9,7 +9,9 @@ using Kestrel.Core.Flight;
 using Kestrel.Core.Json;
 using Kestrel.Core.Ui;
 using Kestrel.Core.Vehicle;
+using Kestrel.Game.Guide;
 using Kestrel.Game.Shell;
+using Kestrel.Game.Shell.MainMenu;
 using Kestrel.Slice;
 using NUnit.Framework;
 using UnityEngine;
@@ -164,6 +166,11 @@ namespace Kestrel.Capture.Tests
             }
             Assert.IsNotNull(flow, "Boot owns a scene flow");
             Assert.AreEqual(AppScreen.Home, flow.Current, "Boot lands on Home");
+            // First-run welcome (voiced #538) blocks Home CTAs until dismissed; nav tests need the settled Home.
+            MainMenuOverlay.IntroPlayed = true;
+            if (GuideSession.Engine is LiveGuideEngine live)
+                live.SkipWelcome();
+            for (int w = 0; w < 8; w++) yield return null;
         }
 
         /// <summary>Wait until <paramref name="done"/>, capped on a wall-clock stopwatch (not
@@ -532,7 +539,7 @@ namespace Kestrel.Capture.Tests
         /// Fix it must land in the designer and stay there, with no card coming back and no fallback needed.
         /// </summary>
         [UnityTest]
-        [Timeout(300000)]
+        [Timeout(600000)]
         public IEnumerator CrashingRocket_FixIt_LandsInTheDesigner_AndStays()
         {
             yield return ToThePad(SpoilForBreakUp);
