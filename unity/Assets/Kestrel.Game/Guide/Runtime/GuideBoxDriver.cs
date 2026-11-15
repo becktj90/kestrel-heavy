@@ -150,8 +150,9 @@ namespace Kestrel.Game.Guide
 
         /// <summary>Builds or removes the corner portrait to match the setting. Cheap when nothing changed.
         /// The overlay is absolute and ignores picking, so removing it leaves no gap in the layout.
-        /// Off also skips the first-run welcome stack: Thrum's boxes must not appear or take taps when the
-        /// corner character is off (DECISIONS #72; crash when tapping that stack after a mission).</summary>
+        /// Off never builds the first-run welcome stack (DECISIONS #72/#103): Thrum's boxes must not
+        /// appear or take taps. Queued intro lines are dropped for this session, but FirstRunDone is
+        /// left alone so turning the character on later can still play the intro.</summary>
         public void SyncSprite()
         {
             var live = stage != null ? stage.Engine as LiveGuideEngine : null;
@@ -162,31 +163,10 @@ namespace Kestrel.Game.Guide
                 if (welcome) EnsureWelcomeStack();
                 return;
             }
-            // Off: never build the welcome stack. Mark the intro done so Home CTAs are not blocked.
-            if (welcome && live != null) live.SkipWelcome();
+            // Off: tear down any stack and drop queued lines. Do not SkipWelcome (that would lock out
+            // the intro forever if the player later opts in).
             DropSprite();
             if (live != null) live.DropQueued();
-        }
-
-        void DropCornerPop()
-        {
-            if (pop != null)
-            {
-                pop.Tapped -= OnTap;
-                if (pop.Pop != null) pop.Pop.RemoveFromHierarchy();
-                pop = null;
-            }
-            if (stage != null) stage.Blip -= OnBlip;
-            Silence();
-            if (blipSource != null)
-            {
-                if (Application.isPlaying) Destroy(blipSource);
-                else DestroyImmediate(blipSource);
-                blipSource = null;
-                blipClip = null;
-            }
-            blipUntil = 0f;
-            shownKey = "";
         }
 
         void EnsureWelcomeStack()
@@ -253,7 +233,8 @@ namespace Kestrel.Game.Guide
             SyncSprite();
             if (stage == null) return;
             var liveEngine = stage.Engine as LiveGuideEngine;
-            bool welcome = WelcomePlaying(liveEngine);
+            // Welcome UI only while the corner character is on. Off already tore the stack down in SyncSprite.
+            bool welcome = SpriteOn() && WelcomePlaying(liveEngine);
             if (!welcome && pop == null) return;
             if (blipUntil > 0f && Time.unscaledTime >= blipUntil && blipSource != null) blipSource.Stop();
             stage.Place = Place;

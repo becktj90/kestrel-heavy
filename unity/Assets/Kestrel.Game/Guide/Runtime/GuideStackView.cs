@@ -91,10 +91,16 @@ namespace Kestrel.Game.Guide
             var frames = GuideLayout.Place(Screen, portrait, measure, font, Stage.Place);
             int shown = models.Length < frames.Length ? models.Length : frames.Length;
             string next = "";
-            for (int i = 0; i < shown; i++) next += (models[i] != null ? models[i].Id : "") + "|";
+            int built = 0;
+            for (int i = 0; i < shown; i++)
+            {
+                if (models[i] == null) continue;
+                next += models[i].Id + "|";
+                built++;
+            }
             next += Screen.Compact ? "c" : "f";
             next += Stage.Place == GuidePlace.Menu ? "m" : "d";
-            if (next != signature || stack.childCount != shown)
+            if (next != signature || stack.childCount != built)
             {
                 signature = next;
                 stack.Clear();
@@ -104,7 +110,7 @@ namespace Kestrel.Game.Guide
                     stack.Add(Build(models[i], i));
                 }
             }
-            if (shown == 0)
+            if (built == 0)
             {
                 stack.style.display = DisplayStyle.None;
                 ClearancePx = 0f;
