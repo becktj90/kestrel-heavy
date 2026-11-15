@@ -9,7 +9,7 @@ Snapshot: 2026-11-10 (America/New_York). `main` at `b7d7f89f` (#490). Export **2
 | ID | Topic | Draft / recommendation in repo | Blocker for submit? |
 |---|---|---|---|
 | T1 | **Privacy policy URL** | Unity policy is published at https://beckify.com/games/kestrel-heavy/privacy (Data Not Collected, no Game Center, on-device saves). https://beckify.com/privacy stays the Beckify Toolbox policy and must not be replaced. | Point ASC at the game URL |
-| T2 | **Marketing URL** | https://beckify.com/games/kestrel-heavy is the browser demo. Label it as a demo; do not describe it as the App Store build. | Should fix before submit |
+| T2 | **Marketing URL** | https://beckify.com/games/kestrel-heavy is labeled "Kestrel Heavy browser demo" and says the App Store game is a separate build. Published 2026-11-15 (America/New_York), beckify `c3ab42c`. | Done |
 | T3 | **Support URL** | https://beckify.com/contact shows trevorjohnbeck@gmail.com for the site, the app, and Kestrel Heavy. | Use that URL |
 | T4 | **Game Center** | **Removed for 1.0.** Trevor decided **2026-11-09 9:58 AM ET**; executed in [#478](https://github.com/becktj90/kestrel-heavy/pull/478). Listing stays GC-free. | **Done** |
 | T5 | **iPad** | Project ships iPhone + iPad, `uIRequiresFullScreen: 1`, portrait only. iPad 13" screenshots become mandatory. Confirm keep iPad on the listing (DECISIONS #7 / #62). | Yes for screenshot set |

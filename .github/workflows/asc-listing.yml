@@ -74,6 +74,10 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
+          if git ls-remote --tags "https://github.com/${GH_REPO}.git" refs/tags/export/2.0.0-224 | grep -q .; then
+            echo "export/2.0.0-224 already exists; not starting another."
+            exit 0
+          fi
           active=$(gh run list --repo "$GH_REPO" --workflow=xcode-export.yml --limit 20 --json status \
             --jq '[.[] | select(.status=="queued" or .status=="in_progress" or .status=="waiting" or .status=="pending")] | length')
           if [[ "$active" != "0" ]]; then
