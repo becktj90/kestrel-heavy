@@ -186,11 +186,12 @@ namespace Kestrel.Core.Tests
         // design (TestCaseSource) with the same flights and the same checks, each with its own small timeout; the
         // *_CoverEvery* tests pin that the case lists still cover all 18 starters and all 113 golden designs.
 
-        /// <summary>Per-case timeouts. Slowest measured dotnet case: starter m19 5.1 s, golden winners m13 d0 1.9 s. Unity EditMode ran
-        /// the old tests ~1.6x slower than dotnet (145 s vs 92 s) and slow runners another ~1.5x (~2.4x total), so the slowest
-        /// slow-runner case is ~12 s / ~5 s; these leave about 2.5x / 3x on top of that.</summary>
+        /// <summary>Per-case timeouts. Dotnet on this box: starter m19 8.5 s, golden winners m13 d0 4.8 s, m19 d0 3.3 s.
+        /// EditMode job 132566777931 ran those goldens about 3.3x slower (m19 d0 11.0 s, m6 d0 10.9 s) and killed m13 d0 at 15 s.
+        /// The m13 assertion passes; the flight is not hung. 4.8 s times that 3.3x is about 16 s, past the old cap.
+        /// Starters already use 30 s (slowest there was m19 at 22.3 s). Goldens use the same cap.</summary>
         const int StarterCaseTimeoutMs = 30000;
-        const int GoldenCaseTimeoutMs = 15000;
+        const int GoldenCaseTimeoutMs = 30000;
 
         List<(CampaignMission mission, Design design, string mode)> starters;
         List<(CampaignMission mission, Design design, string mode)> CachedStarters() => starters ??= BoardStarters();

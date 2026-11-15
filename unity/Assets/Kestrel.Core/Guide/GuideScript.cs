@@ -273,7 +273,7 @@ namespace Kestrel.Core.Guide
                 if (all && letters >= 4)
                 {
                     string word = text.Substring(start, i - start);
-                    // UI labels, not shouting: SKIP, LAUNCH, MISSIONS, and flight callouts.
+                    // Button labels and flight callouts, not shouting. The shipped CTA still says Launch and Missions.
                     if (word != "SKIP" && word != "LAUNCH" && word != "MISSIONS"
                         && word != "MECO" && word != "SECO" && word != "RTLS") return true;
                 }

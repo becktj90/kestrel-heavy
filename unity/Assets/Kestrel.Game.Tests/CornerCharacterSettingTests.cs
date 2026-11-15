@@ -195,6 +195,7 @@ namespace Kestrel.Game.Tests
             Assume.That(offered, "a briefing tip is allowed after the welcome is settled");
             Assert.That(live.Pending.Count, Is.GreaterThan(0), "the line is queued before the sync");
             driver.SyncSprite();
+            Assert.That(driver.HasSprite, Is.False, "the corner portrait stays off");
             Assert.That(live.Pending.Count, Is.EqualTo(0), "off: the queue is emptied");
             LogAssert.NoUnexpectedReceived();
         }

@@ -85,7 +85,7 @@ namespace Kestrel.Game.Guide
                     new GuideCard { Kid = "Oh! A visitor. Mind the oil. I am Thrum. I keep this hangar, and I talk to wrenches." },
                     new GuideCard { Kid = "Mission KH-1 · First Hop: toss Pebble to a 10 km apogee.", Id = "first.host.c1" },
                     new GuideCard { Kid = "Twenty KH flights sit on the career board. Clear each job to unlock the next.", Id = "first.cohost.c1" },
-                    new GuideCard { Kid = "Tap LAUNCH for KH-1 First Hop, or MISSIONS to see all twenty flights.", Id = "first.cta.c1" },
+                    new GuideCard { Kid = "Tap Launch for KH-1 First Hop, or Missions to see all twenty flights.", Id = "first.cta.c1" },
                 }
             };
         }
