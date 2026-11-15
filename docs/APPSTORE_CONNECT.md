@@ -37,37 +37,74 @@ Design, launch, land rockets
 
 ## 3. Version page (English U.S.)
 ```asc:promotional_text
-Design a rocket, predict the flight, light it up. Learn from every launch and fly again in seconds. Offline, no ads, no tracking, no in-app purchases.
+Pick a mission, tune your rocket, then light it up. 20 KH missions, a Codex, and an X-ray cutaway. Offline. No ads. No in-app purchases.
 ```
 ```asc:keywords
-rocket,launch,space,orbit,booster,landing,simulator,engineering,physics,spaceflight,builder,stem
+orbit,space,booster,simulator,engineering,stem,science,builder,spaceflight,kids,missions,max-q
 ```
 ```asc:description
-Kestrel Heavy is a rocket design and launch game for curious kids and serious engineers alike.
+Kestrel Heavy is a rocket design and launch game for curious kids and working engineers.
 
-Snap together big, tactile parts in the hangar, check the predicted flight, then tap to ignite. Watch your rocket climb through max-Q, stage, and coast toward orbit, then bring the booster home. When a flight falls short, the debrief shows exactly what was missing and how to fix it, and you can relaunch in seconds.
+Every flight starts in the designer. Pick a mission, begin with a rocket built to try it, then make it yours.
 
-• Three design layers: Simple to start, Standard after your first orbit, and an Engineer mode in Settings
-• Honest physics: thrust, drag, staging and delta-v you can trust, tuned with friendly assists and presets
-• Mission control and webcast narration, plus an original adaptive score that follows your flight
-• Replays, a daily challenge and personal bests
-• Five KH flights with Game Center leaderboards (optional)
-• Plays fully offline. No ads, no tracking, no accounts, no in-app purchases
-• Safe-flash on by default, and reduced motion follows your device setting
+THE DESIGNER
+• Choose engine fuel (kerosene or methane), stages, fuel load, and side boosters when the mission allows them
+• A readiness check flies your rocket in the game's predictor and says, in plain words, where it expects trouble
+• See the speed you need for orbit next to the speed you have
+• Tap ? on any row for a short Why? card
+• Open the X-ray cutaway to see tanks, engines, fairing, and cargo
+• Engineers: turn on Show full designer in Settings for the full parts workshop
 
-Kestrel Heavy and its world are original fiction. Not affiliated with any launch provider or space agency.
+THE LAUNCH
+• Fly the full sequence: countdown, liftoff, max-Q, staging, fairing separation, and engine cutoff
+• Mission control and webcast-style commentary call the flight. The voices are AI-generated
+• Pick your camera while you fly
+• Day, sunset, and night launches from a detailed pad
+• On recovery missions the first stage turns around and tries to land on Haven, our recovery barge
+• When a flight falls short, the report shows the real cause and your stars, then returns you to your rocket in the designer
+• Optional coast time-warp between calls; skip to the next stage when you want to move on
+
+THE MISSIONS
+• 20 missions, KH-1 through KH-20, each with a fictional payload and a mission patch
+• A Codex of short lessons on delta-v, thrust-to-weight, specific impulse, staging, max-Q, center of mass, orbits, and booster landing
+• Progress saves on your device; Continue picks up where you left off
+• Settings for music, sound, commentary, subtitles, time warp, and Reduce Motion
+
+THE FINE PRINT
+• No ads. No in-app purchases. No accounts. No internet needed to play
+• iPhone and iPad, portrait only
+
+Kestrel Heavy, Haven, and the KH missions are original fiction. Not affiliated with any launch provider or space agency.
 ```
-Claim gates (remove the bullet if the gate isn't met at submission): design layers **[GATED: U3/U8]**, narration **[GATED: U7]**, adaptive score **[GATED: U7, music stems]**, replay/daily **[GATED: per roadmap 1.0 row]**, Game Center **[GATED: U9]**, debrief/relaunch-in-seconds **[GATED: H-loop, QA loop-speed audit]**.
+
+Canonical applied copy: `tools/asc/listing-1.0.json` / [`docs/appstore/LISTING.md`](appstore/LISTING.md).
 
 - What's New: **not available for the first release** (S2). Draft for 2.0.1 kept in §10.
-- Support URL: https://beckify.com [TO CONFIRM it shows contact info: email/address] · Marketing URL: https://beckify.com/games/kestrel-heavy [TO CONFIRM page exists]
+- Support URL: https://beckify.com/contact/ · Marketing URL: https://beckify.com/games/kestrel-heavy/
 - Copyright: `2026 Trevor Beck`
 - Version release: **Manual** release after approval (Trevor presses release).
 - Phased release: n/a for first version.
-- Game Center: ticked on the version **[GATED: U9]**.
+- Game Center: **removed for 1.0** (DECISIONS #98).
 
 ```asc:review_notes
-Kestrel Heavy needs no account or sign-in. Everything works offline. To test: on the title pad tap the rocket to ignite, or tap CONTINUE to open the hangar, build or pick a preset rocket, and tap Launch. Settings > Accessibility has a flat menu list, safe-flash and reduced-motion options. Game Center is optional; leaderboards are kh1-kh5, one per KH flight. No in-app purchases, ads, analytics or network calls besides Game Center. Narration was generated by the developer on a paid ElevenLabs plan; all music and art are original.
+No account. No sign-in. Plays offline.
+
+How to test
+1. On Home, tap CONTINUE or LAUNCH.
+2. Read the mission briefing.
+3. On the Starter designer, change engine fuel, stages, fuel, or boosters.
+4. Tap LAUNCH.
+X-ray opens a cutaway. Tap ? for Why? cards.
+
+Settings includes music, sound, commentary, subtitles, time warp, Reduce Motion, Codex, and Show full designer.
+
+No in-app purchases, ads, analytics, or accounts.
+
+AI-generated voices
+Mission control and commentary are AI-generated. The developer generated them ahead of time with ElevenLabs text-to-speech on a paid plan. They ship as bundled audio files. The app does not contact any voice service. Music and art are bundled.
+
+Fiction
+Kestrel Heavy, Haven, and the KH missions are original and not affiliated with any launch provider or space agency.
 ```
 App Review contact: copied from Beckify [TO CONFIRM still current; phone in +1 format]. Sign-in required: **No**.
 
