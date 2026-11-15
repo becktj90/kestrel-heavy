@@ -16,13 +16,14 @@ Rendered by `tools/appstore-shots/render.py` from the raw captures below.
 | 7 | booster landing | Stick it on Haven. | iPhone: landing-low (18 m, deck in frame); iPad: landing (40 m) |
 | 8 | report card | Earn every star. | report-kh2 (KH-2 winner on auto-assist: 2 stars, silver timing) |
 
+- iPhone 6.9": 1320×2868 (`store/iphone-1320x2868/`) — the required iPhone slot in App Store Connect (APP_IPHONE_67); rendered 2026-11-11 from the same workflow run's 1320×2868 captures, same config
 - iPhone 6.3": 1206×2622 (`store/iphone-1206x2622/`)
 - iPad 13": 2064×2752 (`store/ipad-2064x2752/`)
 
 Sizes checked against Apple's screenshot specifications page on 2026-11-09 (iPhone with Dynamic Island, medium display:
 1206×2622; iPad 13": 2064×2752). PNGs are opaque RGB.
 
-## Raw captures: `iphone-1206x2622/`, `ipad-2064x2752/`
+## Raw captures: `iphone-1320x2868/`, `iphone-1206x2622/`, `ipad-2064x2752/`
 Real in-game frames, unedited, from the **App Store screenshots** workflow run `42740351382` (head 1ab870dd, branch merged with main). Also present: night-launch, launch,
 landing-high, landing-deck, touchdown, mission-complete (KH-7), designer (all-flags, not shipping), designer-kh7.
 

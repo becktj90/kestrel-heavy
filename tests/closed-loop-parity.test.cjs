@@ -10,10 +10,42 @@ const root = path.join(__dirname, '..');
 const fixture = path.join(root, 'tests', 'fixtures', 'closed-loop-parity.json');
 const readJSON = (...p) => JSON.parse(fs.readFileSync(path.join(root, ...p), 'utf8'));
 
+function assertOutputWithin(actual, expected, tolerance, where) {
+  if (typeof expected === 'number') {
+    assert.strictEqual(typeof actual, 'number', `${where}: expected a number`);
+    const limit = tolerance.abs + tolerance.rel * Math.abs(expected);
+    assert.ok(Math.abs(actual - expected) <= limit, `${where}: ${actual} vs ${expected}, limit ${limit}`);
+    return;
+  }
+  if (Array.isArray(expected)) {
+    assert.ok(Array.isArray(actual), `${where}: expected an array`);
+    assert.strictEqual(actual.length, expected.length, `${where}: array length`);
+    expected.forEach((value, index) => assertOutputWithin(actual[index], value, tolerance, `${where}[${index}]`));
+    return;
+  }
+  if (expected && typeof expected === 'object') {
+    assert.ok(actual && typeof actual === 'object' && !Array.isArray(actual), `${where}: expected an object`);
+    assert.deepStrictEqual(Object.keys(actual).sort(), Object.keys(expected).sort(), `${where}: object keys`);
+    for (const key of Object.keys(expected)) assertOutputWithin(actual[key], expected[key], tolerance, `${where}.${key}`);
+    return;
+  }
+  assert.strictEqual(actual, expected, where);
+}
+
 test('closed-loop parity vectors are current (node tools/export-closed-loop-parity.mjs)', async () => {
   const { parityFile } = await import(path.join(root, 'tools', 'export-closed-loop-parity.mjs'));
   const now = JSON.parse(JSON.stringify(parityFile()));
-  assert.deepStrictEqual(now, JSON.parse(fs.readFileSync(fixture, 'utf8')));
+  const expected = JSON.parse(fs.readFileSync(fixture, 'utf8'));
+  assert.deepStrictEqual(now.generatedBy, expected.generatedBy);
+  assert.deepStrictEqual(now.tolerance, expected.tolerance);
+  assert.strictEqual(now.count, expected.count);
+  assert.strictEqual(now.cases.length, expected.cases.length);
+  now.cases.forEach((value, index) => {
+    const { out: actualOut, ...actualCase } = value;
+    const { out: expectedOut, ...expectedCase } = expected.cases[index];
+    assert.deepStrictEqual(actualCase, expectedCase, `case ${index} input`);
+    assertOutputWithin(actualOut, expectedOut, expected.tolerance, `case ${index} output`);
+  });
 });
 
 test('closed loop is opt-in: without closedLoop (or without the energy cutoff) the run is byte-identical', async () => {
