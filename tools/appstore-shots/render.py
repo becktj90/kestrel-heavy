@@ -365,7 +365,11 @@ def main():
         files = Set(cfg, name, spec, src).render(os.path.join(out, name))
         cdir = a.contact or out
         os.makedirs(cdir, exist_ok=True)
-        contact(files, os.path.join(cdir, "contact-" + ("iphone" if spec["kind"] == "phone" else "ipad") + ".png"))
+        # One sheet per size. Two phone sizes would otherwise overwrite contact-iphone.png.
+        contact(files, os.path.join(cdir, "contact-" + name + ".png"))
+        if name in ("iphone-1206x2622", "ipad-2064x2752"):
+            kind = "iphone" if spec["kind"] == "phone" else "ipad"
+            contact(files, os.path.join(cdir, "contact-" + kind + ".png"))
 
 
 if __name__ == "__main__":

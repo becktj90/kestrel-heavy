@@ -6,7 +6,7 @@ DECISIONS #14: screenshots are redone at the end. **Do not upload to ASC without
 
 | Slot | Pixels | Notes |
 |---|---|---|
-| iPhone 6.9" | **1320 × 2868** | Optional if 6.3" provided (ASC fallback chain) |
+| iPhone 6.9" | **1320 × 2868** | Captured and rendered 2026-11-15 from workflow run `43676906044` (`main` `145a9758`). Not uploaded. |
 | iPhone 6.3" | **1206 × 2622** | Required path for modern iPhones |
 | iPad 13" | **2064 × 2752** | **Required** while the app targets iPad |
 

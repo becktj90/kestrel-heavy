@@ -1,7 +1,7 @@
 # App Store screenshot renderer
 
 Regenerates the Kestrel Heavy store set in `docs/appstore/screenshots-2026-11-09/store/`:
-iPhone 6.3" (1206×2622) and iPad 13" (2064×2752), 8 panels each, opaque RGB PNGs.
+iPhone 6.9" (1320×2868), iPhone 6.3" (1206×2622) and iPad 13" (2064×2752), 8 panels each, opaque RGB PNGs.
 
 ```bash
 python3 tools/appstore-shots/render.py          # needs Pillow + numpy
@@ -14,4 +14,4 @@ python3 tools/appstore-shots/render.py          # needs Pillow + numpy
   event nodes), then sliced, so adjacent panels join seamlessly. Panel 1–2 share a tilted hero device across the seam.
 - **Copy and order:** `config.json` (titles ≤ 5 words; subtitles must fit one line or the script stops).
 - **Fonts:** Fraunces Black + Space Grotesk from `unity/Assets/Art/Fonts/Resources/KHFonts`.
-- Contact sheets: `store/contact-iphone.png`, `store/contact-ipad.png`.
+- Contact sheets: `store/contact-<size>.png`, plus `store/contact-iphone.png` (6.3") and `store/contact-ipad.png`.

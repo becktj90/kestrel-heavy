@@ -107,8 +107,8 @@
     {
       "id": "08_report",
       "scene": [
-        "report-kh2",
-        "mission-complete"
+        "mission-complete",
+        "report-kh2"
       ],
       "title": [
         "Earn every",
