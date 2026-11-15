@@ -10,6 +10,32 @@ const root = path.join(__dirname, '..');
 const NAMES = ['propellants', 'engines', 'materials', 'payloads', 'presets', 'tanks', 'fairings', 'interstages', 'fins', 'codex'];
 const readJSON = (...p) => JSON.parse(fs.readFileSync(path.join(root, ...p), 'utf8'));
 
+// Golden outputs come from long-running floating-point simulations. Inputs,
+// case shape and discrete values must stay exact; numeric results use the
+// abs+rel tolerance recorded beside each generated file so supported libm
+// implementations cannot fail the release gate on a one-ULP difference.
+function assertOutputWithin(actual, expected, tolerance, where) {
+  if (typeof expected === 'number') {
+    assert.strictEqual(typeof actual, 'number', `${where}: expected a number`);
+    const limit = tolerance.abs + tolerance.rel * Math.abs(expected);
+    assert.ok(Math.abs(actual - expected) <= limit, `${where}: ${actual} vs ${expected}, limit ${limit}`);
+    return;
+  }
+  if (Array.isArray(expected)) {
+    assert.ok(Array.isArray(actual), `${where}: expected an array`);
+    assert.strictEqual(actual.length, expected.length, `${where}: array length`);
+    expected.forEach((value, index) => assertOutputWithin(actual[index], value, tolerance, `${where}[${index}]`));
+    return;
+  }
+  if (expected && typeof expected === 'object') {
+    assert.ok(actual && typeof actual === 'object' && !Array.isArray(actual), `${where}: expected an object`);
+    assert.deepStrictEqual(Object.keys(actual).sort(), Object.keys(expected).sort(), `${where}: object keys`);
+    for (const key of Object.keys(expected)) assertOutputWithin(actual[key], expected[key], tolerance, `${where}.${key}`);
+    return;
+  }
+  assert.strictEqual(actual, expected, where);
+}
+
 // Minimal JSON Schema (2020-12 subset) validator: type, const, enum, required, properties,
 // additionalProperties, items, minItems, maxItems, minimum, maximum, exclusiveMinimum, pattern,
 // minLength, maxLength, $ref (#/$defs).
@@ -83,7 +109,9 @@ test('loaders expose the catalogs and lookups', async () => {
   assert.ok(Object.isFrozen(ENGINES) && ENGINE_BY_ID['gg-kerolox'] && ENGINE_CYCLES.includes('full-flow'));
 });
 
-test('data/golden matches a fresh export (run node tools/export-golden.mjs)', () => {
+test('data/golden matches a fresh export (run node tools/export-golden.mjs)', async () => {
+  const { loadTolerances, compareTree } = await import(path.join(root, 'tools', 'golden-compare.mjs'));
+  const documentedTolerances = loadTolerances(fs.readFileSync(path.join(root, 'docs', 'PHYSICS.md'), 'utf8'));
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'golden-'));
   execFileSync(process.execPath, [path.join(root, 'tools', 'export-golden.mjs'), '--out', tmp], { stdio: 'pipe' });
   const names = fs.readdirSync(tmp).filter((f) => f.endsWith('.json')).sort();
@@ -96,6 +124,32 @@ test('data/golden matches a fresh export (run node tools/export-golden.mjs)', ()
   const csharpOnly = new Set(['design-v2.json', 'design-v2-literals.json', 'designer-v3.json', 'campaign-viable.json', 'contracts-viable.json', 'campaign-winners.json', 'credits.json']);
   const committed = fs.readdirSync(path.join(root, 'data', 'golden')).filter((f) => f.endsWith('.json') && !csharpOnly.has(f)).sort();
   assert.deepStrictEqual(names, committed);
-  for (const f of names) assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(tmp, f), 'utf8')), readJSON('data', 'golden', f), f);
+  for (const f of names) {
+    const actual = JSON.parse(fs.readFileSync(path.join(tmp, f), 'utf8'));
+    const expected = readJSON('data', 'golden', f);
+    if (!Array.isArray(actual.cases) || !Array.isArray(expected.cases)) {
+      assert.deepStrictEqual(actual, expected, `${f}: generated data`);
+      continue;
+    }
+    assert.deepStrictEqual(actual.generatedBy, expected.generatedBy, `${f}: generator`);
+    assert.deepStrictEqual(actual.tolerance, expected.tolerance, `${f}: tolerance`);
+    assert.strictEqual(actual.count, expected.count, `${f}: vector count`);
+    assert.strictEqual(actual.cases.length, expected.cases.length, `${f}: case count`);
+    actual.cases.forEach((value, index) => {
+      const { out: actualOut, ...actualCase } = value;
+      const { out: expectedOut, ...expectedCase } = expected.cases[index];
+      assert.deepStrictEqual(actualCase, expectedCase, `${f}: case ${index} input`);
+      if (Number.isFinite(expected.tolerance.abs) && Number.isFinite(expected.tolerance.rel)) {
+        assertOutputWithin(actualOut, expectedOut, expected.tolerance, `${f}: case ${index} output`);
+      } else if (f === 'catalog-flight.json') {
+        assert.deepStrictEqual(
+          compareTree(actualOut, expectedOut, documentedTolerances, `${f}: case ${index} output`),
+          [],
+        );
+      } else {
+        assert.deepStrictEqual(actualOut, expectedOut, `${f}: case ${index} output`);
+      }
+    });
+  }
   assert.ok(readJSON('data', 'golden', 'index.json').total >= 100);
 });
