@@ -1,5 +1,7 @@
 # Handoff notes for the grok bot team
 
+> **Superseded for current state by `docs/HANDOFF.md` (2026-11-15).** The build commands, CI layout, traps and harnesses below are still accurate.
+
 _Written 2026-10-25 by Claude Code. Main is at #357 (52e2ffd)._
 
 These notes cover what a new agent needs to pick up work on Kestrel Heavy: where things stand, how to build and test, what is in flight, and the traps we already fell into. Read it alongside the long-lived docs below. Those win if they disagree with this page.
