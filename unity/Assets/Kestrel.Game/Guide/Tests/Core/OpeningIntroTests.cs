@@ -74,6 +74,31 @@ namespace Kestrel.Game.Guide.Tests
         }
 
         [Test]
+        public void SkipOnTheHostPageClosesTheIntroduction()
+        {
+            var engine = Engine(false);
+            engine.SetEngineer(true);
+            engine.Settings.Speed = SubtitleSpeed.Instant;
+            GuideHooks.Home(engine);
+            var stage = new GuideStage(engine) { Place = GuidePlace.Menu };
+            stage.Tick(0.05f);
+            int guard = 0;
+            while (stage.Count > 0 && stage.Models()[0].Id != "first.host" && guard++ < 8)
+                stage.Tap(0);
+            Assert.AreEqual("first.host", stage.Models()[0].Id);
+            stage.Tap(0);
+            stage.Tap(0);
+            stage.Tap(0);
+            Assert.AreEqual("4/6", stage.Models()[0].Index);
+            StringAssert.Contains("Pebble is 50 kg", stage.Models()[0].Full);
+            stage.Skip(0);
+            Assert.AreEqual(0, stage.Count);
+            Assert.IsTrue(engine.State.FirstRunDone);
+            stage.Tick(0.05f);
+            Assert.AreEqual(0, stage.Count);
+        }
+
+        [Test]
         public void CompletingEachBeatFinishesTheWelcomeOnce()
         {
             var engine = Engine(false);

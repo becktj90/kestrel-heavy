@@ -21,6 +21,8 @@ namespace Kestrel.Game.Guide
         public float LayoutWidth = 200f;
         public bool Caret;
         public bool UsingFallback { get; private set; }
+        /// <summary>Laid-out height in the same pixels as <see cref="FontPx"/>. The box scrolls when this exceeds the viewport.</summary>
+        public float TextHeight { get; private set; }
 
         public BitmapTextElement()
         {
@@ -51,8 +53,10 @@ namespace Kestrel.Game.Guide
             float width = LayoutWidth > 0f ? LayoutWidth : 200f;
             float font = Snap(FontPx);
             int lines = GlyphLayout.CountLines(Text, width, font);
-            style.height = GlyphLayout.LineHeight(font) * lines;
+            TextHeight = GlyphLayout.LineHeight(font) * lines;
+            style.height = TextHeight;
             style.flexShrink = 0;
+            style.flexGrow = 0;
             if (Atlas != null) Atlas.filterMode = FilterMode.Point;
             MarkDirtyRepaint();
         }
