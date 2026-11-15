@@ -96,6 +96,9 @@ namespace Kestrel.Core.Tests
             Assert.Throws<FormatException>(() => GuideScript.Parse(Wrap(Card("Try the hop again.", "No number in this engineer line."))));
             Assert.Throws<FormatException>(() => GuideScript.Parse(Wrap(Card(new string('a', 91) + ".", "TWR is 1.30."))));
             Assert.Throws<FormatException>(() => GuideScript.Parse(Wrap(Card("Oh! Wow! Too many.", "TWR is 1.30."))));
+            Assert.Throws<FormatException>(() => GuideScript.Parse(Wrap(Card("Do not YELL at the pad.", "TWR is 1.30."))));
+            var buttons = GuideScript.Parse(Wrap(Card("Tap LAUNCH or MISSIONS. Tap SKIP.", "KH-1 is 10 km.")));
+            Assert.IsTrue(buttons.ById("t.1").Cards[0].Kid.Contains("LAUNCH"));
         }
 
         [Test]

@@ -623,14 +623,38 @@ namespace Kestrel.Capture.Tests
             Assert.AreEqual(OrbitCoast.CalloutApogee, driver.Coast.Callout);
             Assert.That(driver.Coast.WallSeconds, Is.InRange(OrbitCoast.MinWallSeconds, OrbitCoast.MaxWallSeconds));
             double startAlt = driver.Altitude;
-            yield return Until(() => driver.CoastWall >= 1.5 || !driver.Coasting, 15f);
-            Assert.IsTrue(driver.Coasting, "still coasting 1.5 s in");
+            // Flake-hardening. This used to wait on the live player clock (Until CoastWall >= 1.5 or !Coasting, 15s).
+            // The ascent above is pumped because that clock stalls on CI. A stall left CoastWall under 1.5 until
+            // EnsureReportReady ended the climax: ~7s when the watchdog's raw unscaled budget tripped
+            // (run 43043315690, "still coasting 1.5 s in"), or the 15s cap (docs run 43047628485, same assertion).
+            // Neither run's diff touches this flight. Pump the coast wall the same way as the ascent. frame 0 so a
+            // stray click cannot TappedToSkip (that path requires frame > 0).
+            PumpCoastWall(driver, 1.5);
+            Assert.IsTrue(driver.Coasting, "still coasting 1.5 s in (CoastWall=" + driver.CoastWall.ToString("F2")
+                + " CoastEnd=" + driver.CoastEnd + ")");
+            Assert.That(driver.CoastWall, Is.GreaterThanOrEqualTo(1.5), "the pumped coast reached 1.5 s of wall");
+            Assert.That(driver.Altitude, Is.GreaterThan(startAlt), "the coast climbs on the propagated arc");
             double wallAtHold = driver.CoastWall;
             driver.Hold(true);
-            for (int i = 0; i < 4; i++) yield return null;
-            Assert.That(driver.Altitude, Is.GreaterThan(startAlt), "the coast climbs on the propagated arc");
+            driver.Advance(0f, Kh3PumpDt);
             Assert.That(driver.CoastWall, Is.GreaterThan(wallAtHold), "climax wall clock advances while Held (KH-3 freeze: Pause must not freeze Orbit!)");
             Assert.IsTrue(driver.Coasting, "still coasting under Hold");
+            driver.CaptureClock = false;
+            // The chase eases into the band over 0.6 s, and the pump left that ease at zero.
+            // Two fast frames wrote a band whose nose was still in the banner (run 43647984865:
+            // band (0.22, 0.43), nose at 0.59). Wait the ease out. At 60 fps that is ~0.6 s of
+            // coast wall, inside the 1.5 s still left on a 3 s coast.
+            float glide = 0f;
+            while (glide < 0.9f && driver.Coasting)
+            {
+                yield return null;
+                float dt = Time.unscaledDeltaTime;
+                if (float.IsNaN(dt) || dt < 0f) dt = 0f;
+                glide += dt;
+                var traced = hopApp.CoastTrace;
+                if (traced.y - traced.x > 0.1f && traced.w <= traced.y + 0.01f && traced.z >= traced.x - 0.01f)
+                    break;
+            }
             var verdict = SliceUi()?.Q<Label>("h-verdict");
             Assert.IsNotNull(verdict, "flight HUD verdict");
             Assert.AreEqual(OrbitCoast.CalloutApogee, verdict.text, "the HUD calls the climax");
@@ -654,6 +678,9 @@ namespace Kestrel.Capture.Tests
             if (NavIds.Shown(Find("screen-pause")) && AppShell.Instance != null)
                 AppShell.Instance.HandleEscape();
             Assert.IsFalse(driver.Held, "climax inspection Hold must be released");
+            // Same stall: waiting on Update for the result is how the 1.5 s sample died. Finish on the pump.
+            PumpCoastWall(driver, double.PositiveInfinity);
+            driver.CaptureClock = false;
             yield return Until(() => driver.Result != null, 20f);
             Assert.IsNotNull(driver.Result, "the coast ends and hands over the result");
             Assert.AreEqual("played", driver.CoastEnd);
@@ -800,6 +827,22 @@ namespace Kestrel.Capture.Tests
         /// </summary>
         IEnumerator PumpKh3Until(FlightDriver driver, SliceApp app, Func<bool> done, float maxSim)
             => PumpFlightUntil(driver, app, done, maxSim);
+
+        /// <summary>
+        /// Step the climax wall on the capture clock until <paramref name="wallSeconds"/> (or the coast ends).
+        /// <c>frame</c> is 0 so a sticky mouse button is not a tap-to-skip.
+        /// </summary>
+        void PumpCoastWall(FlightDriver driver, double wallSeconds)
+        {
+            driver.CaptureClock = true;
+            int steps = 0;
+            const int cap = 1200; // 20 s of 1/60, past OrbitCoast.MaxWallSeconds
+            while (driver.Coasting && driver.CoastWall < wallSeconds && steps < cap)
+            {
+                driver.Advance(0f, Kh3PumpDt);
+                steps++;
+            }
+        }
 
         /// <summary>
         /// Drive the live FlightDriver at a fixed 1/60 s step so a slow or frozen wall clock
