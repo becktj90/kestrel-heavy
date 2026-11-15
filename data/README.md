@@ -16,6 +16,7 @@
 | finishes.json | loader in Kestrel.Livery (no JSON Schema file) | per-part paint |
 | codex.json | schemas/codex.schema.json | CodexBook (Unity); web/js/data/gen/codex.js |
 | starter-readiness.json | loader in Kestrel.Core.Designer.StarterReadinessCopy (no JSON Schema file) | Starter screen Honest Ready badge and reason, kid + engineer per predicted cause |
+| starter-kicks.json | loader in Kestrel.Core.Designer.StarterKicks (no JSON Schema file); written by tools/starter-kicks | DECISIONS #85: the stage-1 pitch kick each non-default Starter setting flies |
 | golden/*.json | see golden/README.md and docs/PHYSICS.md | ports (tolerances are per quantity for catalog-flight) |
 
 Economy constants stay in `web/js/economy-data/constants.json` (already JSON + schema).

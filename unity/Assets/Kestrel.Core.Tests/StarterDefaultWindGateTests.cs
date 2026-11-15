@@ -41,6 +41,31 @@ namespace Kestrel.Core.Tests
             Assert.That(misses, Is.Empty, string.Join(" | ", misses));
         }
 
+        /// <summary>DECISIONS #86, the shipped-wind gate (replaces #456's device calm-pad gate): every Starter default wins the
+        /// live pad on the card the device itself draws, with no checkout and the Resources books installed
+        /// (<see cref="DevicePad.Card"/>, AscentFlight.Prepare's ForPad). That card is the seed-1 briefing wind and site.</summary>
+        [Test]
+        public void StarterDefault_EveryMission_WinsTheShippedWindPad()
+        {
+            var catalog = StarterFixture.Catalog;
+            var misses = new List<string>();
+            int seen = 0;
+            foreach (var mission in StarterFixture.Campaign.Missions)
+            {
+                var design = Design.FromJson(StarterFixture.Rocket(mission.Id).BuildDesign());
+                var card = DevicePad.Card(mission, design);
+                Assert.IsNotNull(card, mission.Id + ": the device has a briefing");
+                Assert.IsFalse(card.Wind.Calm, mission.Id + ": the device flies the briefing wind, not calm air");
+                var live = LivePadLoop.FlyCard(catalog, mission, design, card);
+                if (!LivePadLoop.Passes(catalog, mission, design, live)
+                    && !LivePadLoop.IsM13HardButWins(catalog, mission, design, live))
+                    misses.Add(mission.Id + " Starter default live shipped wind " + LivePadLoop.Text(live));
+                seen++;
+            }
+            Assert.AreEqual(20, seen, "KH-1 through KH-20");
+            Assert.That(misses, Is.Empty, string.Join(" | ", misses));
+        }
+
         /// <summary>DECISIONS #86: with the Resources books installed and no checkout, ForPad builds the same seed-1
         /// card the checkout path builds. The device gate is then the seed-1 live gate above (no separate calm pad).</summary>
         [Test]

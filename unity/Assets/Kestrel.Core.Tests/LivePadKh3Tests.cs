@@ -181,11 +181,17 @@ namespace Kestrel.Core.Tests
     internal static class LivePadLoop
     {
         public static SimResult Fly(Catalog catalog, CampaignMission mission, Design design, bool wind)
+            => FlyCard(catalog, mission, design, wind ? MissionBriefing.Load(Golden.Root, mission.Index, FlightBatch.DesignHash(design), 1) : null);
+
+        /// <summary>The live pad on a given briefing card, as AscentFlight.Prepare hands it to the director and FlightDriver.Launch.
+        /// DECISIONS #86: the device draws that card from the shipped books (<see cref="DevicePad"/>). Null is calm air on the
+        /// reference pad (the pre-#86 device, and the batch's conditions).</summary>
+        public static SimResult FlyCard(Catalog catalog, CampaignMission mission, Design design, MissionBriefing card)
         {
             ulong hash = FlightBatch.DesignHash(design);
             const ulong seed = 1;
-            var card = MissionBriefing.Load(Golden.Root, mission.Index, hash, seed);
-            var weather = wind ? card?.Wind : null;
+            bool wind = card != null;
+            var weather = wind ? card.Wind : null;
             double target = Stack.RequiredDeltaV(catalog, design.payloadOrbit).targetAlt;
             if (MissionAim.IsApogeeHop(mission)) target = mission.GuidanceAltM;
             double qLim = FailureMonitor.StructuralQLimPa(catalog, design);

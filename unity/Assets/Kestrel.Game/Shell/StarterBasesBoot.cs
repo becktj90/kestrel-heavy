@@ -18,6 +18,7 @@ namespace Kestrel.Game.Shell
         public static void Load()
         {
             LoadCopy();
+            LoadKicks();
             if (Loaded) return;
             Loaded = true;
             try
@@ -38,6 +39,21 @@ namespace Kestrel.Game.Shell
                 StarterBases.Active = StarterBases.Parse(json);
             }
             catch (Exception e) { Debug.LogWarning("[Kestrel] campaign-winners.json skipped: " + e.Message); }
+        }
+
+        /// <summary>DECISIONS #85: the per-setting pitch kicks (data/starter-kicks.json) into StarterKicks.Active, once. With a
+        /// checkout Core reads the checkout's file itself (StarterKicks.Current); a player build installs the
+        /// Resources/KestrelData/starter-kicks copy here. No file: every setting flies the base rocket's kick.</summary>
+        public static void LoadKicks()
+        {
+            if (StarterKicks.Active != null || !string.IsNullOrEmpty(ScreenStub.RepoRoot())) return;
+            try
+            {
+                var asset = Resources.Load<TextAsset>(StarterKicks.ResourcePath);
+                if (asset != null && !string.IsNullOrEmpty(asset.text)) StarterKicks.Active = StarterKicks.Parse(asset.text);
+                else Debug.LogWarning("[Kestrel] Resources/" + StarterKicks.ResourcePath + " missing; Starter settings fly the base kick");
+            }
+            catch (Exception e) { Debug.LogWarning("[Kestrel] starter-kicks.json skipped: " + e.Message); }
         }
 
         /// <summary>Honest Ready copy (data/starter-readiness.json) into StarterReadinessCopy.Active, once: the checkout's
