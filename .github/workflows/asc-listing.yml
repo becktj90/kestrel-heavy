@@ -3,10 +3,18 @@
 # Separate and non-required: it never builds, signs, uploads a binary, creates a version or submits for review.
 #   pull_request on these files -> "read" (GET only: shows the live listing next to the repo copy)
 #   workflow_dispatch mode=apply -> writes the listing, screenshots, age rating, price and availability, then reads back.
+#   a push to cursor/asc-store-prep-75de that touches these files also applies, then starts export 224. It does not submit.
 name: App Store Connect listing
 
 on:
   pull_request:
+    paths:
+      - '.github/workflows/asc-listing.yml'
+      - 'tools/asc/asc_listing.py'
+      - 'tools/asc/listing-1.0.json'
+  push:
+    branches:
+      - cursor/asc-store-prep-75de
     paths:
       - '.github/workflows/asc-listing.yml'
       - 'tools/asc/asc_listing.py'
@@ -36,7 +44,7 @@ jobs:
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
       ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
-      MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'read' }}
+      MODE: ${{ github.event_name == 'push' && 'apply' || github.event_name == 'workflow_dispatch' && inputs.mode || 'read' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -50,3 +58,31 @@ jobs:
           python3 -m venv "$RUNNER_TEMP/v"
           "$RUNNER_TEMP/v/bin/pip" install --disable-pip-version-check -q 'cryptography==50.0.0'
           "$RUNNER_TEMP/v/bin/python" tools/asc/asc_listing.py "$MODE"
+
+  export:
+    name: Start Xcode export 224
+    permissions:
+      actions: write
+      contents: read
+    needs: listing
+    if: ${{ always() && github.event_name == 'push' && github.ref == 'refs/heads/cursor/asc-store-prep-75de' && needs.listing.result != 'cancelled' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch export of current main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          active=$(gh run list --workflow=xcode-export.yml --limit 20 --json status \
+            --jq '[.[] | select(.status=="queued" or .status=="in_progress" or .status=="waiting" or .status=="pending")] | length')
+          if [[ "$active" != "0" ]]; then
+            echo "An Xcode export is already active; not starting another."
+            exit 0
+          fi
+          gh workflow run xcode-export.yml --ref main \
+            -f build_number=224 \
+            -f ref=136eccb33307ba82a8baa1af163c60e749fc936b \
+            -f start_cloud=false \
+            -f finalize_build=false \
+            -f credentials_only=false
+          echo "Export 224 dispatched for main 136eccb33307ba82a8baa1af163c60e749fc936b"
