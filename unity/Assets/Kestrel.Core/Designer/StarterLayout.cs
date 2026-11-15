@@ -24,6 +24,8 @@ namespace Kestrel.Core.Designer
         /// <summary>The web page EXIT control drawn over the canvas top-right.</summary>
         public bool ReserveExit;
         public bool BoostersVisible;
+        public bool LandingVisible;
+        public string[] Landing = { StarterScreen.LandingExpend, StarterScreen.LandingHaven, StarterScreen.LandingPad };
         public string Title = "", Subtitle = "", Hint = "", Badge = "", Readiness = "", Spend = "";
         public string[] Builds = { StarterScreen.ShopBuild, StarterScreen.StandardBuild, StarterScreen.FlightBuild };
         public string[] Engines = { StarterScreen.Kerosene, StarterScreen.Methane };
@@ -84,7 +86,7 @@ namespace Kestrel.Core.Designer
         public float ChipPt = StarterLayout.ChipPt, WhyPt = StarterLayout.WhyPt, SpeedPt = StarterLayout.SpeedPt;
         /// <summary>X-ray button, top-right inside the rocket window.</summary>
         public HudBox Xray;
-        public StarterRowFrame Build, Engine, Stages, Fuel, Boosters;
+        public StarterRowFrame Build, Engine, Stages, Fuel, Landing, Boosters;
         public float TitlePt, SubtitlePt, LabelPt, OptionPt, EndPt, HintPt, SpendPt, ReadinessPt, CtaPt, CornerPt;
         public int TitleLines, SubtitleLines, HintLines, ReadinessLines;
         /// <summary>The header sits inside the side panel (landscape web), else above the rocket.</summary>
@@ -100,6 +102,7 @@ namespace Kestrel.Core.Designer
             yield return Engine;
             yield return Stages;
             yield return Fuel;
+            if (Landing != null) yield return Landing;
             if (Boosters != null) yield return Boosters;
         }
 
@@ -170,10 +173,26 @@ namespace Kestrel.Core.Designer
             float st = Math.Max(0f, i.SafeTop), sb = Math.Max(0f, i.SafeBottom), sl = Math.Max(0f, i.SafeLeft), sr = Math.Max(0f, i.SafeRight);
             float left = sl + Edge, right = i.Width - sr - Edge, bottom = i.Height - sb - Edge;
             Fonts(f);
-            if (!f.Wide && i.Height - st - sb < CompactBelow)
+            float availH = i.Height - st - sb;
+            if (!f.Wide && (availH < CompactBelow || (i.ReserveExit && i.LandingVisible && availH <= 700f)))
             {
                 f.Compact = true;
-                f.GapPt = CompactGap; f.SheetPadPt = CompactPad; f.LaunchPt = CompactLaunchH;
+                if (i.LandingVisible)
+                {
+                    f.GapPt = 4f;
+                    f.SheetPadPt = 6f;
+                    f.LaunchPt = 44f;
+                }
+                else
+                {
+                    f.GapPt = CompactGap; f.SheetPadPt = CompactPad; f.LaunchPt = CompactLaunchH;
+                }
+            }
+            else if (!f.Wide && i.LandingVisible)
+            {
+                f.GapPt = 6f;
+                f.SheetPadPt = 10f;
+                f.LaunchPt = 48f;
             }
 
             // Corner controls: Back top-left like every screen (WebDesignerLayout.Home), Reset top-right, left of the page EXIT.
@@ -187,7 +206,10 @@ namespace Kestrel.Core.Designer
                 PlaceSwitch(f, i, resetRight);
                 barBottom = Math.Max(barBottom, f.Switch.Bottom);
             }
-            f.WhyOpen = i.Help && !string.IsNullOrEmpty(i.WhyText) && (i.WhyOpen != StarterKnob.Boosters || i.BoostersVisible) ? i.WhyOpen : StarterKnob.None;
+            f.WhyOpen = i.Help && !string.IsNullOrEmpty(i.WhyText)
+                && (i.WhyOpen != StarterKnob.Boosters || i.BoostersVisible)
+                && (i.WhyOpen != StarterKnob.Landing || i.LandingVisible)
+                ? i.WhyOpen : StarterKnob.None;
             f.WhyPt = f.Compact ? WhyCompactPt : WhyPt;
 
             if (f.Wide) PlaceWide(f, i, left, right, barBottom + WideGap, bottom);
@@ -298,8 +320,8 @@ namespace Kestrel.Core.Designer
             f.Launch = Box(innerL, y - f.LaunchPt, innerW, f.LaunchPt);
             y = f.Launch.Y - f.GapPt;
             y = PlaceReadiness(f, i, innerL, innerW, y);
-            // SE height: the speed bar steps aside while a Why? card is open, so the rocket keeps a window.
-            if (!(f.Compact && f.WhyOpen != StarterKnob.None)) y = PlaceSpeed(f, i, innerL, innerW, y);
+            // While a Why? card is open the speed bar steps aside so the sheet and rocket keep room.
+            if (f.WhyOpen == StarterKnob.None) y = PlaceSpeed(f, i, innerL, innerW, y);
             // Spend rides the readiness / hint copy (StarterPanel), so it does not steal another sheet line.
             if (!i.Help) y = PlaceHint(f, i, innerL, innerW, y - f.GapPt);
             y -= f.GapPt;
@@ -330,20 +352,34 @@ namespace Kestrel.Core.Designer
             f.Title = Box(innerL, y, innerW, f.TitleLines * Line(f.TitlePt));
             f.Subtitle = f.SubtitleLines > 0 ? Box(innerL, f.Title.Bottom + 2f, innerW, f.SubtitleLines * Line(f.SubtitlePt)) : default;
             f.Header = Box(innerL, y, innerW, (f.SubtitleLines > 0 ? f.Subtitle.Bottom : f.Title.Bottom) - y);
-            y = f.Header.Bottom + WideGap;
-            PlaceRows(f, i, innerL, innerW, y);
-            y += RowsHeight(f, i, innerW) + Gap;
-            // Hint under the controls (the open Why? card takes its place); spend rides readiness copy. Readiness and
-            // Launch at the bottom of the panel (one primary, bottom-right), the speed bar over the readiness line.
-            if (!i.Help)
-            {
-                f.HintLines = Lines(i.Hint, innerW, f.HintPt, HintMaxLines);
-                f.Hint = Box(innerL, y, innerW, f.HintLines * Line(f.HintPt));
-            }
+            // Anchor Launch and readiness at the bottom, then stack controls upward (same bottom-up order as portrait).
             float by = f.Sheet.Bottom - WidePad;
             f.Launch = Box(innerL, by - LaunchH, innerW, LaunchH);
-            float ry = PlaceReadiness(f, i, innerL, innerW, f.Launch.Y - Gap);
-            PlaceSpeed(f, i, innerL, innerW, ry);
+            float yUp = f.Launch.Y - Gap;
+            yUp = PlaceReadiness(f, i, innerL, innerW, yUp);
+            if (f.WhyOpen == StarterKnob.None) yUp = PlaceSpeed(f, i, innerL, innerW, yUp);
+            yUp -= Gap;
+            float minTop = f.Header.Bottom + WideGap;
+            float rowsH = RowsHeight(f, i, innerW);
+            float rowsTop = Math.Max(minTop, yUp - rowsH);
+            float shrink = f.OptionPt;
+            while (rowsTop > minTop + 0.5f && shrink > OptionMinPt && rowsTop + rowsH > yUp + 0.5f)
+            {
+                shrink -= 0.5f;
+                f.OptionPt = shrink;
+                rowsH = RowsHeight(f, i, innerW);
+                rowsTop = Math.Max(minTop, yUp - rowsH);
+            }
+            PlaceRows(f, i, innerL, innerW, rowsTop);
+            if (!i.Help)
+            {
+                float hintY = f.Header.Bottom + WideGap;
+                if (hintY + Line(f.HintPt) * HintMaxLines < rowsTop - Gap)
+                {
+                    f.HintLines = Lines(i.Hint, innerW, f.HintPt, HintMaxLines);
+                    f.Hint = Box(innerL, hintY, innerW, f.HintLines * Line(f.HintPt));
+                }
+            }
         }
 
         /// <summary>The speed bar ending a gap above <paramref name="aboveY"/>; returns its top (or aboveY when hidden).</summary>
@@ -426,12 +462,12 @@ namespace Kestrel.Core.Designer
 
         static float RowsHeight(StarterFrame f, StarterLayoutInput i, float w)
         {
-            float h = Touch + f.GapPt + Touch + f.GapPt + Touch + f.GapPt + FuelRowH(f) + (i.BoostersVisible ? f.GapPt + Touch : 0f);
+            float h = Touch + f.GapPt + Touch + f.GapPt + Touch + f.GapPt + FuelRowH(f) + (i.LandingVisible ? f.GapPt + Touch : 0f) + (i.BoostersVisible ? f.GapPt + Touch : 0f);
             if (f.WhyOpen != StarterKnob.None) h += f.GapPt + WhyHeight(f, i, w);
             return h;
         }
 
-        static readonly string[] SideLabels = { StarterScreen.BuildLabel, StarterScreen.EngineLabel, StarterScreen.StagesLabel, StarterScreen.BoostersLabel };
+        static readonly string[] SideLabels = { StarterScreen.BuildLabel, StarterScreen.EngineLabel, StarterScreen.StagesLabel, StarterScreen.LandingLabel, StarterScreen.BoostersLabel };
 
         static float LabelWidth(StarterFrame f, float w, bool words)
         {
@@ -452,7 +488,8 @@ namespace Kestrel.Core.Designer
             if (i.Help)
             {
                 float optW1 = x + w - helpW - (x + labelW + f.GapPt);
-                if (!WordsFit(i.Builds, optW1, OptionMinPt) || !WordsFit(i.Engines, optW1, OptionMinPt) || !WordsFit(i.Stages, optW1, OptionMinPt) || (i.BoostersVisible && !WordsFit(i.Boosters, optW1, OptionMinPt)))
+                if (!WordsFit(i.Builds, optW1, OptionMinPt) || !WordsFit(i.Engines, optW1, OptionMinPt) || !WordsFit(i.Stages, optW1, OptionMinPt)
+                    || (i.LandingVisible && !WordsFit(i.Landing, optW1, OptionMinPt)) || (i.BoostersVisible && !WordsFit(i.Boosters, optW1, OptionMinPt)))
                 {
                     wraps = true;
                     labelW = LabelWidth(f, w, true);
@@ -484,6 +521,14 @@ namespace Kestrel.Core.Designer
             if (i.Help) fuel.Help = Box(x + w - Touch, y + lineH + 2f, Touch, Touch);
             f.Fuel = fuel;
             y = AfterRow(f, i, StarterKnob.FuelNotch, fuel, x, w);
+
+            if (i.LandingVisible)
+            {
+                f.Landing = SideRow("landing", x, y, labelW, optX, optW, i.Landing.Length);
+                Finish(f.Landing, i, x, w, wraps);
+                y = AfterRow(f, i, StarterKnob.Landing, f.Landing, x, w);
+            }
+            else f.Landing = null;
 
             if (i.BoostersVisible)
             {
@@ -533,7 +578,8 @@ namespace Kestrel.Core.Designer
                     if (FlightHudLayout.TextWidth(words[k], pt) > boxes[k].W - 2f * OptionPadX) return false;
                 return true;
             }
-            return Fits(i.Builds, f.Build.Options) && Fits(i.Engines, f.Engine.Options) && Fits(i.Stages, f.Stages.Options) && (f.Boosters == null || Fits(i.Boosters, f.Boosters.Options));
+            return Fits(i.Builds, f.Build.Options) && Fits(i.Engines, f.Engine.Options) && Fits(i.Stages, f.Stages.Options)
+                && (f.Landing == null || Fits(i.Landing, f.Landing.Options)) && (f.Boosters == null || Fits(i.Boosters, f.Boosters.Options));
         }
 
         static StarterRowFrame SideRow(string key, float x, float y, float labelW, float optX, float optW, int n)

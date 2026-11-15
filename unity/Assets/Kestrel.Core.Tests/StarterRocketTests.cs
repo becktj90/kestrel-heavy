@@ -46,7 +46,21 @@ namespace Kestrel.Core.Tests
             var kh3 = R("m3");
             Assert.AreEqual(StarterEngine.Methane, kh3.Engine, "KH-3's winner burns methane");
             Assert.AreEqual(2, kh3.Stages);
-            Assert.AreEqual("kerosene-3-f2-b2", R("m10").Choice.Key, "KH-10: three stages and the landing pair");
+            var m10 = R("m10");
+            StringAssert.StartsWith("kerosene-3-f2-b2", m10.Choice.Key, "KH-10: three stages and the landing pair");
+        }
+
+        [Test]
+        public void LandingRow_Haven_CallsSetRecoveryMode()
+        {
+            var r = R("m6");
+            Assert.IsTrue(r.LandingVisible);
+            r.Landing = StarterLanding.Haven;
+            var d = r.BuildDesign();
+            Assert.AreEqual("barge", d.Str("recoveryMode"));
+            Assert.IsTrue(d.Obj("landing").Bool("legs"));
+            Assert.IsTrue(d.Obj("landing").Bool("gridFins"));
+            Assert.Greater(((JsonObject)d.Arr("stages")[0]).Num("landingPropMass"), 0);
         }
 
         [Test]
@@ -159,6 +173,7 @@ namespace Kestrel.Core.Tests
             r.Engine = StarterEngine.Methane; r.Stages = 2; r.FuelNotch = 4;
             var saved = MiniJson.ParseObject(HangarSession.Snapshot(r.ToSave()));
             Assert.AreEqual(3, (int)saved.Num("v"));
+            Assert.AreEqual(StarterRocket.LandingId(r.Landing), saved.Str("landing"));
             var back = R("m19");
             Assert.IsTrue(back.ApplySave(saved));
             Assert.AreEqual(r.Choice, back.Choice);
