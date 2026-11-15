@@ -11,7 +11,6 @@ using Kestrel.Core.Ui;
 using Kestrel.Core.Vehicle;
 using Kestrel.Game.Guide;
 using Kestrel.Game.Shell;
-using Kestrel.Game.Shell.MainMenu;
 using Kestrel.Slice;
 using NUnit.Framework;
 using UnityEngine;
