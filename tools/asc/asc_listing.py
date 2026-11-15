@@ -132,7 +132,7 @@ def read_all(app):
     il = loc_for(get(f"/v1/appInfos/{info['id']}/appInfoLocalizations")["data"], loc)
     show("appInfoLocalization " + loc, il and {k: il["attributes"].get(k) for k in ["name", "subtitle", "privacyPolicyUrl", "privacyChoicesUrl"]})
     cats = {}
-    for rel in ["primaryCategory", "primarySubcategoryOne", "primarySubcategoryTwo", "secondaryCategory"]:
+    for rel in ["primaryCategory", "primarySubcategoryOne", "primarySubcategoryTwo", "secondaryCategory", "secondarySubcategoryOne", "secondarySubcategoryTwo"]:
         d = req("GET", f"/v1/appInfos/{info['id']}/{rel}", ok_missing=True)
         cats[rel] = (d or {}).get("data", {}) and d["data"]["id"]
     show("categories", cats)

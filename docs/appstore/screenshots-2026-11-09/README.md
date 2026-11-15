@@ -1,6 +1,6 @@
 # App Store screenshots — 2026-11-09 (review only)
 
-**Do not merge until Trevor reviews the art.** Nothing has been uploaded to App Store Connect.
+Trevor approved this art on 2026-11-15 (America/New_York). The App Store Connect listing workflow uploads this set. It does not submit for review.
 
 ## Upload set (designed): `store/`
 One continuous panorama per size, sliced into 8 panels (see `store/contact-iphone-1320x2868.png`, `store/contact-iphone.png`, `store/contact-ipad.png`).
@@ -27,4 +27,4 @@ Sizes checked against Apple's screenshot specifications page on 2026-11-09 (iPho
 Real in-game frames, unedited, from the **App Store screenshots** workflow run `43676906044` (head `145a9758`, `main`, 2026-11-15). Also present: night-launch, launch,
 landing-high, landing-deck, touchdown, report-kh2, designer (all-flags, not shipping), designer-kh7.
 
-Not uploaded to App Store Connect. Not device-verified. llvmpipe lighting. The landing frames are the booster in its landing burn; Haven's deck is in the camera frustum and mostly hidden behind the HUD, the same as the previous set.
+Approved for upload. Not device-verified. llvmpipe lighting. The landing frames are the booster in its landing burn; Haven's deck is in the camera frustum and mostly hidden behind the HUD, the same as the previous set.

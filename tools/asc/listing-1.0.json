@@ -10,10 +10,11 @@
   "categories": {
     "primaryCategory": "GAMES",
     "primarySubcategoryOne": "GAMES_SIMULATION",
-    "primarySubcategoryTwo": "GAMES_ARCADE"
+    "primarySubcategoryTwo": "GAMES_ACTION"
   },
   "contentRightsDeclaration": "USES_THIRD_PARTY_CONTENT",
   "version": {
+    "versionString": "2.0.0",
     "copyright": "2026 Trevor Beck",
     "releaseType": "MANUAL"
   },
@@ -36,6 +37,7 @@
   ],
   "screenshots": {
     "APP_IPHONE_67": "docs/appstore/screenshots-2026-11-09/store/iphone-1320x2868",
+    "APP_IPHONE_61": "docs/appstore/screenshots-2026-11-09/store/iphone-1206x2622",
     "APP_IPAD_PRO_3GEN_129": "docs/appstore/screenshots-2026-11-09/store/ipad-2064x2752"
   }
 }
