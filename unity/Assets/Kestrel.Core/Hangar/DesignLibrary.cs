@@ -143,6 +143,28 @@ namespace Kestrel.Core.Hangar
             NoteDraft(nm, missionId);
         }
 
+        /// <summary>
+        /// Career restart: keep the draft rocket, but point resume at <paramref name="missionId"/>
+        /// (usually KH-1) so CONTINUE does not reopen a locked later mission.
+        /// </summary>
+        public void RebindResumeMission(string missionId)
+        {
+            string mid = string.IsNullOrEmpty(missionId) ? null : missionId;
+            if (HasDraft())
+            {
+                var design = LoadDraft(out _, out string name);
+                if (design != null)
+                {
+                    SaveDraft(design, name, mid);
+                    return;
+                }
+            }
+            var prev = store.GetProgress();
+            var next = prev != null ? JsonMut.CloneObject(prev) : new JsonObject();
+            JsonMut.Set(next, "lastMissionId", mid ?? "");
+            store.PutProgress(next);
+        }
+
         /// <summary>Autosave whenever the session changes, including the rocket that is already open.</summary>
         public void WatchDraft(HangarSession session, Func<string> missionId)
         {
