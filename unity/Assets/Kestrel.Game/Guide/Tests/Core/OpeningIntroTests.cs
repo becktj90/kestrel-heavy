@@ -24,7 +24,8 @@ namespace Kestrel.Game.Guide.Tests
             var script = GuideScript.Load(root);
             StringAssert.Contains("I am Thrum", script.ById("first.1").Cards[0].Kid);
             StringAssert.Contains("KH-1", OpeningIntroSequence.CtaKid(script));
-            StringAssert.Contains("LAUNCH", OpeningIntroSequence.CtaKid(script));
+            StringAssert.Contains("Launch", OpeningIntroSequence.CtaKid(script));
+            StringAssert.Contains("Missions", OpeningIntroSequence.CtaKid(script));
             StringAssert.Contains("Your first rocket is ready", OpeningIntroSequence.CloseKid(script));
             StringAssert.Contains("Twenty flights", OpeningIntroSequence.HostKid());
             StringAssert.Contains("far hold", OpeningIntroSequence.HostKid());

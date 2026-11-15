@@ -170,6 +170,26 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
+        public void Queue_OpeningCtaWaitsBehindTheGreeting()
+        {
+            var script = GuideScript.Load(Golden.Root);
+            var queue = new GuideQueue();
+            queue.Settings.Speed = GuideSpeed.Instant;
+            queue.Push(script.ById("first.1"), 0, null, null);
+            queue.Push(script.ById("first.cta"), 0, null, null);
+            Assert.AreEqual("first.1", queue.CurrentId, "the greeting stays up");
+            Assert.AreEqual(1, queue.Pending, "the CTA waits behind it");
+
+            var ordered = new GuideQueue();
+            ordered.Settings.Speed = GuideSpeed.Instant;
+            ordered.Push(script.ById("first.cta"), 0, null, null, true);
+            ordered.Push(script.ById("first.1"), 0, null, null, true);
+            Assert.AreEqual("first.cta", ordered.CurrentId, "file order does not let the greeting jump the CTA");
+            ordered.Skip(0);
+            Assert.AreEqual("first.1", ordered.CurrentId);
+        }
+
+        [Test]
         public void Queue_AscentAdvancesItselfAndADecisionWaitsForATap()
         {
             var binder = Fresh();
@@ -446,6 +466,7 @@ namespace Kestrel.Core.Tests
             var binder = Fresh();
             binder.Queue.Settings.Speed = GuideSpeed.Instant;
             Assert.AreEqual("first.1", binder.Welcome(0).LineId);
+            Assert.Greater(binder.Queue.Pending, 0);
             Assert.IsFalse(binder.State.HasSeen("first.cta"));
             binder.SkipWelcome();
             Assert.IsTrue(binder.State.FirstRunDone);

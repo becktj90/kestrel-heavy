@@ -249,9 +249,11 @@ namespace Kestrel.Game.Guide
                 name.style.color = Amber;
                 name.style.unityFontStyleAndWeight = FontStyle.Bold;
                 // Wrap inside the column. A nowrap name ("MABEL THRUM · HANGAR KEEPER") draws past the
-                // box and onto the Home key.
-                name.style.marginRight = 0f;
+                // box and onto the Home key. Extending it over SKIP made the glyphs wider than the column.
                 name.style.whiteSpace = WhiteSpace.Normal;
+                name.style.flexShrink = 1;
+                name.style.width = Length.Percent(100);
+                name.style.marginRight = 0f;
                 name.style.overflow = Overflow.Hidden;
             }
 
@@ -379,6 +381,7 @@ namespace Kestrel.Game.Guide
                 nameLabel.style.flexShrink = 1;
                 nameLabel.style.overflow = Overflow.Hidden;
                 nameLabel.style.whiteSpace = WhiteSpace.Normal;
+                nameLabel.style.width = Length.Percent(100);
             }
             var portrait = box.Q("guide-portrait");
             if (portrait != null)

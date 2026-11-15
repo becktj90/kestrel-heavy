@@ -42,25 +42,35 @@ namespace Kestrel.Core.Guide
         }
 
         public GuideFace Push(GuideLine line, double t, IReadOnlyDictionary<string, string> tokens, string clip)
+            => Push(line, t, tokens, clip, false);
+
+        /// <summary>
+        /// <paramref name="inOrder"/> keeps a scripted run (the welcome) in file order.
+        /// A decision still drops chatter everywhere else, except the opening lines that share trigger guide.first.
+        /// </summary>
+        public GuideFace Push(GuideLine line, double t, IReadOnlyDictionary<string, string> tokens, string clip, bool inOrder)
         {
             if (line == null || line.Cards.Count == 0) return Face(t);
             int rank = GuidePriority.Rank(line.Priority);
-            if (current != null && rank == GuidePriority.Rank(GuidePriority.Chatter) && GuidePriority.Rank(current.Line.Priority) >= GuidePriority.Rank(GuidePriority.Decision))
-                return Face(t);
-            if (rank >= GuidePriority.Rank(GuidePriority.Decision))
+            if (!inOrder)
             {
-                // The opening CTA is a decision on the same guide.first trigger as the first card.
-                // It waits behind that card. Any other decision still drops chatter.
-                for (int i = pending.Count - 1; i >= 0; i--)
+                if (current != null && rank == GuidePriority.Rank(GuidePriority.Chatter) && GuidePriority.Rank(current.Line.Priority) >= GuidePriority.Rank(GuidePriority.Decision))
+                    return Face(t);
+                if (rank >= GuidePriority.Rank(GuidePriority.Decision))
                 {
-                    if (GuidePriority.Rank(pending[i].Line.Priority) != GuidePriority.Rank(GuidePriority.Chatter)) continue;
-                    if (OpeningTogether(pending[i].Line, line)) continue;
-                    pending.RemoveAt(i);
+                    // The opening CTA is a decision on the same guide.first trigger as the first card.
+                    // It waits behind that card. Any other decision still drops chatter.
+                    for (int i = pending.Count - 1; i >= 0; i--)
+                    {
+                        if (GuidePriority.Rank(pending[i].Line.Priority) != GuidePriority.Rank(GuidePriority.Chatter)) continue;
+                        if (OpeningTogether(pending[i].Line, line)) continue;
+                        pending.RemoveAt(i);
+                    }
+                    if (current != null
+                        && GuidePriority.Rank(current.Line.Priority) == GuidePriority.Rank(GuidePriority.Chatter)
+                        && !OpeningTogether(current.Line, line))
+                        current = null;
                 }
-                if (current != null
-                    && GuidePriority.Rank(current.Line.Priority) == GuidePriority.Rank(GuidePriority.Chatter)
-                    && !OpeningTogether(current.Line, line))
-                    current = null;
             }
             var slot = new Slot
             {
@@ -71,10 +81,10 @@ namespace Kestrel.Core.Guide
                 StartT = t,
             };
             pending.Add(slot);
-            pending.Sort(Order);
+            if (!inOrder) pending.Sort(Order);
             if (current == null)
                 StartHead(t);
-            else if (rank > GuidePriority.Rank(current.Line.Priority) && !OpeningTogether(current.Line, line))
+            else if (!inOrder && rank > GuidePriority.Rank(current.Line.Priority) && !OpeningTogether(current.Line, line))
             {
                 pending.Add(current);
                 current = null;
