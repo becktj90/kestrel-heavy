@@ -45,7 +45,7 @@ This page says where the work stands, what is unfinished and where it lives, and
 
 All three branches are based on a30ee9b (Nov 11). Main has moved about 30 commits since, so merge `origin/main` first.
 
-### 4a. Liftoff fun pass: branch `feat/liftoff-juice` (WIP commit 85af6ab)
+### 4a. Liftoff fun pass: draft PR #558, branch `feat/liftoff-juice` (WIP commit 85af6ab)
 
 Trevor: "Is there anything we can do to make the launch more fun upon liftoff like it's just kind of boring." The plan I committed to:
 
@@ -64,7 +64,7 @@ What the WIP commit holds (31 files, about 1,700 lines):
 
 Not known: whether it compiles, whether tests pass, and how much of items 3–6 exists. No DECISIONS row is written yet; add one (next free number) saying Trevor asked and Claude chose this package. Nothing here has been felt on a phone.
 
-### 4b. Forgiving Starter (DECISIONS #85): branch `feat/forgiving-starter` (WIP commit d439dd5, on top of 4c)
+### 4b. Forgiving Starter (DECISIONS #85): draft PR #559, branch `feat/forgiving-starter` (WIP commit d439dd5, on top of 4c)
 
 Problem: on KH-3 only 2 of 30 Starter settings reach orbit. Decision: every setting with enough delta-v must reach its band on the live pad; the rest read a cause before launch.
 
@@ -77,7 +77,7 @@ What is missing:
 - A check against DECISIONS #97, which says no pitch-kick edit is handed to the *player*. This table is internal and automatic, so it should be compatible, but read #97 and say so in the PR.
 - Regenerating the table after merging main (physics changed in #463–#467).
 
-### 4c. Briefing wind on device (DECISIONS #86): branch `fix/device-briefing-wind` (commit 7afb63b)
+### 4c. Briefing wind on device (DECISIONS #86): branch `fix/device-briefing-wind` (commit 7afb63b, also the first commit of draft PR #559)
 
 Main already ships the briefing data to the device (`BriefingBooks`, `MissionBriefingBoot`). This commit adds proof: `DeviceBriefingTests.cs` flies the predictor with no checkout and the shipped books installed and checks it matches the editor path; `StarterDefaultWindGateTests` and `LivePadKh3Tests` are extended; `ReferenceAscent.ForgetBriefingRoot()` is a test hook. The agent reported no Starter default or board starter needed a retune. The dotnet tests were not confirmed green after the Nov 14 untangling, so run them before merging.
 
@@ -94,7 +94,7 @@ Per `docs/DESIGNER_TIERS_SPEC.md`: (3) Builder tier, (4) Engineer tier with the 
 
 ## 5. State of main
 
-- **Open PRs:** none on Nov 15.
+- **Open PRs on Nov 15:** only this page's PR (#557) and the two WIP drafts in §4 (#558, #559). The drafts may show red CI; they are snapshots, not finished work.
 - **Narration and sound:** #547 wired the first batch of mission-status calls and #529 added Max-Q narration. About 25 "staging" PRs of unwired clips (#497–#520) and a flight-feedback wiring plan (#522) were open on Nov 14 and are closed now without appearing on main; ask Trevor before redoing any of them. Check `docs/NARRATION_LICENSE.md` and `docs/narration-facts.md` before adding clips. ElevenLabs: the key is a network secret on the cloud environment for `api.elevenlabs.io` (header `xi-api-key`); run generators with `ELEVENLABS_API_KEY=proxy-injected`. About 9k of 229k characters were used when I last checked (Nov 7); check `GET /v1/user/subscription` before generating.
 - **Economy 2:** #525 (DECISIONS #87) plus Trevor's "Poly Bridge" steer (DECISIONS #100): over budget blocks launch, a pass pays an unspent-budget bonus, starting bank 100k Kc, range-credit floor 60k Kc, one-time save migration with a `.bak`.
 - **Release:** export 225 is the latest tag. App Store listing and screenshots were refreshed (#551, #552, #554). Game Center is out of 1.0 (DECISIONS #98). Test Flight mode is in (DECISIONS #102, #508). Read `docs/RELEASE_READINESS.md` for the true verified/unverified split.
