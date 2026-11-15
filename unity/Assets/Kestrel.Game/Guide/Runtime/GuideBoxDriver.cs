@@ -149,7 +149,10 @@ namespace Kestrel.Game.Guide
         }
 
         /// <summary>Builds or removes the corner portrait to match the setting. Cheap when nothing changed.
-        /// The overlay is absolute and ignores picking, so removing it leaves no gap in the layout.</summary>
+        /// The overlay is absolute and ignores picking, so removing it leaves no gap in the layout.
+        /// Off never builds the first-run welcome stack (DECISIONS #72/#103): Thrum's boxes must not
+        /// appear or take taps. Queued intro lines are dropped for this session, but FirstRunDone is
+        /// left alone so turning the character on later can still play the intro.</summary>
         public void SyncSprite()
         {
             var live = stage != null ? stage.Engine as LiveGuideEngine : null;
@@ -160,37 +163,10 @@ namespace Kestrel.Game.Guide
                 if (welcome) EnsureWelcomeStack();
                 return;
             }
-            if (welcome)
-            {
-                // Welcome keeps its own stack without the corner pop; drop any pop left from an earlier On.
-                // Lines that are not the welcome are still dropped below once the intro is finished.
-                DropCornerPop();
-                EnsureWelcomeStack();
-                return;
-            }
+            // Off: tear down any stack and drop queued lines. Do not SkipWelcome (that would lock out
+            // the intro forever if the player later opts in).
             DropSprite();
             if (live != null) live.DropQueued();
-        }
-
-        void DropCornerPop()
-        {
-            if (pop != null)
-            {
-                pop.Tapped -= OnTap;
-                if (pop.Pop != null) pop.Pop.RemoveFromHierarchy();
-                pop = null;
-            }
-            if (stage != null) stage.Blip -= OnBlip;
-            Silence();
-            if (blipSource != null)
-            {
-                if (Application.isPlaying) Destroy(blipSource);
-                else DestroyImmediate(blipSource);
-                blipSource = null;
-                blipClip = null;
-            }
-            blipUntil = 0f;
-            shownKey = "";
         }
 
         void EnsureWelcomeStack()
@@ -257,7 +233,8 @@ namespace Kestrel.Game.Guide
             SyncSprite();
             if (stage == null) return;
             var liveEngine = stage.Engine as LiveGuideEngine;
-            bool welcome = WelcomePlaying(liveEngine);
+            // Welcome UI only while the corner character is on. Off already tore the stack down in SyncSprite.
+            bool welcome = SpriteOn() && WelcomePlaying(liveEngine);
             if (!welcome && pop == null) return;
             if (blipUntil > 0f && Time.unscaledTime >= blipUntil && blipSource != null) blipSource.Stop();
             stage.Place = Place;
@@ -266,12 +243,19 @@ namespace Kestrel.Game.Guide
                 stage.Engine.Settings.Muted = AudioPrefs.SfxMuted;
             bool paused = Time.timeScale <= 0f;
             var director = FindAnyObjectByType<AudioDirector>();
-            if (director != null)
+            if (voice != null)
             {
-                voice.Bind(director);
-                if (director.Held) paused = true;
+                if (director != null)
+                {
+                    voice.Bind(director);
+                    if (director.Held) paused = true;
+                }
+                voice.Hold(paused);
             }
-            voice.Hold(paused);
+            else if (director != null && director.Held)
+            {
+                paused = true;
+            }
             ApplyScreen();
             if (welcome)
             {
@@ -358,7 +342,7 @@ namespace Kestrel.Game.Guide
 
         void OnTap()
         {
-            if (stage == null || !GuidePopLayout.Shows(Place)) return;
+            if (stage == null || !GuidePopLayout.Shows(Place) || !SpriteOn()) return;
             var models = stage.Models();
             int index = -1;
             for (int i = 0; i < models.Length; i++)
@@ -367,14 +351,15 @@ namespace Kestrel.Game.Guide
             }
             if (index < 0) return;
             var model = models[index];
-            var settings = stage.Engine.Settings ?? new GuideSettings();
+            if (model == null) return;
             var live = stage.Engine as LiveGuideEngine;
             bool voiceOn = live != null && live.ClipVoice && !AudioPrefs.NarrationMuted;
-            bool missing = !model.Speaks || voice.Missing || !voice.HasClip;
+            bool hasVoice = voice != null;
+            bool missing = !model.Speaks || !hasVoice || voice.Missing || !voice.HasClip;
             bool caption = GuideCaption.Visible(voiceOn, AudioPrefs.NarrationMuted, missing);
             bool done = model.Shown != null && model.Full != null && model.Shown.Length >= model.Full.Length;
-            bool canPlay = voiceOn && model.Speaks && voice.HasClip && !voice.Missing;
-            var action = GuidePopLayout.OnTap(caption, done, canPlay, voice.Sounding);
+            bool canPlay = hasVoice && voiceOn && model.Speaks && voice.HasClip && !voice.Missing;
+            var action = GuidePopLayout.OnTap(caption, done, canPlay, hasVoice && voice.Sounding);
             if (action == GuidePopAction.Finish)
             {
                 stage.Tap(index);
@@ -382,7 +367,7 @@ namespace Kestrel.Game.Guide
             }
             if (action == GuidePopAction.Replay)
             {
-                voice.Replay();
+                if (hasVoice) voice.Replay();
                 return;
             }
             if (!done) stage.Tap(index);

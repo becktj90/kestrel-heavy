@@ -77,7 +77,9 @@ namespace Kestrel.Game.Shell
                 TextFit.Apply(Root);
             });
             GuideHost.Open(doc, GuidePlace.Menu, false);
-            GuideHooks.Home(GuideSession.Engine);
+            // Corner character off (#72/#103): do not queue the first-run welcome. Leave FirstRunDone
+            // alone so turning the character on later (or next launch with it on) can still play it.
+            if (GuideBoxDriver.SpriteOn()) GuideHooks.Home(GuideSession.Engine);
             GuideHost.Save(GuideSession.Engine);
 
             var listener = camGo.AddComponent<AudioListener>();

@@ -169,6 +169,49 @@ namespace Kestrel.Game.Tests
         }
 
         [Test]
+        public void Off_DropsWelcomeStack_WithoutLockingOutLaterOptIn()
+        {
+            var uiGo = new GameObject("kh-corner-character-welcome-off-test");
+            go = uiGo;
+            var doc = uiGo.AddComponent<UIDocument>();
+            doc.panelSettings = Resources.Load<PanelSettings>("UI/KH_PanelSettings");
+            Assert.That(doc.panelSettings, Is.Not.Null);
+            Assert.That(doc.rootVisualElement, Is.Not.Null);
+
+            GuideSession.Bind(null);
+            ExperienceSettings.SetCornerCharacter(true, PlayerPrefs.SetInt);
+            var driver = uiGo.AddComponent<GuideBoxDriver>();
+            driver.Document = doc;
+            driver.Place = GuidePlace.Menu;
+
+            LogAssert.Expect(LogType.Log, new System.Text.RegularExpressions.Regex(@"\[Kestrel\] guide clips: \d+ found"));
+            driver.SyncSprite();
+            Assert.That(driver.HasSprite, Is.True);
+            var live = driver.Stage != null ? driver.Stage.Engine as LiveGuideEngine : null;
+            Assume.That(live, Is.Not.Null, "needs the real guide script");
+            live.Welcome();
+            Assert.That(OpeningIntroSequence.Active(live), Is.True, "intro is queued while character is on");
+            Assert.That(live.Pending.Count, Is.GreaterThan(0));
+
+            ExperienceSettings.SetCornerCharacter(false, PlayerPrefs.SetInt);
+            Assert.DoesNotThrow(() => driver.SyncSprite());
+            Assert.That(GuideBoxDriver.SpriteOn(), Is.False);
+            Assert.That(driver.HasSprite, Is.False);
+            Assert.That(live.Pending.Count, Is.EqualTo(0), "off drops the queued intro for this session");
+            Assert.That(live.State.FirstRunDone, Is.False, "do not lock out a later opt-in");
+            Assert.That(doc.rootVisualElement.Q("guide-overlay"), Is.Null, "no welcome stack to tap");
+            Assert.That(doc.rootVisualElement.Q("guide-stack"), Is.Null);
+
+            // Opt in again: Home can re-queue the intro because FirstRunDone stayed false.
+            ExperienceSettings.SetCornerCharacter(true, PlayerPrefs.SetInt);
+            GuideHooks.Home(live);
+            driver.SyncSprite();
+            Assert.That(OpeningIntroSequence.Active(live), Is.True);
+            Assert.That(live.Pending.Count, Is.GreaterThan(0));
+            LogAssert.NoUnexpectedReceived();
+        }
+
+        [Test]
         public void Off_DropsQueuedLines_SoTheyDoNotPileUpIntoABacklog()
         {
             var uiGo = new GameObject("kh-corner-character-backlog-test");

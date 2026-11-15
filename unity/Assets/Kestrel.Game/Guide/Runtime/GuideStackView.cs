@@ -69,30 +69,48 @@ namespace Kestrel.Game.Guide
 
         public void Sync()
         {
-            if (Stage == null) { stack.Clear(); signature = ""; return; }
+            if (Stage == null || Stage.Engine == null || Stage.Engine.Settings == null)
+            {
+                stack.Clear();
+                signature = "";
+                ClearancePx = 0f;
+                return;
+            }
             var models = Stage.Models();
+            if (models == null) { stack.Clear(); signature = ""; ClearancePx = 0f; return; }
             float scale = PanelPerPoint > 0f ? PanelPerPoint : 1f;
             float font = GuidePacing.FontPt(Stage.Engine.Settings.Size);
             bool[] portrait = new bool[models.Length];
             string[] measure = new string[models.Length];
             for (int i = 0; i < models.Length; i++)
             {
+                if (models[i] == null) { portrait[i] = false; measure[i] = ""; continue; }
                 portrait[i] = models[i].Portrait;
                 measure[i] = models[i].Full;
             }
             var frames = GuideLayout.Place(Screen, portrait, measure, font, Stage.Place);
             int shown = models.Length < frames.Length ? models.Length : frames.Length;
             string next = "";
-            for (int i = 0; i < shown; i++) next += models[i].Id + "|";
+            int built = 0;
+            for (int i = 0; i < shown; i++)
+            {
+                if (models[i] == null) continue;
+                next += models[i].Id + "|";
+                built++;
+            }
             next += Screen.Compact ? "c" : "f";
             next += Stage.Place == GuidePlace.Menu ? "m" : "d";
-            if (next != signature || stack.childCount != shown)
+            if (next != signature || stack.childCount != built)
             {
                 signature = next;
                 stack.Clear();
-                for (int i = 0; i < shown; i++) stack.Add(Build(models[i], i));
+                for (int i = 0; i < shown; i++)
+                {
+                    if (models[i] == null) continue;
+                    stack.Add(Build(models[i], i));
+                }
             }
-            if (shown == 0)
+            if (built == 0)
             {
                 stack.style.display = DisplayStyle.None;
                 ClearancePx = 0f;
@@ -139,8 +157,17 @@ namespace Kestrel.Game.Guide
                     suppressTap = -1;
                     return;
                 }
-                Stage?.Tap(captured);
-                Sync();
+                try
+                {
+                    Stage?.Tap(captured);
+                    Sync();
+                }
+                catch (System.Exception)
+                {
+                    // A bad tap must never take down the app; skip the beat if we can.
+                    try { Stage?.Skip(captured); }
+                    catch (System.Exception) { }
+                }
             });
 
             var shadow = new VisualElement { name = "guide-shadow", pickingMode = PickingMode.Ignore };
