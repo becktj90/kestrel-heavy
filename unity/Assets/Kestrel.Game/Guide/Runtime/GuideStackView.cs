@@ -52,14 +52,22 @@ namespace Kestrel.Game.Guide
 
         public void Sync()
         {
-            if (Stage == null) { stack.Clear(); signature = ""; return; }
+            if (Stage == null || Stage.Engine == null || Stage.Engine.Settings == null)
+            {
+                stack.Clear();
+                signature = "";
+                ClearancePx = 0f;
+                return;
+            }
             var models = Stage.Models();
+            if (models == null) { stack.Clear(); signature = ""; ClearancePx = 0f; return; }
             float scale = PanelPerPoint > 0f ? PanelPerPoint : 1f;
             float font = GuidePacing.FontPt(Stage.Engine.Settings.Size);
             bool[] portrait = new bool[models.Length];
             string[] measure = new string[models.Length];
             for (int i = 0; i < models.Length; i++)
             {
+                if (models[i] == null) { portrait[i] = false; measure[i] = ""; continue; }
                 portrait[i] = models[i].Portrait;
                 measure[i] = models[i].Full;
             }
@@ -67,17 +75,27 @@ namespace Kestrel.Game.Guide
             int shown = models.Length < frames.Length ? models.Length : frames.Length;
             string next = "";
             bool place = !HostParksPosition;
-            for (int i = 0; i < shown; i++) next += models[i].Id + "|";
+            int built = 0;
+            for (int i = 0; i < shown; i++)
+            {
+                if (models[i] == null) continue;
+                next += models[i].Id + "|";
+                built++;
+            }
             next += Screen.Compact ? "c" : "f";
             next += Stage.Place == GuidePlace.Menu ? "m" : "d";
-            if (next != signature || stack.childCount != shown)
+            if (next != signature || stack.childCount != built)
             {
                 place = true;
                 signature = next;
                 stack.Clear();
-                for (int i = 0; i < shown; i++) stack.Add(Build(models[i], i));
+                for (int i = 0; i < shown; i++)
+                {
+                    if (models[i] == null) continue;
+                    stack.Add(Build(models[i], i));
+                }
             }
-            if (shown == 0)
+            if (built == 0)
             {
                 stack.style.display = DisplayStyle.None;
                 ClearancePx = 0f;
@@ -104,12 +122,15 @@ namespace Kestrel.Game.Guide
                 stack.style.width = width;
             }
             float band = 0f;
-            for (int i = 0; i < shown && i < stack.childCount; i++)
+            int at = 0;
+            for (int i = 0; i < shown && at < stack.childCount; i++)
             {
-                Fill(stack[i], models[i], frames[i], scale);
+                if (models[i] == null) continue;
+                Fill(stack[at], models[i], frames[i], scale);
                 band += frames[i].H;
+                at++;
             }
-            if (shown > 1) band += GuidePacing.StackGapPt * (shown - 1);
+            if (built > 1) band += GuidePacing.StackGapPt * (built - 1);
             ClearancePx = Stage.Place == GuidePlace.Menu
                 ? (band + GuidePacing.ShadowPt + GuidePacing.StackGapPt) * scale
                 : 0f;
@@ -495,14 +516,24 @@ namespace Kestrel.Game.Guide
         {
             if (gesture.Handled || Stage == null) return;
             gesture.Handled = true;
-            if (action == GuideScrollAction.Next) Stage.Next(index);
-            else if (action == GuideScrollAction.Previous) Stage.Back(index);
-            else if (action == GuideScrollAction.Tap) Stage.Tap(index);
-            else return;
-            Sync();
-            // The page turn rebuilds the box. A click still in this gesture must not turn the new one.
-            if (index >= 0 && index < stack.childCount && stack[index].userData is BoxGesture fresh)
-                fresh.Handled = true;
+            if (action == GuideScrollAction.Scroll) return;
+            try
+            {
+                if (action == GuideScrollAction.Next) Stage.Next(index);
+                else if (action == GuideScrollAction.Previous) Stage.Back(index);
+                else if (action == GuideScrollAction.Tap) Stage.Tap(index);
+                else return;
+                Sync();
+                // The page turn rebuilds the box. A click still in this gesture must not turn the new one.
+                if (index >= 0 && index < stack.childCount && stack[index].userData is BoxGesture fresh)
+                    fresh.Handled = true;
+            }
+            catch (System.Exception)
+            {
+                // A bad tap must never take down the app; skip the beat if we can.
+                try { Stage?.Skip(index); Sync(); }
+                catch (System.Exception) { }
+            }
         }
 
         void BindSkip(Button skip, int index)

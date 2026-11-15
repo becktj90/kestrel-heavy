@@ -13,7 +13,7 @@ on:
         default: false
         type: boolean
       build_number:
-        description: "CFBundleVersion / export tag (must be > last export/2.0.0-N, ≥ 100)"
+        description: "CFBundleVersion / export tag. Stale values automatically advance to the next available build."
         required: true
         type: string
       ref:
@@ -323,18 +323,28 @@ jobs:
           echo "UNITY_LICENSE secret is empty; cannot export." >&2
           exit 1
 
-      - name: Validate build number
-        run: |
-          set -euo pipefail
-          n="$BUILD_NUMBER"
-          [[ "$n" =~ ^[0-9]+$ ]] || { echo "build_number must be an integer"; exit 1; }
-          (( n >= 100 )) || { echo "build_number must be >= 100"; exit 1; }
-
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
           fetch-depth: 0
           lfs: true
+
+      - name: Choose the next unused build number
+        id: next-build
+        run: |
+          set -euo pipefail
+          requested="$BUILD_NUMBER"
+          [[ "$requested" =~ ^[0-9]+$ ]] || { echo "build_number must be an integer"; exit 1; }
+          (( requested >= 100 )) || { echo "build_number must be >= 100"; exit 1; }
+          latest=$(git ls-remote --tags origin 'export/2.0.0-*' \
+            | sed 's#.*/export/2.0.0-##' | grep -E '^[0-9]+$' | sort -n | tail -1 || true)
+          chosen="$requested"
+          if [[ -n "$latest" ]] && (( chosen <= latest )); then
+            chosen=$((latest + 1))
+            echo "::warning::Requested build $requested is already exported; using next available build $chosen."
+          fi
+          echo "build_number=$chosen" >> "$GITHUB_OUTPUT"
+          echo "Export build number: $chosen" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Free disk space
         run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc || true
@@ -358,6 +368,7 @@ jobs:
       - name: Export iOS Xcode project
         uses: game-ci/unity-builder@v4
         env:
+          BUILD_NUMBER: ${{ steps.next-build.outputs.build_number }}
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
@@ -370,7 +381,7 @@ jobs:
           buildName: iOS
           versioning: None
           allowDirtyBuild: true
-          customParameters: -khBuildNumber ${{ env.BUILD_NUMBER }}
+          customParameters: -khBuildNumber ${{ steps.next-build.outputs.build_number }}
 
       - name: Install git-lfs + rsync
         run: |
@@ -380,6 +391,7 @@ jobs:
 
       - name: Publish orphan xcode-export branch
         env:
+          BUILD_NUMBER: ${{ steps.next-build.outputs.build_number }}
           SOURCE_REF: ${{ inputs.ref }}
         run: |
           set -euo pipefail
@@ -391,7 +403,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: xcode-export-${{ env.BUILD_NUMBER }}
+          name: xcode-export-${{ steps.next-build.outputs.build_number }}
           path: build/iOS/iOS
           retention-days: 7
           if-no-files-found: error
