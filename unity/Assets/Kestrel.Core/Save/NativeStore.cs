@@ -27,6 +27,9 @@ namespace Kestrel.Core.Save
         public const string MissionsKey = Prefix + "missions";
         /// <summary>Mid-design autosave. Not a design slot: the key does not use <see cref="DesignPrefix"/>.</summary>
         public const string DraftKey = Prefix + "draft";
+        /// <summary>Test Flight's last rocket (DECISIONS #102). Separate from the draft and the slots, so a test never moves
+        /// the campaign's Continue record.</summary>
+        public const string TestFlightKey = Prefix + "testflight";
         /// <summary>Fictional credits wallet. Separate from the career Kc bank.</summary>
         public const string CreditsKey = Prefix + "credits";
         /// <summary>File copy of the PlayerPrefs toggles.</summary>

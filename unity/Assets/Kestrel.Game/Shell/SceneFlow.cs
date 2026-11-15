@@ -30,6 +30,9 @@ namespace Kestrel.Game.Shell
             return false;
         }
 
+        /// <summary>Home's Test Flight tile control id.</summary>
+        public const string TestFlightControl = "testflight";
+
         public static bool IsHomeControl(string controlId) =>
             controlId == "launch" || controlId == "design" || controlId == "missions" || controlId == "hangar";
 
@@ -56,9 +59,17 @@ namespace Kestrel.Game.Shell
                 Go(AppScreen.Missions);
                 return;
             }
+            // Home's Test Flight tile is the Sandbox free build (DECISIONS #102), the same route as the board's Sandbox.
+            if (controlId == TestFlightControl) controlId = "hangar";
             if (!TryHomeControl(controlId, out var route)) return;
             MissionBriefing card = null;
-            if (route == RouteId.HomeHangar) card = TryFreeBriefing();
+            if (route == RouteId.HomeHangar)
+            {
+                card = TryFreeBriefing();
+                // A test opens on the last test rocket (its own save record), else the designer's usual first rocket.
+                var last = TestFlightHome.Last();
+                if (last != null) PadHandoff.Arm(last, false, false);
+            }
             Present(GameSession.Apply(route, null, null, card));
         }
 
@@ -133,6 +144,11 @@ namespace Kestrel.Game.Shell
         }
         public void ReportRetry() => Route(RouteId.ReportRetry);
 
+        /// <summary>Test Flight card: Tweak &amp; Retry and New Design open the designer (a mission's "Test it" goes back
+        /// to that mission). The card's own callbacks then load the rocket.</summary>
+        public void TestRetry() => Route(RouteId.TestRetry);
+        public void TestNewDesign() => Route(RouteId.TestNewDesign);
+
         /// <summary>Same exit the in-flight pause menu reaches via Go(Home): title screen, session cleared.</summary>
         public void ExitToHome() => Route(RouteId.ExitHome);
 
@@ -199,7 +215,7 @@ namespace Kestrel.Game.Shell
             Present(new RouteResult(SessionScreens.Design, SessionScreens.None, ctx));
         }
 
-        /// <summary>Free build. The existing hangar route, not a new flight.</summary>
+        /// <summary>Free build. The existing hangar route, not a new flight. Since DECISIONS #102 it is Test Flight.</summary>
         public void OpenSandbox()
         {
             if (!Busy) HomePressed("hangar");

@@ -36,6 +36,10 @@ namespace Kestrel.Core.Flight
         ReportMissions,
         ExitHome,
         ExitMissions,
+        /// <summary>Test Flight card: Tweak &amp; Retry. The designer with the same rocket, still a test.</summary>
+        TestRetry,
+        /// <summary>Test Flight card: New Design. The designer with a fresh rocket, still a test.</summary>
+        TestNewDesign,
     }
 
     public readonly struct RouteResult
@@ -120,6 +124,39 @@ namespace Kestrel.Core.Flight
         public bool AutoPad;
 
         public bool IsFree => Mode == MissionMode.Free;
+
+        /// <summary>
+        /// DECISIONS #102 Test Flight: this flight counts for nothing (no Kc, stars, medals, unlocks, records, draft, guide
+        /// or Game Center). Set on Home's Test Flight free build, and on a mission's "Test it" copy (<see cref="TestOf"/>).
+        /// </summary>
+        public bool TestFlight;
+        /// <summary>The mission a "Test it" flight came from; Tweak &amp; Retry and New Design return to it. Null for Home's Test Flight.</summary>
+        public MissionContext TestReturn;
+
+        /// <summary>Home's Test Flight: a free build flagged as a test (DECISIONS #102).</summary>
+        public static MissionContext Test(ulong seed = 1)
+        {
+            var ctx = Free(seed);
+            ctx.Label = Kestrel.Core.Flight.TestFlightCopy.Name;
+            ctx.Name = Kestrel.Core.Flight.TestFlightCopy.Name;
+            ctx.TestFlight = true;
+            return ctx;
+        }
+
+        /// <summary>
+        /// A mission's "Test it": the same mission, target, seed, pad and wind, flagged as a test so nothing counts.
+        /// The original context is kept in <see cref="TestReturn"/> and is not changed.
+        /// </summary>
+        public static MissionContext TestOf(MissionContext mission)
+        {
+            if (mission == null) return Test();
+            if (mission.TestFlight) return mission;
+            var ctx = (MissionContext)mission.MemberwiseClone();
+            ctx.TestFlight = true;
+            ctx.TestReturn = mission;
+            ctx.AutoPad = false;
+            return ctx;
+        }
 
         public static ulong DefaultSeed(Campaign campaign)
         {
@@ -297,6 +334,9 @@ namespace Kestrel.Core.Flight
 
         public static bool IsFreeBuild => Current == null || Current.IsFree;
 
+        /// <summary>DECISIONS #102: the flight on the pad is a test flight and writes nothing to the career.</summary>
+        public static bool IsTestFlight => Current != null && Current.TestFlight;
+
         public static void Carry(MissionContext context) => Current = context;
 
         public static void Clear() => Current = null;
@@ -308,8 +348,17 @@ namespace Kestrel.Core.Flight
                 case RouteId.HomeLaunch:
                     return Done(SessionScreens.Missions, SessionScreens.None);
                 case RouteId.HomeHangar:
-                    Current = MissionContext.Free(briefing != null ? briefing.MissionSeed : 1);
+                    // DECISIONS #102: the Sandbox free build (Missions board Sandbox, Home's Test Flight tile) is Test
+                    // Flight: still a free build (MissionMode.Free), flagged so it writes nothing and shows the test card.
+                    Current = MissionContext.Test(briefing != null ? briefing.MissionSeed : 1);
                     Current.ApplyBriefing(briefing);
+                    return Done(SessionScreens.Design, SessionScreens.None);
+                case RouteId.TestRetry:
+                case RouteId.TestNewDesign:
+                    // Both open the designer. Home's Test Flight stays a test (its free build). A mission's "Test it"
+                    // returns to that mission, so the designer's LAUNCH flies the real mission again.
+                    if (Current == null) Current = MissionContext.Test();
+                    else if (Current.TestFlight && Current.TestReturn != null) Current = Current.TestReturn;
                     return Done(SessionScreens.Design, SessionScreens.None);
                 case RouteId.MissionChosen:
                     var chosen = MissionContext.FromCampaign(campaign, missionId);
@@ -324,6 +373,8 @@ namespace Kestrel.Core.Flight
                 case RouteId.ExitMissions:
                     return Done(SessionScreens.Missions, SessionScreens.None);
                 case RouteId.DesignerBack:
+                    // A mission's "Test it" copy: Back leaves the test and returns to that mission's own flow.
+                    if (Current != null && Current.TestFlight && Current.TestReturn != null) Current = Current.TestReturn;
                     if (IsFreeBuild)
                     {
                         Current = null;
