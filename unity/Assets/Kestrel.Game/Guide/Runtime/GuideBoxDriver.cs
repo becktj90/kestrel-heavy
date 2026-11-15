@@ -149,7 +149,9 @@ namespace Kestrel.Game.Guide
         }
 
         /// <summary>Builds or removes the corner portrait to match the setting. Cheap when nothing changed.
-        /// The overlay is absolute and ignores picking, so removing it leaves no gap in the layout.</summary>
+        /// The overlay is absolute and ignores picking, so removing it leaves no gap in the layout.
+        /// Off also skips the first-run welcome stack: Thrum's boxes must not appear or take taps when the
+        /// corner character is off (DECISIONS #72; crash when tapping that stack after a mission).</summary>
         public void SyncSprite()
         {
             var live = stage != null ? stage.Engine as LiveGuideEngine : null;
@@ -160,14 +162,8 @@ namespace Kestrel.Game.Guide
                 if (welcome) EnsureWelcomeStack();
                 return;
             }
-            if (welcome)
-            {
-                // Welcome keeps its own stack without the corner pop; drop any pop left from an earlier On.
-                // Lines that are not the welcome are still dropped below once the intro is finished.
-                DropCornerPop();
-                EnsureWelcomeStack();
-                return;
-            }
+            // Off: never build the welcome stack. Mark the intro done so Home CTAs are not blocked.
+            if (welcome && live != null) live.SkipWelcome();
             DropSprite();
             if (live != null) live.DropQueued();
         }
@@ -266,12 +262,19 @@ namespace Kestrel.Game.Guide
                 stage.Engine.Settings.Muted = AudioPrefs.SfxMuted;
             bool paused = Time.timeScale <= 0f;
             var director = FindAnyObjectByType<AudioDirector>();
-            if (director != null)
+            if (voice != null)
             {
-                voice.Bind(director);
-                if (director.Held) paused = true;
+                if (director != null)
+                {
+                    voice.Bind(director);
+                    if (director.Held) paused = true;
+                }
+                voice.Hold(paused);
             }
-            voice.Hold(paused);
+            else if (director != null && director.Held)
+            {
+                paused = true;
+            }
             ApplyScreen();
             if (welcome)
             {
@@ -358,7 +361,7 @@ namespace Kestrel.Game.Guide
 
         void OnTap()
         {
-            if (stage == null || !GuidePopLayout.Shows(Place)) return;
+            if (stage == null || !GuidePopLayout.Shows(Place) || !SpriteOn()) return;
             var models = stage.Models();
             int index = -1;
             for (int i = 0; i < models.Length; i++)
@@ -367,14 +370,15 @@ namespace Kestrel.Game.Guide
             }
             if (index < 0) return;
             var model = models[index];
-            var settings = stage.Engine.Settings ?? new GuideSettings();
+            if (model == null) return;
             var live = stage.Engine as LiveGuideEngine;
             bool voiceOn = live != null && live.ClipVoice && !AudioPrefs.NarrationMuted;
-            bool missing = !model.Speaks || voice.Missing || !voice.HasClip;
+            bool hasVoice = voice != null;
+            bool missing = !model.Speaks || !hasVoice || voice.Missing || !voice.HasClip;
             bool caption = GuideCaption.Visible(voiceOn, AudioPrefs.NarrationMuted, missing);
             bool done = model.Shown != null && model.Full != null && model.Shown.Length >= model.Full.Length;
-            bool canPlay = voiceOn && model.Speaks && voice.HasClip && !voice.Missing;
-            var action = GuidePopLayout.OnTap(caption, done, canPlay, voice.Sounding);
+            bool canPlay = hasVoice && voiceOn && model.Speaks && voice.HasClip && !voice.Missing;
+            var action = GuidePopLayout.OnTap(caption, done, canPlay, hasVoice && voice.Sounding);
             if (action == GuidePopAction.Finish)
             {
                 stage.Tap(index);
@@ -382,7 +386,7 @@ namespace Kestrel.Game.Guide
             }
             if (action == GuidePopAction.Replay)
             {
-                voice.Replay();
+                if (hasVoice) voice.Replay();
                 return;
             }
             if (!done) stage.Tap(index);

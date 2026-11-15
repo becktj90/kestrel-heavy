@@ -169,6 +169,41 @@ namespace Kestrel.Game.Tests
         }
 
         [Test]
+        public void Off_SkipsWelcome_AndBuildsNoStack_SoTappingCannotCrash()
+        {
+            var uiGo = new GameObject("kh-corner-character-welcome-off-test");
+            go = uiGo;
+            var doc = uiGo.AddComponent<UIDocument>();
+            doc.panelSettings = Resources.Load<PanelSettings>("UI/KH_PanelSettings");
+            Assert.That(doc.panelSettings, Is.Not.Null);
+            Assert.That(doc.rootVisualElement, Is.Not.Null);
+
+            GuideSession.Bind(null);
+            ExperienceSettings.SetCornerCharacter(true, PlayerPrefs.SetInt);
+            var driver = uiGo.AddComponent<GuideBoxDriver>();
+            driver.Document = doc;
+            driver.Place = GuidePlace.Menu;
+
+            LogAssert.Expect(LogType.Log, new System.Text.RegularExpressions.Regex(@"\[Kestrel\] guide clips: \d+ found"));
+            driver.SyncSprite();
+            Assert.That(driver.HasSprite, Is.True);
+            var live = driver.Stage != null ? driver.Stage.Engine as LiveGuideEngine : null;
+            Assume.That(live, Is.Not.Null, "needs the real guide script");
+            live.Welcome();
+            Assert.That(OpeningIntroSequence.Active(live), Is.True, "intro is queued while character is on");
+
+            ExperienceSettings.SetCornerCharacter(false, PlayerPrefs.SetInt);
+            Assert.DoesNotThrow(() => driver.SyncSprite());
+            Assert.That(GuideBoxDriver.SpriteOn(), Is.False);
+            Assert.That(OpeningIntroSequence.Active(live), Is.False, "off marks the welcome done");
+            Assert.That(live.State.FirstRunDone, Is.True);
+            Assert.That(driver.HasSprite, Is.False);
+            Assert.That(doc.rootVisualElement.Q("guide-overlay"), Is.Null, "no welcome stack to tap");
+            Assert.That(doc.rootVisualElement.Q("guide-stack"), Is.Null);
+            LogAssert.NoUnexpectedReceived();
+        }
+
+        [Test]
         public void Off_DropsQueuedLines_SoTheyDoNotPileUpIntoABacklog()
         {
             var uiGo = new GameObject("kh-corner-character-backlog-test");

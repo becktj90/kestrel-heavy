@@ -77,7 +77,10 @@ namespace Kestrel.Game.Shell
                 TextFit.Apply(Root);
             });
             GuideHost.Open(doc, GuidePlace.Menu, false);
-            GuideHooks.Home(GuideSession.Engine);
+            // Corner character off (#72/#103): do not queue the first-run Thrum welcome — SyncSprite
+            // would SkipWelcome anyway, but skipping here keeps Home CTAs clear with no stack to tap.
+            if (GuideBoxDriver.SpriteOn()) GuideHooks.Home(GuideSession.Engine);
+            else if (GuideSession.Engine != null) GuideSession.Engine.SkipWelcome();
             GuideHost.Save(GuideSession.Engine);
 
             var listener = camGo.AddComponent<AudioListener>();
