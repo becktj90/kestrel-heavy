@@ -390,6 +390,9 @@ namespace Kestrel.Core.Designer
 
             // The mission stamp Home and the board use (payload type and mass, orbit, budget, missionId).
             if (mission != null) HomeAutoBuild.ApplyMission(c, d, mission);
+            // DECISIONS #85: a non-default setting flies the pitch kick data/starter-kicks.json picked for it (StarterKicks).
+            if (mission != null && !want.Equals(baseChoice) && StarterKicks.Current is StarterKicks kicks && kicks.TryKick(mission.Id, want.Key, out double kick))
+                StarterKicks.Apply(d, kick);
             if (!want.Equals(baseChoice)) JsonMut.Set(d, "id", (baseDesign.Str("id") ?? "starter") + "~" + want.Key);
             return d;
         }
