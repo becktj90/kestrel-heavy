@@ -25,7 +25,7 @@ using UnityEngine.UIElements;
 
 namespace Kestrel.Game.Tests
 {
-    public class TextFitDeviceSweepTests
+    public partial class TextFitDeviceSweepTests
     {
         const string ExperienceKey = Kestrel.Core.Features.ExperienceSettings.CornerCharacterPref;
         const string Tokens = "Assets/Kestrel.Game/Shell/UI/KH_Tokens.uss";
@@ -381,8 +381,7 @@ namespace Kestrel.Game.Tests
                     JsonMut.Set(d, "mission", mission);
                 }
                 JsonMut.Set(mission, "requiresLanding", true);
-                HangarEditor.SetLegs(d, true);
-                return DesignerV3Edits.SetRecoveryMode(d, "rtls");
+                return HangarEditor.SetRecoveryMode(d, "rtls");
             });
         }
 

@@ -66,13 +66,14 @@ namespace Kestrel.Core.Tests
             {
                 var rocket = StarterFixture.Rocket(m.Id);
                 long budget = Career.KcToMinor(m.BudgetKc, perKc);
+                foreach (var build in StarterRocket.BuildOrder)
                 foreach (var e in StarterRocket.EngineOrder)
                 foreach (var stages in StarterRocket.StageValues)
                 for (int notch = 0; notch < StarterRocket.FuelNotches; notch++)
                 foreach (var boosters in StarterRocket.BoosterValues)
                 {
                     if (!rocket.IsStagesAllowed(stages) || !rocket.IsBoostersAllowed(boosters)) continue;
-                    var choice = new StarterChoice(e, stages, notch, boosters);
+                    var choice = new StarterChoice(build, e, stages, notch, boosters);
                     var design = rocket.BuildDesign(choice);
                     long cost = CostModel.PriceDesign(catalog, Design.FromJson(design)).recurring;
                     Assert.LessOrEqual(cost, budget, m.Id + " " + choice.Key);

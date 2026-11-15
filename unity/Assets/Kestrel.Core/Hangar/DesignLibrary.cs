@@ -143,13 +143,70 @@ namespace Kestrel.Core.Hangar
             NoteDraft(nm, missionId);
         }
 
+        /// <summary>
+        /// Career restart: keep the draft rocket, but point resume at <paramref name="missionId"/>
+        /// (usually KH-1) so CONTINUE does not reopen a locked later mission.
+        /// </summary>
+        public void RebindResumeMission(string missionId)
+        {
+            string mid = string.IsNullOrEmpty(missionId) ? null : missionId;
+            if (HasDraft())
+            {
+                var design = LoadDraft(out _, out string name);
+                if (design != null)
+                {
+                    SaveDraft(design, name, mid);
+                    return;
+                }
+            }
+            var prev = store.GetProgress();
+            var next = prev != null ? JsonMut.CloneObject(prev) : new JsonObject();
+            JsonMut.Set(next, "lastMissionId", mid ?? "");
+            store.PutProgress(next);
+        }
+
+        /// <summary>Test Flight's last rocket: its own record, never the draft or the progress record (DECISIONS #102).</summary>
+        public void SaveTestFlight(JsonObject design, string name)
+        {
+            if (design == null) return;
+            string nm = CleanName(name ?? design.Str("name"));
+            var copy = JsonMut.CloneObject(design);
+            JsonMut.Set(copy, "name", nm);
+            var data = new JsonObject();
+            data.Add("design", copy);
+            data.Add("name", nm);
+            store.PutRecord(NativeStore.TestFlightKey, "testflight", data);
+        }
+
+        /// <summary>The last Test Flight rocket, or null.</summary>
+        public JsonObject LoadTestFlight()
+        {
+            var env = store.Read(NativeStore.TestFlightKey);
+            if (env == null || env.Str("kind") != "testflight") return null;
+            var design = env.Obj("data") != null ? env.Obj("data").Obj("design") : null;
+            return design != null ? JsonMut.CloneObject(design) : null;
+        }
+
         /// <summary>Autosave whenever the session changes, including the rocket that is already open.</summary>
-        public void WatchDraft(HangarSession session, Func<string> missionId)
+        public void WatchDraft(HangarSession session, Func<string> missionId) => WatchDraft(session, missionId, null);
+
+        /// <summary>As <see cref="WatchDraft(HangarSession, Func{string})"/>; while <paramref name="testFlight"/> answers true
+        /// the rocket goes to Test Flight's own record instead, and the draft and progress stay as they were.</summary>
+        public void WatchDraft(HangarSession session, Func<string> missionId, Func<bool> testFlight)
         {
             if (session == null) return;
             void Keep()
             {
                 if (session.Loading || session.Design == null) return;
+                bool test = false;
+                try { test = testFlight != null && testFlight(); }
+                catch (Exception) { test = false; }
+                if (test)
+                {
+                    try { SaveTestFlight(session.Design, session.SavedName ?? session.Design.Str("name")); }
+                    catch (SaveException) { }
+                    return;
+                }
                 string mid = null;
                 try { if (missionId != null) mid = missionId(); }
                 catch (Exception) { mid = null; }

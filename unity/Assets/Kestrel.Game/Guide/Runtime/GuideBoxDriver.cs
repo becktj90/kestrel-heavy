@@ -1,4 +1,5 @@
 using Kestrel.Core.Guide;
+using Kestrel.Core.Ui;
 using Kestrel.Game.Audio;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -19,8 +20,19 @@ namespace Kestrel.Game.Guide
         /// on screen, so the corner pop rests under them instead of on the gear. Null or 0 keeps the plain corner.</summary>
         public static System.Func<float> ClearTopPanel;
 
+        /// <summary>Panel pixels from the panel bottom that the opening sheet must stay above. The two arguments are the
+        /// sheet column's left and width in panel pixels, so a control beside the sheet does not lift it. 0 keeps the menu footer.</summary>
+        public static System.Func<float, float, float> ClearBottomPanel;
+
+        /// <summary>Panel x the sheet must stay left of, so a right-hand action column does not crush it into the wordmark. 0 means no cap.</summary>
+        public static System.Func<float, float, float> SheetStopX;
+
         /// <summary>Home sets this while it is up: true keeps the corner pop off the menu (Starter Home, home.thrum off).</summary>
         public static System.Func<bool> HideOnMenu;
+
+        /// <summary>Home sets this to the panel pixels from the screen bottom up to the top of the Home key,
+        /// so the welcome box sits above LAUNCH instead of on it. 0 keeps the plain footer.</summary>
+        public static System.Func<float> MenuFooterPanel;
 
         bool Hidden()
         {
@@ -108,13 +120,18 @@ namespace Kestrel.Game.Guide
             var doc = Document != null ? Document : GetComponent<UIDocument>();
             var parent = doc != null ? doc.rootVisualElement : null;
             if (parent == null) return;
-            overlay = new VisualElement { name = "guide-overlay", pickingMode = PickingMode.Ignore };
-            overlay.style.position = Position.Absolute;
-            overlay.style.left = 0;
-            overlay.style.right = 0;
-            overlay.style.top = 0;
-            overlay.style.bottom = 0;
-            parent.Add(overlay);
+            // The opening sheet may already own the overlay. A second one stacks on Home.
+            if (overlay == null)
+            {
+                overlay = new VisualElement { name = "guide-overlay", pickingMode = PickingMode.Ignore };
+                overlay.style.position = Position.Absolute;
+                overlay.style.left = 0;
+                overlay.style.right = 0;
+                overlay.style.top = 0;
+                overlay.style.bottom = 0;
+                parent.Add(overlay);
+                overlay.RegisterCallback<GeometryChangedEvent>(_ => ApplyScreen());
+            }
             pop = new GuidePopView(overlay)
             {
                 Glyphs = art.Glyphs,
@@ -122,7 +139,7 @@ namespace Kestrel.Game.Guide
                 Portrait = art.Portrait,
             };
             pop.Tapped += OnTap;
-            overlay.RegisterCallback<GeometryChangedEvent>(_ => ApplyScreen());
+            if (blipSource != null) return;
             blipSource = gameObject.AddComponent<AudioSource>();
             blipSource.playOnAwake = false;
             blipSource.spatialBlend = 0f;
@@ -146,28 +163,34 @@ namespace Kestrel.Game.Guide
             if (welcome)
             {
                 // Welcome keeps its own stack without the corner pop; drop any pop left from an earlier On.
-                if (pop != null)
-                {
-                    Silence();
-                    if (stage != null) stage.Blip -= OnBlip;
-                    pop.Pop?.RemoveFromHierarchy();
-                    pop = null;
-                    if (blipSource != null)
-                    {
-                        if (Application.isPlaying) Destroy(blipSource);
-                        else DestroyImmediate(blipSource);
-                        blipSource = null;
-                    }
-                    blipClip = null;
-                    blipUntil = 0f;
-                    shownKey = "";
-                }
+                // Lines that are not the welcome are still dropped below once the intro is finished.
+                DropCornerPop();
                 EnsureWelcomeStack();
                 return;
             }
             DropSprite();
-            // Off: nothing consumes the engine's queue, so keep it empty. Turning the character on later starts clean.
             if (live != null) live.DropQueued();
+        }
+
+        void DropCornerPop()
+        {
+            if (pop != null)
+            {
+                pop.Tapped -= OnTap;
+                if (pop.Pop != null) pop.Pop.RemoveFromHierarchy();
+                pop = null;
+            }
+            if (stage != null) stage.Blip -= OnBlip;
+            Silence();
+            if (blipSource != null)
+            {
+                if (Application.isPlaying) Destroy(blipSource);
+                else DestroyImmediate(blipSource);
+                blipSource = null;
+                blipClip = null;
+            }
+            blipUntil = 0f;
+            shownKey = "";
         }
 
         void EnsureWelcomeStack()
@@ -250,6 +273,11 @@ namespace Kestrel.Game.Guide
             }
             voice.Hold(paused);
             ApplyScreen();
+            if (welcome)
+            {
+                FitWelcomeToShell();
+                ApplyMenuClearance();
+            }
             if (GuideClipPlayer.InFlight || !GuidePopLayout.Shows(Place) || (!welcome && Hidden()))
             {
                 if (voice != null && (voice.Sounding || voice.HasClip || voice.CardId.Length > 0)) Silence();
@@ -262,7 +290,13 @@ namespace Kestrel.Game.Guide
             if (welcome)
             {
                 EnsureWelcomeStack();
-                welcomeStack.Tick(Time.unscaledDeltaTime);
+                if (welcomeStack != null)
+                {
+                    welcomeStack.Screen = screen;
+                    welcomeStack.PanelPerPoint = panelPerPoint;
+                    welcomeStack.Tick(Time.unscaledDeltaTime);
+                    ParkWelcome();
+                }
                 if (pop != null) pop.Hide();
                 if (!WelcomePlaying(liveEngine)) TearDownWelcomeStack();
                 return;
@@ -368,6 +402,129 @@ namespace Kestrel.Game.Guide
             blipUntil = Time.unscaledTime + GuidePacing.BlipSeconds;
         }
 
+        /// <summary>
+        /// The layout screen is in device points. The Home panel is often a different size, so the
+        /// box was drawn on the Launch key or off the panel. Park it just above the primary key,
+        /// inside the panel.
+        /// </summary>
+        void ParkWelcome()
+        {
+            if (welcomeStack == null || welcomeStack.Root == null) return;
+            var stack = welcomeStack.Root.Q("guide-stack");
+            if (stack == null || stack.resolvedStyle.display == DisplayStyle.None) return;
+            if (stack.worldBound.height < 1f || stack.worldBound.width < 1f) return;
+            var doc = Document != null ? Document : GetComponent<UIDocument>();
+            var root = doc != null ? doc.rootVisualElement : null;
+            if (root == null || root.worldBound.width < 1f || root.worldBound.height < 1f) return;
+            var parent = stack.hierarchy.parent;
+            float originX = parent != null ? parent.worldBound.xMin : 0f;
+            float originY = parent != null ? parent.worldBound.yMin : 0f;
+            const float margin = 8f;
+            float rootL = root.worldBound.xMin + margin;
+            float rootR = root.worldBound.xMax - margin;
+            float rootT = root.worldBound.yMin + margin;
+            float width = stack.worldBound.width;
+            float maxW = rootR - rootL;
+            if (maxW > 40f && width > maxW) width = maxW;
+            stack.style.width = width;
+            var box = stack.Q("guide-box");
+            if (box != null) box.style.width = width;
+            float left = stack.worldBound.xMin;
+            if (left < rootL) left = rootL;
+            if (left + width > rootR) left = rootR - width;
+            stack.style.left = left - originX;
+
+            float bottom = root.worldBound.yMax - margin;
+            var primary = root.Q(UiIds.HomePrimary);
+            if (primary != null && primary.resolvedStyle.display != DisplayStyle.None && primary.worldBound.height > 1f)
+                bottom = primary.worldBound.yMin - margin;
+            float top = bottom - stack.worldBound.height;
+            if (top < rootT) top = rootT;
+            stack.style.top = top - originY;
+        }
+
+        /// <summary>The opening sheet uses the shell's safe rect, which is the area Home captures check. Screen.safeArea
+        /// in the editor is the full frame, so a sheet placed from it sits in the inset and fails that check.</summary>
+        void FitWelcomeToShell()
+        {
+            var doc = Document != null ? Document : GetComponent<UIDocument>();
+            var root = doc != null ? doc.rootVisualElement : null;
+            var safe = root != null ? root.Q("safe") : null;
+            if (root == null || safe == null) return;
+            if (safe.worldBound.width < 1f || root.worldBound.width < 1f) return;
+            // Lay the sheet out in panel pixels. Screen.dpi on the capture runner is not the device scale,
+            // and treating the panel as 2x points makes a 600 pt column cover a 1280-wide web Home.
+            panelPerPoint = 1f;
+            float left = safe.worldBound.xMin - root.worldBound.xMin;
+            float top = safe.worldBound.yMin - root.worldBound.yMin;
+            float right = root.worldBound.xMax - safe.worldBound.xMax;
+            float bottom = root.worldBound.yMax - safe.worldBound.yMax;
+            if (left < 0f) left = 0f;
+            if (top < 0f) top = 0f;
+            if (right < 0f) right = 0f;
+            if (bottom < 0f) bottom = 0f;
+            var title = root.Q("mm-title");
+            if (title != null && title.worldBound.height > 1f)
+            {
+                float titleBottom = title.worldBound.yMax - root.worldBound.yMin;
+                if (titleBottom > top) top = titleBottom;
+            }
+            screen = new GuideScreen(root.worldBound.width, root.worldBound.height, top, bottom, left, right, 0f, screen.Compact, 0f);
+        }
+
+        /// <summary>Home reports how far up from the panel bottom its controls reach, so the opening sheet sits above them.</summary>
+        void ApplyMenuClearance()
+        {
+            if (Place != GuidePlace.Menu || ClearBottomPanel == null || panelPerPoint <= 0f) return;
+            var doc = Document != null ? Document : GetComponent<UIDocument>();
+            var root = doc != null ? doc.rootVisualElement : null;
+            float origin = root != null ? root.worldBound.xMin : 0f;
+            float left = origin + screen.ColumnX * panelPerPoint;
+            float width = screen.ColumnWidth * panelPerPoint;
+            float px = ReadClearance(left, width);
+            float pt = px > 1f ? px / panelPerPoint + 8f : 0f;
+            float room = screen.Height - screen.DockTop - pt;
+            // A right-hand card just under the wordmark would squash the sheet into a sliver. Stop short of that card
+            // and dock in the open band instead. A phone column has no card beside it, so it keeps the lift.
+            bool narrowed = false;
+            if (room < 110f && SheetStopX != null)
+            {
+                float stop;
+                try { stop = SheetStopX(left, width); }
+                catch (System.Exception) { stop = 0f; }
+                float localStop = panelPerPoint > 0f ? (stop - origin) / panelPerPoint : 0f;
+                float colLeft = screen.ColumnX;
+                if (localStop > colLeft + 220f)
+                {
+                    narrowed = true;
+                    float newW = Mathf.Min(screen.ColumnWidth, localStop - colLeft - 8f);
+                    float safeLeft = colLeft - GuidePacing.SideMarginPt;
+                    if (safeLeft < 0f) safeLeft = 0f;
+                    float safeRight = screen.Width - (colLeft + newW) - GuidePacing.SideMarginPt;
+                    if (safeRight < 0f) safeRight = 0f;
+                    screen = new GuideScreen(screen.Width, screen.Height, screen.SafeTop, screen.SafeBottom, safeLeft, safeRight, screen.Header, screen.Compact, 0f);
+                    left = origin + screen.ColumnX * panelPerPoint;
+                    width = screen.ColumnWidth * panelPerPoint;
+                    px = ReadClearance(left, width);
+                    pt = px > 1f ? px / panelPerPoint + 8f : 0f;
+                    room = screen.Height - screen.DockTop - pt;
+                }
+            }
+            if (narrowed && room < 110f) return;
+            if (pt > screen.Footer) screen = screen.WithFooter(pt);
+        }
+
+        float ReadClearance(float left, float width)
+        {
+            if (ClearBottomPanel == null) return 0f;
+            try
+            {
+                float px = ClearBottomPanel(left, width);
+                return float.IsNaN(px) || px < 0f ? 0f : px;
+            }
+            catch (System.Exception) { return 0f; }
+        }
+
         void ApplyScreen()
         {
             float dpr = Screen.dpi >= 10f ? Screen.dpi / 160f : 2f;
@@ -376,6 +533,13 @@ namespace Kestrel.Game.Guide
             float widthPt = Screen.width / dpr;
             float panelW = overlay != null && overlay.resolvedStyle.width > 1f ? overlay.resolvedStyle.width : widthPt;
             panelPerPoint = widthPt > 1f ? panelW / widthPt : 1f;
+            if (Place == GuidePlace.Menu && MenuFooterPanel != null && panelPerPoint > 0f)
+            {
+                float px = 0f;
+                try { px = MenuFooterPanel(); }
+                catch (System.Exception) { px = 0f; }
+                if (px > 1f) screen = screen.WithFooter(px / panelPerPoint + GuidePacing.StackGapPt);
+            }
         }
 
         static string RepoRoot()

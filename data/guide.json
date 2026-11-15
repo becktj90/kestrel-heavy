@@ -58,8 +58,23 @@
       "cards": [
         {
           "id": "first.cta.c1",
-          "kid": "Tap LAUNCH for KH-1 First Hop, or MISSIONS to see all twenty flights. Tap SKIP and I hush.",
+          "kid": "Tap Launch for KH-1 First Hop, or Missions to see all twenty flights. Tap SKIP and I hush.",
           "eng": "KH-1 apogee is 10 km. Pebble is 50 kg. KH-20 is mission 20 on the board."
+        }
+      ]
+    },
+    {
+      "id": "first.close",
+      "trigger": "guide.first",
+      "when": "close",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": true,
+      "cards": [
+        {
+          "id": "first.close.c1",
+          "kid": "Your first rocket is ready. Shall we roll it out?",
+          "eng": "First hop: 10 km up, then home. Pebble rides on top."
         }
       ]
     },

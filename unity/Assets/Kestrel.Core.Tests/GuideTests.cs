@@ -12,7 +12,7 @@ namespace Kestrel.Core.Tests
     public class GuideTests
     {
         static readonly string[] Ids = {
-            "first.1", "first.cta",
+            "first.1", "first.cta", "first.close",
             "brief.kh1", "brief.kh3", "brief.kh6", "brief.kh8", "brief.kh9",
             "brief.kh2", "brief.kh4", "brief.kh5", "brief.kh7", "brief.kh10",
             "brief.kh11", "brief.kh12", "brief.kh13", "brief.kh14", "brief.kh15",
@@ -96,6 +96,9 @@ namespace Kestrel.Core.Tests
             Assert.Throws<FormatException>(() => GuideScript.Parse(Wrap(Card("Try the hop again.", "No number in this engineer line."))));
             Assert.Throws<FormatException>(() => GuideScript.Parse(Wrap(Card(new string('a', 91) + ".", "TWR is 1.30."))));
             Assert.Throws<FormatException>(() => GuideScript.Parse(Wrap(Card("Oh! Wow! Too many.", "TWR is 1.30."))));
+            Assert.Throws<FormatException>(() => GuideScript.Parse(Wrap(Card("Do not YELL at the pad.", "TWR is 1.30."))));
+            var buttons = GuideScript.Parse(Wrap(Card("Tap LAUNCH or MISSIONS. Tap SKIP.", "KH-1 is 10 km.")));
+            Assert.IsTrue(buttons.ById("t.1").Cards[0].Kid.Contains("LAUNCH"));
         }
 
         [Test]
@@ -164,6 +167,26 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual(1, queue.Pending);
             queue.Skip(1);
             Assert.AreEqual("asc.maxq.warn", queue.CurrentId);
+        }
+
+        [Test]
+        public void Queue_OpeningCtaWaitsBehindTheGreeting()
+        {
+            var script = GuideScript.Load(Golden.Root);
+            var queue = new GuideQueue();
+            queue.Settings.Speed = GuideSpeed.Instant;
+            queue.Push(script.ById("first.1"), 0, null, null);
+            queue.Push(script.ById("first.cta"), 0, null, null);
+            Assert.AreEqual("first.1", queue.CurrentId, "the greeting stays up");
+            Assert.AreEqual(1, queue.Pending, "the CTA waits behind it");
+
+            var ordered = new GuideQueue();
+            ordered.Settings.Speed = GuideSpeed.Instant;
+            ordered.Push(script.ById("first.cta"), 0, null, null, true);
+            ordered.Push(script.ById("first.1"), 0, null, null, true);
+            Assert.AreEqual("first.cta", ordered.CurrentId, "file order does not let the greeting jump the CTA");
+            ordered.Skip(0);
+            Assert.AreEqual("first.1", ordered.CurrentId);
         }
 
         [Test]
@@ -443,6 +466,7 @@ namespace Kestrel.Core.Tests
             var binder = Fresh();
             binder.Queue.Settings.Speed = GuideSpeed.Instant;
             Assert.AreEqual("first.1", binder.Welcome(0).LineId);
+            Assert.Greater(binder.Queue.Pending, 0);
             Assert.IsFalse(binder.State.HasSeen("first.cta"));
             binder.SkipWelcome();
             Assert.IsTrue(binder.State.FirstRunDone);

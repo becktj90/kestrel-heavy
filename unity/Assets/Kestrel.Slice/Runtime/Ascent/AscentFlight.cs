@@ -30,7 +30,10 @@ namespace Kestrel.Slice
         public static AscentHook Prepare(Catalog catalog, Design design, JsonObject json, bool engineer, bool reduceMotion)
         {
             ulong hash = FlightBatch.DesignHash(design);
-            ulong seed = ReadSeed(json);
+            // Daily (and any other session seed) is on the mission, not the starter document.
+            // Starters name no seed, so ReadSeed alone flew seed 1 while the briefing showed today's.
+            var session = GameSession.Current;
+            ulong seed = FlightSeed.ForAscent(json, session != null ? session.Seed : (ulong?)null);
             bool gentle = FailureMonitor.GentleTier(design);
             bool auto = StepperProgress.Read(json).AutoAssistOn(engineer ? DesignerDepth.Engineer : DesignerDepth.Simple);
             var mission = CurrentMission();
@@ -104,29 +107,7 @@ namespace Kestrel.Slice
             return null;
         }
 
-        public static ulong ReadSeed(JsonObject json)
-        {
-            if (json == null) return 1;
-            string s = json.Str("seed");
-            if (string.IsNullOrEmpty(s)) s = json.Obj("mission")?.Str("seed");
-            if (string.IsNullOrEmpty(s)) s = json.Str("missionSeed");
-            if (!string.IsNullOrEmpty(s))
-            {
-                bool hex = false;
-                for (int i = 0; i < s.Length; i++)
-                {
-                    char c = s[i];
-                    if ((c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) { hex = true; break; }
-                }
-                if (!hex && ulong.TryParse(s, NumberStyles.Integer, CultureInfo.InvariantCulture, out var dec))
-                    return dec == 0 ? 1 : dec;
-                if (hex && ulong.TryParse(s, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var h))
-                    return h == 0 ? 1 : h;
-            }
-            if (json.TryGetValue("missionSeed", out var raw) && raw is double d && d > 0 && d == Math.Truncate(d) && d < ulong.MaxValue)
-                return (ulong)d;
-            return 1;
-        }
+        public static ulong ReadSeed(JsonObject json) => FlightSeed.Read(json);
 
         public static int MissionIndex(Design design, JsonObject json)
         {

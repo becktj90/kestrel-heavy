@@ -39,7 +39,15 @@ namespace Kestrel.Core.Tests
                             if (r.IsStagesAllowed(s) && r.IsBoostersAllowed(b)) yield return new StarterChoice(e, s, f, b);
         }
 
-        static void Set(StarterRocket r, StarterChoice c) { r.Engine = c.Engine; r.Stages = c.Stages; r.FuelNotch = c.FuelNotch; r.Boosters = c.Boosters; }
+        static void Set(StarterRocket r, StarterChoice c)
+        {
+            r.BuildGrade = c.Build;
+            r.Engine = c.Engine;
+            r.Stages = c.Stages;
+            r.FuelNotch = c.FuelNotch;
+            r.Boosters = c.Boosters;
+            r.Landing = c.Landing;
+        }
 
         /// <summary>
         /// Conservative disagreements (Judge worse than flown) found on main. Each is "mission key: judge -> flown".

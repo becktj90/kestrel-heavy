@@ -476,6 +476,18 @@ namespace Kestrel.Slice
                 content.Add(ui.Stepper("Fin size", () => HangarFormat.Metres(D.Obj("aero")?.Num("finSpanM", 1) ?? 1), () => "Bigger fins move the push point down",
                     (dir, key) => Do(d => HangarEditor.SetFinSpan(d, (d.Obj("aero")?.Num("finSpanM", 1) ?? 1) + dir * DesignerLimits.Active.finSpanStep), key), End, "fins.span", refreshers));
             }
+            // Where it lands first: picking Haven / pad arms legs, grid fins and a default reserve (SetRecoveryMode).
+            var modes = new List<HangarUi.Choice>
+            {
+                new HangarUi.Choice("expendable", "Expend"),
+                new HangarUi.Choice("rtls", "Return to pad"),
+                new HangarUi.Choice("barge", "Haven barge"),
+            };
+            var recovery = ui.Chips(engineer ? "Recovery mode" : "Where it lands", modes,
+                () => D.Str("recoveryMode") ?? D.Obj("recovery")?.Str("mode") ?? "expendable",
+                id => Do(d => HangarEditor.SetRecoveryMode(d, id)), refreshers);
+            recovery.name = "field-recoveryMode";
+            content.Add(recovery);
             content.Add(ui.Switch("Landing legs", null, () => D.Obj("landing")?.Bool("legs") ?? false, on => Do(d => HangarEditor.SetLegs(d, on)), refreshers));
             content.Add(ui.Switch("Grid fins", "Steer on the way down", () => D.Obj("landing")?.Bool("gridFins") ?? false, on => Do(d => HangarEditor.SetGridFins(d, on)), refreshers));
             content.Add(ui.Switch(engineer ? "RCS" : "Steering jets", null, () => D.Obj("landing")?.Bool("rcs") ?? false, on => Do(d => HangarEditor.SetRcs(d, on)), refreshers));

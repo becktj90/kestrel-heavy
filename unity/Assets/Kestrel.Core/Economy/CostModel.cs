@@ -233,7 +233,15 @@ namespace Kestrel.Core.Economy
             {
                 if (!c.EngineById.TryGetValue(p.engine ?? "", out var e)) continue;
                 int tol = EngineOutTolerance(c, p.engineCount, e);
-                double r = Math.Pow(ClusterReliability(c, p.engineCount, e.reliability, tol), n);
+                // Match FailureModel: shop scrap scales each engine's catalog reliability before cluster survival.
+                double engRel = e.reliability;
+                if (d != null && !string.IsNullOrEmpty(d.manufacturing) && d.manufacturing != "standard")
+                {
+                    engRel *= Designer.StarterManufacturing.EngineReliabilityScale(d.manufacturing);
+                    if (engRel > 1) engRel = 1;
+                    if (engRel < 0) engRel = 0;
+                }
+                double r = Math.Pow(ClusterReliability(c, p.engineCount, engRel, tol), n);
                 stages.Add(new StageReliability { engine = e.id, count = p.engineCount * n, tolerance = tol, reliability = r });
                 rel *= r;
             }

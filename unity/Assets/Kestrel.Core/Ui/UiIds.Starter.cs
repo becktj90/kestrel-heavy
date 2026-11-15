@@ -1,6 +1,6 @@
 // Starter designer screen ids (feat(designer-starter), PR 5) for the navigation harness. The root is
 // UiIds.ScreenStarter ("screen-starter", in UiIds.cs). Option ids carry the option's value, not its index:
-// starter-engine-kerosene, starter-stages-2, starter-fuel-3 (notch 3 of 5), starter-boosters-4.
+// starter-build-shop, starter-engine-kerosene, starter-stages-2, starter-fuel-3 (notch 3 of 5), starter-boosters-4.
 using System.Collections.Generic;
 using System.Globalization;
 
@@ -17,6 +17,10 @@ namespace Kestrel.Core.Ui
         public const string StarterReset = "starter-reset";
 
         // ---- Starter controls --------------------------------------------------------------------
+        public const string StarterBuild = "starter-build";
+        public const string StarterBuildShop = "starter-build-shop";
+        public const string StarterBuildStandard = "starter-build-standard";
+        public const string StarterBuildFlight = "starter-build-flight";
         public const string StarterEngine = "starter-engine";
         public const string StarterEngineKerosene = "starter-engine-kerosene";
         public const string StarterEngineMethane = "starter-engine-methane";
@@ -31,31 +35,42 @@ namespace Kestrel.Core.Ui
         public const string StarterBoosters0 = "starter-boosters-0";
         public const string StarterBoosters2 = "starter-boosters-2";
         public const string StarterBoosters4 = "starter-boosters-4";
+        public const string StarterLanding = "starter-landing";
+        public const string StarterLandingExpend = "starter-landing-expend";
+        public const string StarterLandingHaven = "starter-landing-haven";
+        public const string StarterLandingPad = "starter-landing-pad";
 
         // ---- Starter read-only elements (not tappable) -------------------------------------------
         public const string StarterRocket = "starter-rocket";
         public const string StarterTitle = "starter-title";
         public const string StarterSubtitle = "starter-subtitle";
+        public const string StarterSpend = "starter-spend";
         public const string StarterHint = "starter-hint";
         public const string StarterBadge = "starter-badge";
         public const string StarterReadiness = "starter-readiness";
         public const string StarterSheet = "starter-sheet";
 
+        public static string StarterBuildOption(global::Kestrel.Core.Designer.StarterBuild b) =>
+            StarterBuild + "-" + global::Kestrel.Core.Designer.StarterManufacturing.Id(b);
         public static string StarterEngineOption(global::Kestrel.Core.Designer.StarterEngine e) => StarterEngine + "-" + global::Kestrel.Core.Designer.StarterRocket.EngineId(e);
         public static string StarterStagesOption(int stages) => StarterStages + "-" + stages.ToString(CultureInfo.InvariantCulture);
         /// <summary>Notch 1..5 (the fuel slider reads "Fuel, 3 of 5").</summary>
         public static string StarterFuelNotch(int notch1To5) => StarterFuel + "-" + notch1To5.ToString(CultureInfo.InvariantCulture);
         public static string StarterBoostersOption(int count) => StarterBoosters + "-" + count.ToString(CultureInfo.InvariantCulture);
+        public static string StarterLandingOption(global::Kestrel.Core.Designer.StarterLanding landing) =>
+            StarterLanding + "-" + global::Kestrel.Core.Designer.StarterRocket.LandingId(landing);
 
         /// <summary>Every interactive Starter control, in reading order. Booster options exist on every
         /// mission but are hidden where the mission has no strap-ons.</summary>
         public static readonly string[] StarterControls =
         {
             StarterBack, StarterReset,
+            StarterBuildShop, StarterBuildStandard, StarterBuildFlight,
             StarterEngineKerosene, StarterEngineMethane,
             StarterStages1, StarterStages2, StarterStages3,
             StarterFuel + "-1", StarterFuel + "-2", StarterFuel + "-3", StarterFuel + "-4", StarterFuel + "-5",
             StarterBoosters0, StarterBoosters2, StarterBoosters4,
+            StarterLandingExpend, StarterLandingHaven, StarterLandingPad,
             StarterLaunch,
         };
 

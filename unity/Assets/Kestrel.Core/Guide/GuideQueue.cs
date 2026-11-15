@@ -41,19 +41,55 @@ namespace Kestrel.Core.Guide
             return t < AscentMinSeconds ? AscentMinSeconds : t;
         }
 
+        /// <summary>
+        /// Queue behind the line already showing, in call order. A decision does not drop or preempt what is in front.
+        /// The opening uses this so the greeting stays up when the career CTA is a decision.
+        /// </summary>
+        public GuideFace AppendInOrder(GuideLine line, double t, IReadOnlyDictionary<string, string> tokens, string clip)
+        {
+            if (line == null || line.Cards.Count == 0) return Face(t);
+            pending.Add(new Slot
+            {
+                Line = line,
+                Tokens = Copy(tokens),
+                Clip = clip,
+                Seq = ++seq,
+                StartT = t,
+            });
+            if (current == null) StartHead(t);
+            return Face(t);
+        }
+
         public GuideFace Push(GuideLine line, double t, IReadOnlyDictionary<string, string> tokens, string clip)
+            => Push(line, t, tokens, clip, false);
+
+        /// <summary>
+        /// <paramref name="inOrder"/> keeps a scripted run (the welcome) in file order.
+        /// A decision still drops chatter everywhere else, except the opening lines that share trigger guide.first.
+        /// </summary>
+        public GuideFace Push(GuideLine line, double t, IReadOnlyDictionary<string, string> tokens, string clip, bool inOrder)
         {
             if (line == null || line.Cards.Count == 0) return Face(t);
             int rank = GuidePriority.Rank(line.Priority);
-            if (current != null && rank == GuidePriority.Rank(GuidePriority.Chatter) && GuidePriority.Rank(current.Line.Priority) >= GuidePriority.Rank(GuidePriority.Decision))
-                return Face(t);
-            if (rank >= GuidePriority.Rank(GuidePriority.Decision))
+            if (!inOrder)
             {
-                for (int i = pending.Count - 1; i >= 0; i--)
-                    if (GuidePriority.Rank(pending[i].Line.Priority) == GuidePriority.Rank(GuidePriority.Chatter))
+                if (current != null && rank == GuidePriority.Rank(GuidePriority.Chatter) && GuidePriority.Rank(current.Line.Priority) >= GuidePriority.Rank(GuidePriority.Decision))
+                    return Face(t);
+                if (rank >= GuidePriority.Rank(GuidePriority.Decision))
+                {
+                    // The opening CTA is a decision on the same guide.first trigger as the first card.
+                    // It waits behind that card. Any other decision still drops chatter.
+                    for (int i = pending.Count - 1; i >= 0; i--)
+                    {
+                        if (GuidePriority.Rank(pending[i].Line.Priority) != GuidePriority.Rank(GuidePriority.Chatter)) continue;
+                        if (OpeningTogether(pending[i].Line, line)) continue;
                         pending.RemoveAt(i);
-                if (current != null && GuidePriority.Rank(current.Line.Priority) == GuidePriority.Rank(GuidePriority.Chatter))
-                    current = null;
+                    }
+                    if (current != null
+                        && GuidePriority.Rank(current.Line.Priority) == GuidePriority.Rank(GuidePriority.Chatter)
+                        && !OpeningTogether(current.Line, line))
+                        current = null;
+                }
             }
             var slot = new Slot
             {
@@ -64,16 +100,35 @@ namespace Kestrel.Core.Guide
                 StartT = t,
             };
             pending.Add(slot);
-            pending.Sort(Order);
+            if (!inOrder) pending.Sort(Order);
             if (current == null)
                 StartHead(t);
-            else if (rank > GuidePriority.Rank(current.Line.Priority))
+            else if (!inOrder && rank > GuidePriority.Rank(current.Line.Priority) && !OpeningTogether(current.Line, line))
             {
                 pending.Add(current);
                 current = null;
                 pending.Sort(Order);
                 StartHead(t);
             }
+            return Face(t);
+        }
+
+        /// <summary>
+        /// Queue behind the line that is showing. Does not preempt it and does not drop chatter.
+        /// The first-run CTA is a decision, and it still waits until the welcome in front of it finishes.
+        /// </summary>
+        public GuideFace Append(GuideLine line, double t, IReadOnlyDictionary<string, string> tokens, string clip)
+        {
+            if (line == null || line.Cards.Count == 0) return Face(t);
+            pending.Add(new Slot
+            {
+                Line = line,
+                Tokens = Copy(tokens),
+                Clip = clip,
+                Seq = ++seq,
+                StartT = t,
+            });
+            if (current == null) StartHead(t);
             return Face(t);
         }
 
@@ -216,6 +271,11 @@ namespace Kestrel.Core.Guide
 
         static bool Critical(Slot slot)
             => slot.Line.Priority == GuidePriority.Safety || slot.Line.Priority == GuidePriority.Decision;
+
+        /// <summary>The first-run lines share trigger guide.first. The CTA must not erase the card in front of it.</summary>
+        static bool OpeningTogether(GuideLine queued, GuideLine incoming)
+            => queued != null && incoming != null
+                && queued.Trigger == "guide.first" && incoming.Trigger == "guide.first";
 
         static int Order(Slot a, Slot b)
         {

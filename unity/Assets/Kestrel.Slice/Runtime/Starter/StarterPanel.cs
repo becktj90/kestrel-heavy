@@ -53,6 +53,8 @@ namespace Kestrel.Slice
 
         public event Action LaunchRequested;
         public event Action BackRequested;
+        /// <summary>"Test it" (DECISIONS #102): fly this rocket as a test; the mission stays open.</summary>
+        public event Action TestRequested;
         /// <summary>The rocket window moved or resized (a Why? card opened or closed): the host re-frames its camera.</summary>
         public event Action RocketBoxChanged;
         /// <summary>The X-ray view opened (true) or closed (false).</summary>
@@ -81,9 +83,10 @@ namespace Kestrel.Slice
         public bool Visible => Root.resolvedStyle.display != DisplayStyle.None && shown;
 
         readonly VisualElement rocketBox, header, sheet;
-        readonly Label title, subtitle, hint, badge, readiness, fuelLess, fuelMore;
-        readonly Button back, reset, launch;
-        readonly Row engine, stages, fuel, boosters;
+        readonly Label title, subtitle, spend, hint, badge, readiness, fuelLess, fuelMore;
+        readonly Button back, reset, launch, testIt;
+        bool testItShown;
+        readonly Row build, engine, stages, fuel, landing, boosters;
         readonly VisualElement whyCard, speedTrack, speedFill, speedNeed, tierSwitch;
         readonly StarterGlyph whyIcon;
         readonly Label whyText, speedLabel, speedStatus;
@@ -120,17 +123,25 @@ namespace Kestrel.Slice
             sheet.style.backgroundColor = SheetBg;
             Root.Add(sheet);
 
+            build = MakeRow(UiIds.StarterBuild, "build", StarterScreen.BuildLabel, StarterRocket.BuildOrder.Count, k => UiIds.StarterBuildOption(StarterRocket.BuildOrder[k]), k => Pick(StarterKnob.Build, () => Rocket.BuildGrade = StarterRocket.BuildOrder[k]));
             engine = MakeRow(UiIds.StarterEngine, "engine", StarterScreen.EngineLabel, StarterRocket.EngineOrder.Count, k => UiIds.StarterEngineOption(StarterRocket.EngineOrder[k]), k => Pick(StarterKnob.Engine, () => Rocket.Engine = StarterRocket.EngineOrder[k]));
             stages = MakeRow(UiIds.StarterStages, "stages", StarterScreen.StagesLabel, StarterRocket.StageValues.Count, k => UiIds.StarterStagesOption(StarterRocket.StageValues[k]), k => Pick(StarterKnob.Stages, () => Rocket.Stages = StarterRocket.StageValues[k]));
             fuel = MakeRow(UiIds.StarterFuel, "fuel", StarterScreen.FuelLabel, StarterRocket.FuelNotches, k => UiIds.StarterFuelNotch(k + 1), k => Pick(StarterKnob.FuelNotch, () => Rocket.FuelNotch = k));
             boosters = MakeRow(UiIds.StarterBoosters, "boosters", StarterScreen.BoostersLabel, StarterRocket.BoosterValues.Count, k => UiIds.StarterBoostersOption(StarterRocket.BoosterValues[k]), k => Pick(StarterKnob.Boosters, () => Rocket.Boosters = StarterRocket.BoosterValues[k]));
+            landing = MakeRow(UiIds.StarterLanding, "landing", StarterScreen.LandingLabel, StarterRocket.LandingOrder.Count,
+                k => UiIds.StarterLandingOption(StarterRocket.LandingOrder[k]),
+                k => Pick(StarterKnob.Landing, () => Rocket.Landing = StarterRocket.LandingOrder[k]));
+            for (int i = 0; i < StarterRocket.BuildOrder.Count; i++) build.Options[i].text = StarterScreen.OptionText(StarterRocket.BuildOrder[i]);
             for (int i = 0; i < StarterRocket.EngineOrder.Count; i++) engine.Options[i].text = StarterScreen.OptionText(StarterRocket.EngineOrder[i]);
+            for (int i = 0; i < StarterRocket.LandingOrder.Count; i++) landing.Options[i].text = StarterRocket.LandingLabel(StarterRocket.LandingOrder[i]);
             for (int i = 0; i < StarterRocket.StageValues.Count; i++) stages.Options[i].text = StarterRocket.StageValues[i].ToString(System.Globalization.CultureInfo.InvariantCulture);
             for (int i = 0; i < StarterRocket.BoosterValues.Count; i++) boosters.Options[i].text = StarterScreen.BoosterText(StarterRocket.BoosterValues[i]);
+            build.Label.tooltip = StarterScreen.BuildHint;
             engine.Label.tooltip = StarterScreen.EngineHint;
             stages.Label.tooltip = StarterScreen.StagesHint;
             fuel.Label.tooltip = StarterScreen.FuelHint;
             boosters.Label.tooltip = StarterScreen.BoostersHint;
+            landing.Label.tooltip = StarterScreen.LandingHint;
             for (int i = 0; i < StarterRocket.FuelNotches; i++)
             {
                 var dot = new VisualElement { name = "starter-fuel-dot-" + (i + 1), pickingMode = PickingMode.Ignore };
@@ -145,8 +156,9 @@ namespace Kestrel.Slice
             fuelMore.style.unityTextAlign = TextAnchor.MiddleRight;
             fuel.Box.Add(fuelLess);
             fuel.Box.Add(fuelMore);
-            engine.Knob = StarterKnob.Engine; stages.Knob = StarterKnob.Stages; fuel.Knob = StarterKnob.FuelNotch; boosters.Knob = StarterKnob.Boosters;
-            foreach (var row in new[] { engine, stages, fuel, boosters })
+            build.Knob = StarterKnob.Build; engine.Knob = StarterKnob.Engine; stages.Knob = StarterKnob.Stages; fuel.Knob = StarterKnob.FuelNotch;
+            landing.Knob = StarterKnob.Landing; boosters.Knob = StarterKnob.Boosters;
+            foreach (var row in new[] { build, engine, stages, fuel, landing, boosters })
             {
                 var r = row;
                 r.Help = new Button(() => ToggleWhy(r.Knob)) { name = UiIds.StarterWhy(r.Knob), text = Copy?.WhyButton ?? "?" };
@@ -181,9 +193,12 @@ namespace Kestrel.Slice
             speedTrack.Add(speedNeed);
             sheet.Add(speedLabel); sheet.Add(speedStatus); sheet.Add(speedTrack);
 
+            spend = Text(UiIds.StarterSpend, 14f, Accent, true, false);
+            spend.tooltip = "Hardware cost in Kc and how likely this rocket is to hold together.";
             hint = Text(UiIds.StarterHint, 13f, Muted, false, true);
             badge = Text(UiIds.StarterBadge, 16f, ReadyGreen, true, false);
             readiness = Text(UiIds.StarterReadiness, 16f, Ink, false, true);
+            sheet.Add(spend);
             sheet.Add(hint);
             sheet.Add(badge);
             sheet.Add(readiness);
@@ -191,6 +206,12 @@ namespace Kestrel.Slice
             launch = new Button(() => { if (LaunchReady) LaunchRequested?.Invoke(); }) { name = UiIds.StarterLaunch, text = StarterScreen.LaunchText };
             Style(launch, LaunchRed, Color.white, true);
             sheet.Add(launch);
+            // Test Flight (DECISIONS #102): the secondary "Test it", left of LAUNCH. Any rocket may fly as a test, so it
+            // is never gated by Honest Ready. Hidden until the game turns it on (ShowTestIt).
+            testIt = new Button(() => TestRequested?.Invoke()) { name = UiIds.StarterTestIt, text = TestFlightCopy.TestIt, tooltip = TestFlightCopy.TestItSpoken };
+            Style(testIt, CornerBg, Color.white, true);
+            testIt.style.display = DisplayStyle.None;
+            sheet.Add(testIt);
 
             back = new Button(() => BackRequested?.Invoke()) { name = UiIds.StarterBack, text = StarterScreen.BackText, tooltip = StarterScreen.BackHint };
             Style(back, CornerBg, Color.white, true);
@@ -261,6 +282,9 @@ namespace Kestrel.Slice
         public void Refresh()
         {
             var r = Rocket;
+            Select(build, k => r.BuildGrade == StarterRocket.BuildOrder[k], k => r.IsBuildAllowed(StarterRocket.BuildOrder[k]));
+            for (int k = 0; k < build.Options.Length; k++)
+                build.Options[k].tooltip = StarterScreen.BuildHintFor(StarterRocket.BuildOrder[k]);
             Select(engine, k => r.Engine == StarterRocket.EngineOrder[k], k => r.IsEngineAllowed(StarterRocket.EngineOrder[k]));
             Select(stages, k => r.Stages == StarterRocket.StageValues[k], k => r.IsStagesAllowed(StarterRocket.StageValues[k]));
             Select(fuel, k => r.FuelNotch == k, k => r.IsFuelNotchAllowed(k));
@@ -272,6 +296,8 @@ namespace Kestrel.Slice
                 fuel.Options[k].tooltip = StarterScreen.FuelSpoken(k);
             }
             fuel.Box.tooltip = StarterScreen.FuelSpoken(r.FuelNotch);
+            Select(landing, k => r.Landing == StarterRocket.LandingOrder[k], k => r.IsLandingAllowed(StarterRocket.LandingOrder[k]));
+            landing.Box.style.display = r.LandingVisible ? DisplayStyle.Flex : DisplayStyle.None;
             Select(boosters, k => r.Boosters == StarterRocket.BoosterValues[k], k => r.IsBoostersAllowed(StarterRocket.BoosterValues[k]));
             boosters.Box.EnableInClassList("starter-locked", r.BoostersLocked);
             boosters.Label.style.color = r.BoostersLocked ? Muted : Ink;
@@ -279,18 +305,27 @@ namespace Kestrel.Slice
 
             title.text = StarterScreen.Title(r.Mission);
             subtitle.text = StarterScreen.Subtitle(r.Mission);
+            double budget = r.Mission != null ? r.Mission.BudgetKc : 0;
+            try { spend.text = StarterManufacturing.SpendLine(r.Catalog, r.BuildDesign(), budget); }
+            catch (Exception) { spend.text = ""; }
+            spend.tooltip = StarterScreen.BuildHintFor(r.BuildGrade) + " " + spend.text;
             hint.text = StarterScreen.Hint(r, LastKnob);
             // The existing readout and the launch predictor (Honest Ready) as plain information. Launch is off only on a
             // hard Validate block, whose one plain reason is the line; a rocket the predictor says breaks up shows its
             // cause and still launches (and may explode). An unchecked setting reads "Test-flying it" until TickPrediction lands.
+            // Spend (cost · hold-together) leads the readiness body so manufacturing choices stay visible without a sheet line.
+            bool wasReady = LaunchReady;
             LaunchReady = StarterScreen.ReadinessNow(r, out var b, out var rest);
             badge.text = b;
             badge.style.color = b == StarterScreen.ReadyBadge ? ReadyGreen : b == StarterScreen.TightBadge ? TightAmber : ShortRed;
-            readiness.text = rest;
-            readiness.tooltip = StarterScreen.Spoken(b, rest);
+            readiness.text = string.IsNullOrEmpty(spend.text) ? rest : (string.IsNullOrEmpty(rest) ? spend.text : spend.text + " · " + rest);
+            readiness.tooltip = StarterScreen.Spoken(b, readiness.text);
             launch.SetEnabled(LaunchReady);
             launch.style.backgroundColor = LaunchReady ? LaunchRed : LaunchOff;
             launch.tooltip = LaunchReady ? "Launch this rocket." : rest;
+            // Key-moment haptic when the starter rocket becomes launch-ready (same payoff as HangarFeel).
+            if (LaunchReady && !wasReady)
+                HangarNative.Play(Haptic.Payoff, HangarFeel.Pattern(Haptic.Payoff, SliceData.Feel));
             RefreshTiers();
             Relayout();
         }
@@ -313,7 +348,8 @@ namespace Kestrel.Slice
             if (Xray != null) Xray.Engineer = Tier == ExperienceTier.Engineer;
 
             if (WhyOpen == StarterKnob.Boosters && !r.BoostersVisible) WhyOpen = StarterKnob.None;
-            foreach (var row in new[] { engine, stages, fuel, boosters })
+            if (WhyOpen == StarterKnob.Landing && !r.LandingVisible) WhyOpen = StarterKnob.None;
+            foreach (var row in new[] { build, engine, stages, fuel, landing, boosters })
             {
                 bool on = row.Knob == WhyOpen;
                 row.Help.EnableInClassList("starter-on", on);
@@ -417,9 +453,9 @@ namespace Kestrel.Slice
             Input = new StarterLayoutInput
             {
                 Width = wPt, Height = hPt, SafeTop = safeT, SafeBottom = safeB, SafeLeft = safeL, SafeRight = safeR,
-                Wide = wide, ReserveExit = reserveExit, BoostersVisible = r.BoostersVisible,
+                Wide = wide, ReserveExit = reserveExit, BoostersVisible = r.BoostersVisible, LandingVisible = r.LandingVisible,
                 Title = title.text, Subtitle = subtitle.text, Hint = hint.text, Badge = badge.text, Readiness = readiness.text,
-                Engines = Texts(engine), Stages = Texts(stages), Boosters = Texts(boosters),
+                Builds = Texts(build), Engines = Texts(engine), Stages = Texts(stages), Landing = Texts(landing), Boosters = Texts(boosters),
                 Help = Copy != null && Copy.Why.Count > 0, HelpText = Copy?.WhyButton ?? "?",
                 WhyOpen = WhyOpen, WhyText = whyText.text,
                 Speed = Speed.Visible, SpeedLabel = Speed.Label, SpeedStatus = Speed.Status,
@@ -472,11 +508,14 @@ namespace Kestrel.Slice
             Corner(back, f.Back, f.CornerPt);
             Corner(reset, f.Reset, f.CornerPt);
 
+            PlaceRow(build, f.Build, f.Sheet, f.LabelPt, f.OptionPt);
             PlaceRow(engine, f.Engine, f.Sheet, f.LabelPt, f.OptionPt);
             PlaceRow(stages, f.Stages, f.Sheet, f.LabelPt, f.OptionPt);
             PlaceRow(fuel, f.Fuel, f.Sheet, f.LabelPt, f.OptionPt);
             Pin(fuelLess, f.Fuel.Less, f.Fuel.Row); Font(fuelLess, f.EndPt);
             Pin(fuelMore, f.Fuel.More, f.Fuel.Row); Font(fuelMore, f.EndPt);
+            landing.Box.style.display = f.Landing != null ? DisplayStyle.Flex : DisplayStyle.None;
+            if (f.Landing != null) PlaceRow(landing, f.Landing, f.Sheet, f.LabelPt, f.OptionPt);
             for (int k = 0; k < fuelDots.Length && k < f.Fuel.Options.Length; k++)
             {
                 float d = 14f * upp, ow = f.Fuel.Options[k].W * upp, oh = f.Fuel.Options[k].H * upp;
@@ -489,6 +528,7 @@ namespace Kestrel.Slice
             boosters.Box.style.display = f.Boosters != null ? DisplayStyle.Flex : DisplayStyle.None;
             if (f.Boosters != null) PlaceRow(boosters, f.Boosters, f.Sheet, f.LabelPt, f.OptionPt);
 
+            spend.style.display = DisplayStyle.None; // spend leads the readiness line
             hint.style.display = f.Hint.Live ? DisplayStyle.Flex : DisplayStyle.None;
             if (f.Hint.Live) { Pin(hint, f.Hint, f.Sheet); Font(hint, f.HintPt); }
 
@@ -509,9 +549,9 @@ namespace Kestrel.Slice
             }
 
             // "?" buttons, the Why? card, the speed bar, the X-ray button.
-            foreach (var row in new[] { engine, stages, fuel, boosters })
+            foreach (var row in new[] { build, engine, stages, fuel, landing, boosters })
             {
-                var rf = row == engine ? f.Engine : row == stages ? f.Stages : row == fuel ? f.Fuel : f.Boosters;
+                var rf = row == build ? f.Build : row == engine ? f.Engine : row == stages ? f.Stages : row == fuel ? f.Fuel : row == landing ? f.Landing : f.Boosters;
                 bool on = rf != null && rf.Help.Live;
                 row.Help.style.display = on ? DisplayStyle.Flex : DisplayStyle.None;
                 if (!on) continue;
@@ -554,9 +594,41 @@ namespace Kestrel.Slice
             badge.style.display = f.Badge.Live ? DisplayStyle.Flex : DisplayStyle.None;
             if (f.Badge.Live) { Pin(badge, f.Badge, f.Sheet); Font(badge, f.ReadinessPt); }
             Pin(readiness, f.Readiness, f.Sheet); Font(readiness, f.ReadinessPt);
-            Pin(launch, f.Launch, f.Sheet); Font(launch, f.CtaPt);
+            var launchBox = f.Launch;
+            testIt.style.display = testItShown ? DisplayStyle.Flex : DisplayStyle.None;
+            if (testItShown)
+            {
+                // Split the CTA row: "Test it" on the left third, LAUNCH keeps the rest (and its label).
+                var testBox = TestItBox(f.Launch);
+                launchBox.X = testBox.X + testBox.W + TestItGapPt;
+                launchBox.W = f.Launch.X + f.Launch.W - launchBox.X;
+                Pin(testIt, testBox, f.Sheet); Font(testIt, Mathf.Min(f.CtaPt, TestItMaxPt));
+                Radius(testIt, 14f);
+            }
+            Pin(launch, launchBox, f.Sheet); Font(launch, f.CtaPt);
             Radius(launch, 14f);
         }
+
+        /// <summary>"Test it" keeps the CTA's height; this many points between it and LAUNCH.</summary>
+        public const float TestItGapPt = 8f, TestItMaxPt = 17f, TestItShare = 0.36f;
+
+        /// <summary>The "Test it" box inside the CTA row, in points (the left <see cref="TestItShare"/>, at least 44 pt wide).</summary>
+        public static HudBox TestItBox(HudBox cta)
+        {
+            float w = Mathf.Max(44f, (cta.W - TestItGapPt) * TestItShare);
+            return new HudBox { X = cta.X, Y = cta.Y, W = w, H = cta.H };
+        }
+
+        /// <summary>Show or hide "Test it" (SliceApp turns it on for a mission's Starter).</summary>
+        public void ShowTestIt(bool on)
+        {
+            if (testItShown == on) return;
+            testItShown = on;
+            if (laidOut) Relayout();
+        }
+
+        /// <summary>The "Test it" button (tests and the text-fit sweep).</summary>
+        public Button TestItButton => testIt;
 
         void PlaceRow(Row row, StarterRowFrame rf, HudBox sheetBox, float labelPt, float optionPt)
         {

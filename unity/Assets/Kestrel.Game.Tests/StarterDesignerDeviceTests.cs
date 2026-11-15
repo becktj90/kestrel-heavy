@@ -8,6 +8,7 @@
 // Batchmode-safe: no LogError, no throw outside asserts; surfaces disposed per case, globals restored in TearDown.
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using Kestrel.Core.Data;
 using Kestrel.Core.Designer;
@@ -106,9 +107,22 @@ namespace Kestrel.Game.Tests
             var r = new StarterRocket(catalog, campaign.ById(id), StarterBases.For(id));
             if (key != null)
             {
-                var p = key.Split('-');
-                StarterRocket.TryEngine(p[0], out var e);
-                r.Engine = e; r.Stages = int.Parse(p[1]); r.FuelNotch = int.Parse(p[2].Substring(1)); r.Boosters = int.Parse(p[3].Substring(1));
+                var full = key;
+                string land = null;
+                int li = full.LastIndexOf("-l", StringComparison.Ordinal);
+                if (li >= 0) { land = full.Substring(li + 2); full = full.Substring(0, li); }
+                var p = full.Split('-');
+                int i = 0;
+                if (StarterManufacturing.TryParse(p[0], out var build) && (p[0] == "shop" || p[0] == "flight" || p[0] == "standard"))
+                { r.BuildGrade = build; i = 1; }
+                StarterRocket.TryEngine(p[i], out var e);
+                r.Engine = e;
+                r.Stages = int.Parse(p[i + 1], CultureInfo.InvariantCulture);
+                r.FuelNotch = int.Parse(p[i + 2].Substring(1), CultureInfo.InvariantCulture);
+                r.Boosters = int.Parse(p[i + 3].Substring(1), CultureInfo.InvariantCulture);
+                r.Landing = land != null
+                    ? (StarterLanding)int.Parse(land, CultureInfo.InvariantCulture)
+                    : StarterLanding.Expend;
                 Assert.AreEqual(key, r.Choice.Key, id + " setting");
             }
             return r;
@@ -230,7 +244,10 @@ namespace Kestrel.Game.Tests
 
             var line = panel.Root.Q<Label>(UiIds.StarterReadiness);
             var badge = panel.Root.Q<Label>(UiIds.StarterBadge);
-            Assert.AreEqual("Too heavy to leave the pad. Try less fuel.", line.text);
+            // Spend (cost · Holds %) leads the readiness body; the hard-block reason still follows.
+            StringAssert.Contains("Too heavy to leave the pad", line.text);
+            StringAssert.Contains("Holds", line.text);
+            StringAssert.Contains("Kc", line.text);
             Assert.AreEqual(StarterScreen.HeavyBadge, badge.text);
             Assert.IsTrue(UiTreeChecks.Visible(line), "the message is on screen");
             Assert.IsTrue(UiTreeChecks.Visible(badge), "the badge is on screen");
@@ -316,14 +333,14 @@ namespace Kestrel.Game.Tests
                 Assert.AreEqual(StarterReadinessCopy.Current.Badge(cause), badgeLabel.text, where + " the Honest Ready badge");
                 Assert.AreNotEqual(StarterScreen.ReadyBadge, badgeLabel.text, where);
                 Assert.AreNotEqual(StarterScreen.TightBadge, badgeLabel.text, where);
-                StringAssert.StartsWith(StarterReadinessCopy.Current.Causes[cause].Kid, lineLabel.text, where);
+                StringAssert.Contains(StarterReadinessCopy.Current.Causes[cause].Kid, lineLabel.text, where);
                 Assert.IsTrue(UiTreeChecks.Visible(badgeLabel), where + " the badge is on screen");
                 Assert.IsTrue(UiTreeChecks.Visible(lineLabel), where + " the reason is on screen");
                 Assert.IsTrue(launch.enabledSelf, where + " a bad but buildable rocket still launches");
             }
             if (label == "kh5-checking")
             {
-                Assert.AreEqual(StarterReadinessCopy.Current.Checking, lineLabel.text, where);
+                StringAssert.Contains(StarterReadinessCopy.Current.Checking, lineLabel.text, where);
                 Assert.AreEqual("", badgeLabel.text, where + " no Ready while checking");
                 Assert.IsTrue(launch.enabledSelf, where);
             }

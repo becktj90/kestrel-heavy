@@ -94,6 +94,9 @@ namespace Kestrel.Slice.DesignerV3
             root.style.minHeight = 0;
             root.style.overflow = Overflow.Hidden;
 
+            var testBand = TestFlightBand.For(ui);   // DECISIONS #102: "TEST FLIGHT" + rules note in a test
+            if (testBand != null) root.Add(testBand);
+
             strip = ui.Row(0f);
             strip.name = "sticky-strip";
             strip.tooltip = "Live flight numbers.";
@@ -1144,12 +1147,7 @@ namespace Kestrel.Slice.DesignerV3
             content.Add(ui.Section(engineer ? "Recovery" : "Landing"));
             var land = Readout.Quick(C, D);
             Teach(DesignerCoach.WhyLanding(land.totalDeltaV, land.required), "landing");
-            var legsRow = ui.Switch("Landing legs", null, () => D.Obj("landing")?.Bool("legs") ?? false,
-                on => Do(d => HangarEditor.SetLegs(d, on)), refreshers);
-            legsRow.name = "field-legs";
-            content.Add(legsRow);
-            content.Add(ui.Switch("Grid fins", "Steer on the way down", () => D.Obj("landing")?.Bool("gridFins") ?? false,
-                on => Do(d => HangarEditor.SetGridFins(d, on)), refreshers));
+            // Where it lands first: Haven / pad arms legs, grid fins and a default reserve (HangarEditor.SetRecoveryMode).
             var modes = new List<HangarUi.Choice>
             {
                 new HangarUi.Choice("expendable", "Expend"),
@@ -1161,6 +1159,12 @@ namespace Kestrel.Slice.DesignerV3
                 id => Do(d => DesignerV3Edits.SetRecoveryMode(d, id)), refreshers);
             recovery.name = "field-recoveryMode";
             content.Add(recovery);
+            var legsRow = ui.Switch("Landing legs", null, () => D.Obj("landing")?.Bool("legs") ?? false,
+                on => Do(d => HangarEditor.SetLegs(d, on)), refreshers);
+            legsRow.name = "field-legs";
+            content.Add(legsRow);
+            content.Add(ui.Switch("Grid fins", "Steer on the way down", () => D.Obj("landing")?.Bool("gridFins") ?? false,
+                on => Do(d => HangarEditor.SetGridFins(d, on)), refreshers));
             if (engineer)
             {
                 var legs = new List<HangarUi.Choice>

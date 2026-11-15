@@ -88,8 +88,14 @@ namespace Kestrel.Core.Flight
             ReachedDirectly = MissionScore.TargetMet(row.TargetKind, row.ApoKm, row.PeriKm, row.C3Km2PerS2, apoMeters, periMeters, c3, false, out _);
         }
         public double RequiredMps;
+        /// <summary>Liftoff wet mass (kg) when known; NaN otherwise. Feeds per-metric PBs.</summary>
+        public double MassKg = double.NaN;
+        /// <summary>Landing miss distance (m) when a booster was graded; NaN otherwise.</summary>
+        public double LandingOffsetM = double.NaN;
         /// <summary>F4: why an intact flight missed (<see cref="MissReason.Explain"/>). Null on a pass or a failure event.</summary>
         public MissExplanation Miss;
+        /// <summary>DECISIONS #102: what a test flight did, for its result card. Null on a counted flight.</summary>
+        public TestFlightFacts Test;
 
         /// <summary>
         /// Every design tag true of the flight: the avionics/engine one, finless when the design has no fins, and
@@ -153,8 +159,16 @@ namespace Kestrel.Core.Flight
         public string KcHeadline = "";
         public string CosmeticLine = "";
         public string UnlockLine = "";
+        /// <summary>H3 gap-to-goal sentence shown on the report (ascent or landing).</summary>
+        public string GapLine = "";
+        /// <summary>New personal-best line when a metric improved on a pass.</summary>
+        public string PbLine = "";
         public bool Passed;
         public bool FreeBuild;
+        /// <summary>DECISIONS #102: a test flight. Nothing was written, and <see cref="TestCard"/> is the card.</summary>
+        public bool TestFlight;
+        /// <summary>The Test Flight result card (real sim numbers). Null unless <see cref="TestFlight"/>.</summary>
+        public TestFlightCard TestCard;
         public bool EconomySettled;
         public bool TriedSettle;
         public bool WroteCareer;
@@ -305,7 +319,10 @@ namespace Kestrel.Core.Flight
             if (pool == null) pool = NarrationPool.Empty;
             if (minorPerKc < 1) minorPerKc = 1;
             var ev = facts.Failure;
-            bool free = mission == null || mission.IsFree || mission.Mode == MissionMode.Free;
+            // DECISIONS #102: a test flight (Home's Test Flight or a mission's "Test it") writes nothing, like a free build,
+            // and earns no stars or medals.
+            bool test = mission != null && mission.TestFlight;
+            bool free = test || mission == null || mission.IsFree || mission.Mode == MissionMode.Free;
             // A booster miss explains itself. It fails the mission when landing was the job.
             // An orbit that did not ask for the booster still counts.
             bool recovery = ev != null && ev.kind != null && ev.kind.StartsWith("recovery-", System.StringComparison.Ordinal);
@@ -321,6 +338,7 @@ namespace Kestrel.Core.Flight
                 Engineer = ev != null && !string.IsNullOrEmpty(ev.engineer) ? ev.engineer : "",
                 Passed = passed,
                 FreeBuild = free,
+                TestFlight = test,
                 Seed = facts.Seed != 0 ? facts.Seed : (mission != null ? mission.Seed : 0),
                 MissionId = mission != null ? mission.MissionId : null,
             };
@@ -337,11 +355,12 @@ namespace Kestrel.Core.Flight
                 debrief.MissCode = miss.Code;
                 debrief.MissAdvice = miss.Advice;
             }
+            debrief.GapLine = GapLineOf(ev, miss, facts, passed);
             bool perfectLanding = MissionScore.IsPerfect(facts.LandingGrade);
             double costKc = facts.CostKc;
             if (costKc == 0 && facts.CostMinor > 0) costKc = facts.CostMinor / (double)minorPerKc;
-            int stars = MissionScore.Stars(passed, facts.Margin, costKc, facts.BudgetKc, facts.LandingRequired, perfectLanding, facts.PeakG, facts.GLimit);
-            if (passed) stars = AscentDecisions.ApplyStars(stars, facts.TimingMedal);
+            int stars = test ? 0 : MissionScore.Stars(passed, facts.Margin, costKc, facts.BudgetKc, facts.LandingRequired, perfectLanding, facts.PeakG, facts.GLimit);
+            if (passed && !test) stars = AscentDecisions.ApplyStars(stars, facts.TimingMedal);
             double score = MissionScore.Points(passed, facts.Margin, costKc, facts.BudgetKc, facts.LandingGrade, facts.PlayerFlownBurn);
             debrief.Stars = stars;
             debrief.Score = score;
@@ -352,7 +371,7 @@ namespace Kestrel.Core.Flight
                 : stars == 1
                     ? "1 star."
                     : stars.ToString(CultureInfo.InvariantCulture) + " stars.";
-            CollectMedals(facts, debrief);
+            if (!test) CollectMedals(facts, debrief);
             debrief.MedalsLine = MedalSentence(debrief.Medals, passed);
 
             string narrKind = kind;
@@ -420,8 +439,19 @@ namespace Kestrel.Core.Flight
 
             if (write && store != null && !free && !string.IsNullOrEmpty(debrief.MissionId))
             {
-                long? seed = debrief.Seed <= (ulong)long.MaxValue ? (long?)debrief.Seed : null;
-                store.RecordAttempt(debrief.MissionId, debrief.Stars, debrief.Score, debrief.Medals, seed, facts.DesignId);
+                // Seeds above 2^53-1 are not exact JSON numbers. Dropping the seed keeps the
+                // attempt and the personal bests; throwing here used to discard the whole card.
+                long? seed = debrief.Seed <= (ulong)CareerStore.SafeInteger ? (long?)debrief.Seed : null;
+                var pb = new PbSnapshot(debrief.CostKc, facts.MassKg, facts.Margin, facts.LandingOffsetM, passed);
+                var before = store.Mission(debrief.MissionId);
+                var metricsBefore = before != null ? CloneMetrics(before.Metrics) : new MissionMetrics();
+                store.RecordAttempt(debrief.MissionId, debrief.Stars, debrief.Score, debrief.Medals, seed, facts.DesignId, pb);
+                var after = store.Mission(debrief.MissionId);
+                if (after != null)
+                {
+                    var delta = DiffMetrics(metricsBefore, after.Metrics);
+                    if (delta.Any) debrief.PbLine = delta.Line;
+                }
                 debrief.WroteCareer = true;
                 debrief.BankMinor = store.Career.BankMinor;
             }
@@ -434,7 +464,13 @@ namespace Kestrel.Core.Flight
             debrief.BankKc = debrief.BankMinor / (double)minorPerKc;
             if (debrief.EconomySettled)
                 debrief.CostKc = debrief.CostMinor / (double)minorPerKc;
-            debrief.KcLine = KcSentence(debrief, facts, free);
+            debrief.KcLine = test ? TestFlightCopy.Rules : KcSentence(debrief, facts, free);
+            if (test)
+            {
+                debrief.TestCard = Kestrel.Core.Flight.TestFlight.Card(facts.Test ?? new TestFlightFacts { Failure = facts.Failure });
+                debrief.StarsLine = "";
+                debrief.MedalsLine = "";
+            }
             debrief.KcHeadline = KcHeadlineOf(debrief, free);
             debrief.UnlockLine = debrief.Unlocks.Count > 0 ? "New part: " + string.Join(", ", debrief.Unlocks) + "." : "";
             debrief.CosmeticLine = CosmeticSentence(debrief.Cosmetics);
@@ -475,6 +511,49 @@ namespace Kestrel.Core.Flight
         /// <summary>Air load against the wall, in kPa, as <see cref="PairText"/> prints the pair.</summary>
         public static void KpaPair(double valuePa, double limitPa, out string q, out string qlim) =>
             PairText(valuePa / 1000.0, limitPa / 1000.0, out q, out qlim);
+
+        /// <summary>H3 gap-to-goal: landing uses GapToGoal.Landing; ascent uses Δv or apogee shortfall.</summary>
+        public static string GapLineOf(FailureEvent ev, MissExplanation miss, FlightFacts facts, bool passed)
+        {
+            if (passed) return "";
+            if (ev != null && ev.kind != null && ev.kind.StartsWith("recovery-", StringComparison.Ordinal)
+                && !string.IsNullOrEmpty(ev.engineer))
+                return ev.engineer;
+            if (miss != null)
+            {
+                if (miss.Code == "margin" && facts != null && facts.RequiredMps > 0 && facts.Margin < 0)
+                    return GapToGoal.DeltaV(facts.RequiredMps * (1 + facts.Margin), facts.RequiredMps).Text;
+                if ((miss.Code == "altitude-low" || miss.Code == "suborbital-short" || miss.Code == "orbit-low")
+                    && facts != null && facts.GoalKm > 0 && facts.ApoKm < facts.GoalKm)
+                    return GapToGoal.Apoapsis(facts.ApoKm, facts.GoalKm).Text;
+                if (!string.IsNullOrEmpty(miss.Line)) return miss.Line;
+            }
+            if (facts != null && facts.RequiredMps > 0 && facts.Margin < 0)
+                return GapToGoal.DeltaV(facts.RequiredMps * (1 + facts.Margin), facts.RequiredMps).Text;
+            if (facts != null && facts.GoalKm > 0 && facts.ApoKm < facts.GoalKm)
+                return GapToGoal.Apoapsis(facts.ApoKm, facts.GoalKm).Text;
+            return "";
+        }
+
+        static MissionMetrics CloneMetrics(MissionMetrics src)
+        {
+            var m = new MissionMetrics();
+            if (src == null) return m;
+            m.BestCostKc = src.BestCostKc;
+            m.BestMassKg = src.BestMassKg;
+            m.BestMargin = src.BestMargin;
+            m.BestLandingOffsetM = src.BestLandingOffsetM;
+            return m;
+        }
+
+        static PbDelta DiffMetrics(MissionMetrics before, MissionMetrics after)
+        {
+            if (after == null) return new PbDelta(false, false, false, false, "");
+            // Re-run Apply against a clone of the pre-flight metrics so the line matches PersonalBests.
+            var probe = CloneMetrics(before);
+            return PersonalBests.Apply(probe, new PbSnapshot(
+                after.BestCostKc, after.BestMassKg, after.BestMargin, after.BestLandingOffsetM, true));
+        }
 
         public static string NumberLine(FailureEvent ev, FlightFacts facts, bool passed)
         {

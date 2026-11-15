@@ -62,19 +62,9 @@ namespace Kestrel.Slice.DesignerV3
         public static Edit SetGuidance(JsonObject d, string key, double value)
             => DesignerKnobs.SetGuidance(d, key, value);
 
+        /// <summary>Delegates to <see cref="HangarEditor.SetRecoveryMode"/> so Haven / pad also arms legs and landing fuel.</summary>
         public static Edit SetRecoveryMode(JsonObject d, string mode)
-        {
-            if (d == null) return Edit.None;
-            string next = string.IsNullOrEmpty(mode) ? "expendable" : mode;
-            string from = d.Str("recoveryMode");
-            if (string.IsNullOrEmpty(from)) from = d.Obj("recovery")?.Str("mode") ?? "expendable";
-            var rec = d.Obj("recovery");
-            if (from == next && d.Str("recoveryMode") == next && rec != null && rec.Str("mode") == next) return Edit.None;
-            JsonMut.Set(d, "recoveryMode", next);
-            if (rec == null) { rec = new JsonObject(); JsonMut.Set(d, "recovery", rec); }
-            JsonMut.Set(rec, "mode", next);
-            return new Edit("Recovery", from, next);
-        }
+            => HangarEditor.SetRecoveryMode(d, mode);
 
         public static Edit SetLegsKind(JsonObject d, string kind)
         {

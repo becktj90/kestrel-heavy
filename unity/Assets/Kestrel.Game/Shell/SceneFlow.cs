@@ -30,6 +30,9 @@ namespace Kestrel.Game.Shell
             return false;
         }
 
+        /// <summary>Home's Test Flight tile control id.</summary>
+        public const string TestFlightControl = "testflight";
+
         public static bool IsHomeControl(string controlId) =>
             controlId == "launch" || controlId == "design" || controlId == "missions" || controlId == "hangar";
 
@@ -56,9 +59,17 @@ namespace Kestrel.Game.Shell
                 Go(AppScreen.Missions);
                 return;
             }
+            // Home's Test Flight tile is the Sandbox free build (DECISIONS #102), the same route as the board's Sandbox.
+            if (controlId == TestFlightControl) controlId = "hangar";
             if (!TryHomeControl(controlId, out var route)) return;
             MissionBriefing card = null;
-            if (route == RouteId.HomeHangar) card = TryFreeBriefing();
+            if (route == RouteId.HomeHangar)
+            {
+                card = TryFreeBriefing();
+                // A test opens on the last test rocket (its own save record), else the designer's usual first rocket.
+                var last = TestFlightHome.Last();
+                if (last != null) PadHandoff.Arm(last, false, false);
+            }
             Present(GameSession.Apply(route, null, null, card));
         }
 
@@ -70,9 +81,10 @@ namespace Kestrel.Game.Shell
             var campaign = ScreenStub.LoadCampaign();
             MissionBriefing card = null;
             var mission = campaign != null ? campaign.ById(missionId) : null;
+            ulong seed = DailyChallenge.TakeSeed(missionId) ?? MissionContext.DefaultSeed(campaign);
             if (mission != null)
             {
-                try { card = LoadBriefing(mission.Index, MissionContext.DefaultSeed(campaign)); }
+                try { card = LoadBriefing(mission.Index, seed); }
                 catch (Exception e) { Debug.LogWarning("[Kestrel] briefing unavailable: " + e.Message); }
             }
             Present(BriefingBoard.BeforeDesign(GameSession.Apply(RouteId.MissionChosen, campaign, missionId, card)));
@@ -132,6 +144,11 @@ namespace Kestrel.Game.Shell
         }
         public void ReportRetry() => Route(RouteId.ReportRetry);
 
+        /// <summary>Test Flight card: Tweak &amp; Retry and New Design open the designer (a mission's "Test it" goes back
+        /// to that mission). The card's own callbacks then load the rocket.</summary>
+        public void TestRetry() => Route(RouteId.TestRetry);
+        public void TestNewDesign() => Route(RouteId.TestNewDesign);
+
         /// <summary>Same exit the in-flight pause menu reaches via Go(Home): title screen, session cleared.</summary>
         public void ExitToHome() => Route(RouteId.ExitHome);
 
@@ -144,14 +161,16 @@ namespace Kestrel.Game.Shell
             var campaign = ScreenStub.LoadCampaign();
             var mission = campaign != null ? campaign.ById(missionId) : null;
             if (mission == null || mission.Index > ScreenStub.ClearedCount() + 1) return;
+            ulong? dailySeed = DailyChallenge.PeekSeed(missionId);
             var choice = HomeAutoBuild.Choose(ScreenStub.LoadCatalog(), ScreenStub.LoadHangar()?.templates, mission);
             if (choice != null && choice.LaunchEnabled && choice.Design != null)
             {
-                var ctx = MissionContext.FromMission(campaign, mission);
+                var ctx = MissionContext.FromMission(campaign, mission, dailySeed);
                 if (ctx != null)
                 {
+                    DailyChallenge.ClearArm();
                     MissionBriefing card = null;
-                    try { card = LoadBriefing(mission.Index, MissionContext.DefaultSeed(campaign)); }
+                    try { card = LoadBriefing(mission.Index, dailySeed ?? MissionContext.DefaultSeed(campaign)); }
                     catch (Exception e) { Debug.LogWarning("[Kestrel] briefing unavailable: " + e.Message); }
                     ctx.ApplyBriefing(card);
                     ctx.VehicleLine = choice.VehicleLine;
@@ -174,18 +193,20 @@ namespace Kestrel.Game.Shell
             var campaign = ScreenStub.LoadCampaign();
             var mission = campaign != null ? campaign.ById(missionId) : null;
             if (mission == null || mission.Index > ScreenStub.ClearedCount() + 1) return;
+            ulong? dailySeed = DailyChallenge.PeekSeed(missionId);
             var choice = HomeAutoBuild.Choose(ScreenStub.LoadCatalog(), ScreenStub.LoadHangar()?.templates, mission);
             if (choice == null || choice.Design == null)
             {
                 StartMission(missionId);
                 return;
             }
-            var ctx = MissionContext.FromMission(campaign, mission);
+            var ctx = MissionContext.FromMission(campaign, mission, dailySeed);
             if (ctx == null)
             {
                 StartMission(missionId);
                 return;
             }
+            DailyChallenge.ClearArm();
             ctx.VehicleLine = choice.VehicleLine;
             ctx.ReachLine = choice.ReachLine;
             ctx.AutoPad = false;
@@ -194,7 +215,7 @@ namespace Kestrel.Game.Shell
             Present(new RouteResult(SessionScreens.Design, SessionScreens.None, ctx));
         }
 
-        /// <summary>Free build. The existing hangar route, not a new flight.</summary>
+        /// <summary>Free build. The existing hangar route, not a new flight. Since DECISIONS #102 it is Test Flight.</summary>
         public void OpenSandbox()
         {
             if (!Busy) HomePressed("hangar");

@@ -4,6 +4,7 @@
 // Motion follows motion-spec.md where cheap: staggered intro by class toggle + USS transition, :active press,
 // :focus ring. Reduce Motion: no intro, no transitions (root gets kh-mm-reduce).
 using System;
+using System.Linq;
 using Kestrel.Core.Features;
 using Kestrel.Core.Flight;
 using Kestrel.Core.Save;
@@ -37,9 +38,12 @@ namespace Kestrel.Game.Shell
         /// <summary>Codex tile opens the reader. Null shows "Coming soon."</summary>
         public static Action OpenCodex;
 
+        /// <summary>Settings → Restart career (after confirm). Host wipes the save and refreshes Home.</summary>
+        public static Action RestartCareer;
+
         /// <summary>Builds the overlay. <paramref name="safe"/> holds the controls (safe-area inset);
         /// <paramref name="full"/> holds the full-bleed bars and grain. Returns the root parented in <paramref name="safe"/>.</summary>
-        public static VisualElement Build(VisualElement full, VisualElement safe, Action launch, Action design, Action missions, bool reduceMotion, string missionLine = null)
+        public static VisualElement Build(VisualElement full, VisualElement safe, Action launch, Action design, Action missions, bool reduceMotion, string missionLine = null, Action testFlight = null)
         {
             MainMenuLayout.HeroLift = 0f;
             var root = new VisualElement { name = RootName, pickingMode = PickingMode.Ignore };
@@ -110,6 +114,9 @@ namespace Kestrel.Game.Shell
             root.Add(launchKey);
             var designKey = DesignBar(design);
             root.Add(designKey);
+            // Test Flight (DECISIONS #102): a full-width tile under LAUNCH / Design first, over the MISSIONS row. Only
+            // built when the game turns it on (HomeFeatures.TestFlightTile), so a Home without it has the old tree.
+            if (HomeFeatures.TestFlightTile && testFlight != null) root.Add(Tile(MainMenuCopy.TestFlight, testFlight));
             var grid = new VisualElement { name = "mm-grid", pickingMode = PickingMode.Ignore };
             grid.AddToClassList("kh-mm-grid");
             grid.style.flexShrink = 0;
@@ -178,9 +185,19 @@ namespace Kestrel.Game.Shell
             });
             // The Thrum corner pop rests under the gear and the wordmark while Home is up (phone column only).
             GuideBoxDriver.ClearTopPanel = () => PopClearTop(root, full);
+            GuideBoxDriver.MenuFooterPanel = () => PopMenuFooter(root, full);
+            GuideBoxDriver.ClearBottomPanel = (left, width) => PopClearBottom(root, left, width);
+            GuideBoxDriver.SheetStopX = (left, width) => PopSheetStopX(root, left, width);
             // Starter Home (home.thrum off) has no Thrum: his corner pop stays off Home too, so nothing floats over the rocket.
             GuideBoxDriver.HideOnMenu = () => !HomeFeatures.Current().Thrum;
-            root.RegisterCallback<DetachFromPanelEvent>(_ => { GuideBoxDriver.ClearTopPanel = null; GuideBoxDriver.HideOnMenu = null; });
+            root.RegisterCallback<DetachFromPanelEvent>(_ =>
+            {
+                GuideBoxDriver.ClearTopPanel = null;
+                GuideBoxDriver.HideOnMenu = null;
+                GuideBoxDriver.MenuFooterPanel = null;
+                GuideBoxDriver.ClearBottomPanel = null;
+                GuideBoxDriver.SheetStopX = null;
+            });
             launchKey.RegisterCallback<GeometryChangedEvent>(_ =>
             {
                 float h = full.resolvedStyle.height; if (h <= 0f) return;
@@ -222,6 +239,8 @@ namespace Kestrel.Game.Shell
         // ---- Starter Home (feat(home-simple)) ------------------------------------------------------
 
         /// <summary>Home elements each home.* flag hides (Kestrel.Core.Features.HomeFeatures). Starter: all hidden.</summary>
+        /// <summary>Test Flight's Home tile (DECISIONS #102).</summary>
+        public const string TestFlightId = UiIds.HomeTestFlight;
         public const string DesignId = UiIds.HomeDesign, CodexId = UiIds.HomeCodex, ThrumId = UiIds.HomeThrum, StatsId = "mm-stats";
         public const string CtaContinueClass = "kh-mm-cta-continue";
 
@@ -348,6 +367,68 @@ namespace Kestrel.Game.Shell
             return float.IsNaN(clear) ? 0f : clear;
         }
 
+        /// <summary>Panel pixels from the bottom of Home up to the top of LAUNCH, so the welcome box clears the key.</summary>
+        public static float PopMenuFooter(VisualElement root, VisualElement full)
+        {
+            if (root == null || full == null || root.panel == null) return 0f;
+            if (root.resolvedStyle.display == DisplayStyle.None) return 0f;
+            var key = root.Q("home-primary");
+            if (key == null || key.worldBound.height < 1f || full.worldBound.height < 1f) return 0f;
+            float footer = full.worldBound.yMax - key.worldBound.yMin;
+            return float.IsNaN(footer) || footer < 1f ? 0f : footer;
+        }
+
+        /// <summary>Panel pixels from the panel bottom up to the top of the highest Home control that crosses the
+        /// opening sheet's column (<paramref name="columnLeft"/>, <paramref name="columnWidth"/>).</summary>
+        public static float PopClearBottom(VisualElement root, float columnLeft, float columnWidth)
+        {
+            if (root == null || root.panel == null) return 0f;
+            if (root.resolvedStyle.display == DisplayStyle.None) return 0f;
+            var panel = root.panel.visualTree;
+            float bottom = panel != null && panel.worldBound.height > 1f ? panel.worldBound.yMax : root.worldBound.yMax;
+            float top = bottom;
+            float columnRight = columnWidth > 1f ? columnLeft + columnWidth : float.PositiveInfinity;
+            if (columnWidth <= 1f) columnLeft = float.NegativeInfinity;
+            // The wordmark and a top-corner control (web CONTINUE) share the header. The sheet clears the stack under that.
+            float header = root.worldBound.yMin;
+            var title = root.Q("mm-title");
+            if (title != null && title.worldBound.height > 1f) header = Mathf.Max(header, title.worldBound.yMax);
+            foreach (var id in new[] { "mm-stats", "mm-fuel", "mm-thrust", "mm-record", "home-primary", "home-design", UiIds.HomeTestFlight, "home-missions", "home-codex", "mm-grid", "home-thrum" })
+            {
+                var e = root.Q(id);
+                if (e == null || e.resolvedStyle.display == DisplayStyle.None) continue;
+                var b = e.worldBound;
+                if (b.height < 1f || float.IsNaN(b.y)) continue;
+                if (b.y < header - 1f) continue;
+                if (b.xMax <= columnLeft + 0.5f || b.xMin >= columnRight - 0.5f) continue;
+                if (b.y < top) top = b.y;
+            }
+            float clear = bottom - top;
+            return float.IsNaN(clear) || clear < 0f ? 0f : clear;
+        }
+
+        /// <summary>Left edge, in panel pixels, of the first control to the right of the sheet. 0 when the column is full width.</summary>
+        public static float PopSheetStopX(VisualElement root, float columnLeft, float columnWidth)
+        {
+            if (root == null || root.panel == null || columnWidth < 80f) return 0f;
+            if (!root.ClassListContains("kh-mm-wide")) return 0f;
+            float header = root.worldBound.yMin;
+            var title = root.Q("mm-title");
+            if (title != null && title.worldBound.height > 1f) header = Mathf.Max(header, title.worldBound.yMax);
+            float stop = float.PositiveInfinity;
+            foreach (var id in new[] { "mm-stats", "home-primary", "home-design", UiIds.HomeTestFlight, "home-missions", "home-codex", "mm-grid" })
+            {
+                var e = root.Q(id);
+                if (e == null || e.resolvedStyle.display == DisplayStyle.None) continue;
+                var b = e.worldBound;
+                if (b.height < 1f || float.IsNaN(b.xMin)) continue;
+                if (b.yMax < header - 1f) continue;
+                if (b.xMin <= columnLeft + 48f) continue;
+                if (b.xMin < stop) stop = b.xMin;
+            }
+            return float.IsInfinity(stop) ? 0f : stop;
+        }
+
         /// <summary>Landscape web: the wordmark sits on the hero, and the action cards sit in a column
         /// beside it, sized to the free space. Portrait and iOS leave the phone column from ApplyScale.</summary>
         public static void ApplyWebWide(VisualElement root, bool wide)
@@ -407,7 +488,7 @@ namespace Kestrel.Game.Shell
                 H = b.H * sy,
             };
             frame.Title = Sc(frame.Title); frame.Stats = Sc(frame.Stats);
-            frame.Launch = Sc(frame.Launch); frame.Design = Sc(frame.Design);
+            frame.Launch = Sc(frame.Launch); frame.Design = Sc(frame.Design); frame.TestFlight = Sc(frame.TestFlight);
             frame.Missions = Sc(frame.Missions); frame.Codex = Sc(frame.Codex);
             frame.Menu = Sc(frame.Menu); frame.Hint = Sc(frame.Hint);
             root.style.paddingTop = 0;
@@ -418,6 +499,7 @@ namespace Kestrel.Game.Shell
             Reparent(root, "mm-stats");
             Reparent(root, "home-primary");
             Reparent(root, "home-design");
+            Reparent(root, TestFlightId);
             Reparent(root, "mm-grid");
             Reparent(root, "home-thrum");
             Pin(root.Q("mm-title"), frame.Title);
@@ -444,6 +526,7 @@ namespace Kestrel.Game.Shell
             VisualElement slot = scroll ? scroller : root;
             PlaceAction(root, slot, "home-primary", frame.Launch, scroll, sx, sy);
             PlaceAction(root, slot, "home-design", frame.Design, scroll, sx, sy);
+            PlaceTestFlight(root, slot, frame.TestFlight, scroll, sx, sy);
             var grid = root.Q("mm-grid");
             if (grid != null)
             {
@@ -694,6 +777,7 @@ namespace Kestrel.Game.Shell
             Reparent(root, "mm-stats");
             Reparent(root, "home-primary");
             Reparent(root, "home-design");
+            Reparent(root, TestFlightId);
             Reparent(root, "mm-grid");
             Reparent(root, "home-thrum");
             var scroller = root.Q("mm-wide-scroll");
@@ -735,6 +819,7 @@ namespace Kestrel.Game.Shell
                 grid.style.flexWrap = StyleKeyword.Null;
             }
             foreach (var it in MainMenuCopy.Tiles) Drop(root.Q("home-" + it.Id));
+            Drop(root.Q(TestFlightId));
             ClearWideTitle(root);
         }
 
@@ -1375,6 +1460,20 @@ namespace Kestrel.Game.Shell
             sheet.style.display = DisplayStyle.None;
             sheet.style.flexDirection = FlexDirection.Column;
             sheet.style.overflow = Overflow.Hidden;
+            // Scrim before any click handler that closes the sheet (CS0165 if HideSheet captures it unassigned).
+            var scrim = new VisualElement { name = SettingsScrimName };
+            scrim.style.position = Position.Absolute;
+            scrim.style.left = 0f; scrim.style.right = 0f; scrim.style.top = 0f; scrim.style.bottom = 0f;
+            scrim.style.backgroundColor = new Color(0.02f, 0.03f, 0.07f, 0.62f);
+            scrim.style.display = DisplayStyle.None;
+            void HideSheet()
+            {
+                sheet.style.display = DisplayStyle.None;
+                scrim.style.display = DisplayStyle.None;
+            }
+            scrim.RegisterCallback<ClickEvent>(_ => HideSheet());
+            sheet.RegisterCallback<GeometryChangedEvent>(_ => scrim.style.display = sheet.style.display.value);
+
             var title = new Label("Settings") { name = "settings-title", pickingMode = PickingMode.Ignore };
             title.AddToClassList("kh-mm-sheet-title");
             title.style.fontSize = 16;
@@ -1403,9 +1502,13 @@ namespace Kestrel.Game.Shell
             var subtitles = SettingButton(UiIds.SettingsSubtitles, "Subtitles");
             var sandbox = SettingButton(UiIds.SettingsSandbox, "Sandbox");
             var motion = SettingButton(UiIds.SettingsReduceMotion, "Reduce motion");
+            var flashing = SettingButton(UiIds.SettingsReduceFlashing, "Reduce flashing");
+            var haptics = SettingButton(UiIds.SettingsHaptics, "Haptics");
             var fullDesigner = SettingButton(FullDesignerId, "Show full designer");
             var cornerCharacter = SettingButton(UiIds.SettingsCornerCharacter, CornerCharacterLabel);
             motion.tooltip = "Reduce motion. Holds the menu still.";
+            flashing.tooltip = "Reduce flashing. Softens flashes and camera punch.";
+            haptics.tooltip = "Haptics. Light taps for key moments.";
             // UX after #384/#436: two choice rows. Same row as the others, with a wider state chip for "Calls only".
             var commentary = SettingButton(UiIds.SettingsCommentary, Kestrel.Core.Features.ExperienceSettings.CommentaryLabel);
             var timeWarp = SettingButton(UiIds.SettingsTimeWarp, Kestrel.Core.Features.ExperienceSettings.TimeWarpLabel);
@@ -1464,6 +1567,18 @@ namespace Kestrel.Game.Shell
                 PaintCaption(motion, on ? "Reduce motion on" : "Reduce motion", on);
                 motion.tooltip = on ? "Reduce motion is on." : "Reduce motion is off.";
             }
+            void PaintFlashing()
+            {
+                bool on = PlayerPrefs.GetInt(MainMenuLayout.ReduceFlashingPref, 0) != 0;
+                PaintCaption(flashing, on ? "Reduce flashing on" : "Reduce flashing", on);
+                flashing.tooltip = on ? "Reduce flashing is on." : "Reduce flashing is off.";
+            }
+            void PaintHaptics()
+            {
+                bool on = PlayerPrefs.GetInt(MainMenuLayout.HapticsPref, 1) != 0;
+                PaintCaption(haptics, on ? "Haptics on" : "Haptics", on);
+                haptics.tooltip = on ? "Haptics are on." : "Haptics are off.";
+            }
 
             music.clicked += () => { AudioPrefs.SetMusicMuted(!AudioPrefs.MusicMuted); PaintMix(); };
             sound.clicked += () => { AudioPrefs.SetSfxMuted(!AudioPrefs.SfxMuted); PaintMix(); };
@@ -1492,6 +1607,20 @@ namespace Kestrel.Game.Shell
                 PlayerPrefs.Save();
                 PaintMotion();
             };
+            flashing.clicked += () =>
+            {
+                int cur = PlayerPrefs.GetInt(MainMenuLayout.ReduceFlashingPref, 0);
+                PlayerPrefs.SetInt(MainMenuLayout.ReduceFlashingPref, cur == 0 ? 1 : 0);
+                PlayerPrefs.Save();
+                PaintFlashing();
+            };
+            haptics.clicked += () =>
+            {
+                int cur = PlayerPrefs.GetInt(MainMenuLayout.HapticsPref, 1);
+                PlayerPrefs.SetInt(MainMenuLayout.HapticsPref, cur == 0 ? 1 : 0);
+                PlayerPrefs.Save();
+                PaintHaptics();
+            };
             fullDesigner.clicked += () =>
             {
                 bool next = !Kestrel.Core.Features.ExperienceSettings.ShowFullDesigner(PlayerPrefs.HasKey, k => PlayerPrefs.GetInt(k, 0));
@@ -1513,6 +1642,8 @@ namespace Kestrel.Game.Shell
             PaintCornerCharacter();
             PaintSandbox();
             PaintMotion();
+            PaintFlashing();
+            PaintHaptics();
             PaintTimeWarp();
 
             list.Add(music);
@@ -1525,6 +1656,8 @@ namespace Kestrel.Game.Shell
             list.Add(subtitles);
             list.Add(sandbox);
             list.Add(motion);
+            list.Add(flashing);
+            list.Add(haptics);
             {
                 // Starter Home: Codex leaves the tiles and lives here (PHASED_DESIGNER_PLAN, Phase 1) while home.codexTile is off.
                 var codex = SettingButton(UiIds.SettingsCodex, "Codex");
@@ -1555,6 +1688,40 @@ namespace Kestrel.Game.Shell
             list.Add(cornerCharacter);
             list.Add(cornerNote);
 
+            // Optional campaign wipe: LAUNCH follows Cleared+1, so without this a mid-career player cannot open KH-1 as next.
+            var restart = SettingButton(UiIds.SettingsRestartCareer, RestartCareerLabel);
+            var restartState = restart.Q(restart.name + "-state");
+            if (restartState != null) restartState.style.display = DisplayStyle.None;
+            restart.style.paddingRight = 10;
+            restart.style.backgroundColor = new Color(0.10f, 0.14f, 0.22f, 1f);
+            restart.style.color = new Color(0.96f, 0.93f, 0.86f, 1f);
+            restart.tooltip = RestartCareerTooltip;
+            bool restartArmed = false;
+            void PaintRestart()
+            {
+                restart.text = restartArmed ? RestartCareerConfirm : RestartCareerLabel;
+                restart.style.backgroundColor = restartArmed
+                    ? new Color(0.42f, 0.18f, 0.14f, 1f)
+                    : new Color(0.10f, 0.14f, 0.22f, 1f);
+                restart.tooltip = restartArmed ? RestartCareerConfirmTooltip : RestartCareerTooltip;
+            }
+            restart.clicked += () =>
+            {
+                if (!restartArmed)
+                {
+                    restartArmed = true;
+                    PaintRestart();
+                    return;
+                }
+                restartArmed = false;
+                PaintRestart();
+                RestartCareer?.Invoke();
+                HideSheet();
+            };
+            PaintRestart();
+            list.Add(restart);
+            list.Add(SettingNote("settings-restart-career-note", RestartCareerNote));
+
             var close = new Button { name = UiIds.SettingsClose, text = "Close" };
             close.AddToClassList("kh-button");
             close.tooltip = "Close settings.";
@@ -1574,25 +1741,11 @@ namespace Kestrel.Game.Shell
             close.style.marginRight = 0;
             close.style.alignSelf = Align.Stretch;
             SettingFont(close, "SpaceGrotesk-Bold");
-            close.clicked += () => { sheet.style.display = DisplayStyle.None; var sc = sheet.parent?.Q(SettingsScrimName); if (sc != null) sc.style.display = DisplayStyle.None; };
+            close.clicked += HideSheet;
 
             sheet.Add(title);
             sheet.Add(list);
             sheet.Add(close);
-
-            // L7: the sheet floated over the LAUNCH card. A dim scrim sits between Home and the sheet; tapping it closes.
-            var scrim = new VisualElement { name = SettingsScrimName };
-            scrim.style.position = Position.Absolute;
-            scrim.style.left = 0f; scrim.style.right = 0f; scrim.style.top = 0f; scrim.style.bottom = 0f;
-            scrim.style.backgroundColor = new Color(0.02f, 0.03f, 0.07f, 0.62f);
-            scrim.style.display = DisplayStyle.None;
-            void HideSheet()
-            {
-                sheet.style.display = DisplayStyle.None;
-                scrim.style.display = DisplayStyle.None;
-            }
-            scrim.RegisterCallback<ClickEvent>(_ => HideSheet());
-            sheet.RegisterCallback<GeometryChangedEvent>(_ => scrim.style.display = sheet.style.display.value);
 
             float fitW = -1f, fitH = -1f, measuredExtra = 0f;
             // After layout: when the rows came out taller than the estimate (wrapped note, theme Label chrome), grow the
@@ -1694,8 +1847,12 @@ namespace Kestrel.Game.Shell
                 PaintSubs();
                 PaintSandbox();
                 PaintMotion();
+                PaintFlashing();
+                PaintHaptics();
                 PaintFullDesigner();
                 PaintCornerCharacter();
+                restartArmed = false;
+                PaintRestart();
                 ApplySettingsFeatures(full);
                 sheet.style.display = DisplayStyle.Flex;
                 scrim.style.display = DisplayStyle.Flex;
@@ -1720,9 +1877,14 @@ namespace Kestrel.Game.Shell
         /// <summary>Settings sheet: the gap above Close and the sheet's bottom padding under it.</summary>
         public const float SheetCloseGap = 8f, SheetPadBottom = 8f;
 
-        public const string FullDesignerNote = "Every part and number. For older kids and engineers.";
+        public const string FullDesignerNote = "Every part and number, including Landing (legs and Haven). For older kids and engineers.";
         public const string CornerCharacterLabel = "Show corner character";
         public const string CornerCharacterNote = "A little helper in the corner. Off by default.";
+        public const string RestartCareerLabel = "Restart career";
+        public const string RestartCareerConfirm = "Confirm restart";
+        public const string RestartCareerNote = "Opens KH-1 again. Bank, unlocks, and mission records reset. Your designs stay.";
+        public const string RestartCareerTooltip = "Restart career. Starts again at KH-1.";
+        public const string RestartCareerConfirmTooltip = "Confirm restart. Wipes campaign progress back to KH-1.";
 
         /// <summary>The Settings Codex row stands in for the Codex tile: shown only while home.codexTile is off.</summary>
         static void ApplySettingsFeatures(VisualElement full)
@@ -1870,6 +2032,23 @@ namespace Kestrel.Game.Shell
             note.BringToFront();
         }
 
+        /// <summary>The tiles the phone column sizes: the MISSIONS row, then Test Flight's tile when it was built.</summary>
+        static readonly MainMenuCopy.Item[] PhoneTiles = MainMenuCopy.Tiles.Concat(new[] { MainMenuCopy.TestFlight }).ToArray();
+
+        /// <summary>Wide web: Test Flight's tile in its own box (WebHomeLayout), or a row in the scroll list.</summary>
+        static void PlaceTestFlight(VisualElement root, VisualElement host, HudBox box, bool scroll, float sx, float sy)
+        {
+            var e = root.Q(TestFlightId);
+            if (e == null) return;
+            if (!scroll && !box.Live) { e.style.display = DisplayStyle.None; return; }
+            e.style.display = DisplayStyle.Flex;
+            PlaceAction(root, host, TestFlightId, box, scroll, sx, sy);
+            e.style.paddingLeft = 10f * sx;
+            e.style.paddingRight = 10f * sx;
+            e.style.paddingTop = 10f * sy;
+            e.style.paddingBottom = 10f * sy;
+        }
+
         static Button Tile(MainMenuCopy.Item it, Action pressed)
         {
             bool open = it.Live || pressed != null;
@@ -1877,11 +2056,11 @@ namespace Kestrel.Game.Shell
             b.AddToClassList("kh-button"); b.AddToClassList("kh-mm-tile"); b.AddToClassList("kh-mm-anim");
             if (open) b.AddToClassList("kh-mm-tile--focus"); else b.AddToClassList("kh-mm-tile--soon");
             var head = new VisualElement { pickingMode = PickingMode.Ignore }; head.AddToClassList("kh-mm-tile-head");
-            var icon = new HomeGlyph(it.Id == "codex" ? "book" : "orbit");
+            var icon = new HomeGlyph(it.Id == "codex" ? "book" : it.Id == MainMenuCopy.TestFlight.Id ? "flask" : "orbit");
             // The glyph trails the name so "Missions" and "2 of 20 flown" start at the same tile inset (Trevor's zoom).
             // Same row budget as before (TileIcon stays reserved), so no caption gains a line on a 308-wide phone panel.
             icon.style.width = 18; icon.style.height = 18; icon.style.marginLeft = 6; icon.style.marginRight = 0; icon.style.flexShrink = 0;
-            var name = new Label(it.Id == "codex" ? "Codex" : "Missions") { pickingMode = PickingMode.Ignore }; name.AddToClassList("kh-mm-tile-name");
+            var name = new Label(it.Id == "codex" ? "Codex" : it.Id == MainMenuCopy.TestFlight.Id ? it.Label : "Missions") { pickingMode = PickingMode.Ignore }; name.AddToClassList("kh-mm-tile-name");
             name.style.flexGrow = 1; name.style.flexShrink = 1;
             head.Add(name); head.Add(icon);
             if (it.Live)
@@ -1970,7 +2149,7 @@ namespace Kestrel.Game.Shell
                 hintLine.style.whiteSpace = WhiteSpace.Normal;
                 hintLine.style.textOverflow = TextOverflow.Clip;
             }
-            foreach (var it in MainMenuCopy.Tiles)
+            foreach (var it in PhoneTiles)
             {
                 var b = root.Q("home-" + it.Id); if (b == null) continue;
                 b.style.height = z.TileH; b.style.minHeight = z.TileH; b.style.flexShrink = 0;

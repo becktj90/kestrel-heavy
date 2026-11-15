@@ -43,6 +43,10 @@ namespace Kestrel.Core.Ui
         public const string SettingsSubtitles = "settings-subtitles";
         public const string SettingsSandbox = "settings-sandbox";
         public const string SettingsReduceMotion = "settings-reduce-motion";
+        /// <summary>Reduce flashing (kh.a11y.reduceFlashing). Same key Comfort / CameraFx / PadIgnitionFx already read.</summary>
+        public const string SettingsReduceFlashing = "settings-reduce-flashing";
+        /// <summary>Haptics (kh.hangar.haptics). Same key HangarFeel / HangarNative already read.</summary>
+        public const string SettingsHaptics = "settings-haptics";
         /// <summary>Shown only while home.codexTile is off; opens the Codex (codex-back returns).</summary>
         public const string SettingsCodex = "settings-codex";
         public const string SettingsFullDesigner = "settings-full-designer";
@@ -51,6 +55,8 @@ namespace Kestrel.Core.Ui
         public const string SettingsCommentary = "settings-commentary";
         /// <summary>Time warp: Auto / Off (kh.flight.timewarp). Tap flips.</summary>
         public const string SettingsTimeWarp = "settings-time-warp";
+        /// <summary>Optional wipe: campaign progress back to KH-1. Two taps to confirm.</summary>
+        public const string SettingsRestartCareer = "settings-restart-career";
 
         // ---- sub-screens reachable from Home, and their ways out ---------------------------------
         public const string CodexBack = "codex-back";
@@ -66,7 +72,9 @@ namespace Kestrel.Core.Ui
         public static readonly string[] SettingsControls =
         {
             SettingsMusic, SettingsSound, SettingsVoice, SettingsSubtitles, SettingsSandbox, SettingsReduceMotion,
-            SettingsCodex, SettingsFullDesigner, SettingsCornerCharacter, SettingsCommentary, SettingsTimeWarp, SettingsClose,
+            SettingsReduceFlashing, SettingsHaptics,
+            SettingsCodex, SettingsFullDesigner, SettingsCornerCharacter, SettingsCommentary, SettingsTimeWarp,
+            SettingsRestartCareer, SettingsClose,
         };
     }
 }

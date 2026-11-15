@@ -17,6 +17,7 @@ namespace Kestrel.Game.Shell
             { "MISSIONS", 545.25f },
             { "CODEX", 385.55f },
             { "SETTINGS", 552.95f },
+            { "Test Flight", 559.20f },
             { "Design and tune your rocket.", 1410.20f },
             { "Pick any flight you've unlocked.", 1548.00f },
             { "Parts, places and flight notes.", 1458.80f },

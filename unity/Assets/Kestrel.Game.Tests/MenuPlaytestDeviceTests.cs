@@ -151,8 +151,9 @@ namespace Kestrel.Game.Tests
                 board.SelectContracts();
                 string orbit = board.Q<Label>("mission-orbit").text;
                 string brief = board.Q<Label>("mission-brief").text;
-                Assert.That(brief, Does.Contain("Opens after KH-20"));
-                Assert.That(orbit, Does.Not.Contain("Opens after KH-20"));
+                Assert.That(brief, Does.Contain("Today's flight"));
+                Assert.That(brief, Does.Contain("KH-1"));
+                Assert.That(orbit, Does.Not.Contain("Today's flight"));
             }
             Assert.That(opened, Is.EqualTo(4));
         }

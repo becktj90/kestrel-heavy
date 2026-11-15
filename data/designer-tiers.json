@@ -12,6 +12,12 @@
     "spoken": "Why does {row} matter?",
     "rows": [
       {
+        "row": "build",
+        "codex": "max-q",
+        "icon": "wrench",
+        "text": "Shop cuts corners to save money, so the rocket may blow up. Safe costs more and is built to hold together."
+      },
+      {
         "row": "engine",
         "codex": "isp",
         "icon": "flame",
@@ -36,6 +42,12 @@
         "icon": "boosters",
         "text": "Boosters add extra push at liftoff, when the rocket is heaviest. They drop away once their fuel is gone.",
         "locked": "This mission flies two boosters that come back and land. They add push at liftoff, so they stay on."
+      },
+      {
+        "row": "landing",
+        "codex": "booster-landing",
+        "icon": "landing",
+        "text": "Sea or Pad keeps fuel for the trip home and puts legs on the booster. Out means no landing."
       }
     ]
   },

@@ -18,9 +18,11 @@ namespace Kestrel.Core.Flight.Narration
     }
 
     /// <summary>
-    /// The calls no sim event names: pad, tank press, SECO, Karman line and the booster entry burn. Each is due only
+    /// The calls no sim event names: pad, tank press, SECO, and the booster entry burn. Each is due only
     /// when its event really happens on this flight, for this design (the generated timeline says the design flies it,
     /// see <see cref="CallSchedule"/>, and the live count or flight says it happened now), and each fires once.
+    /// The Karman line is not a Call: the catalog only ships <c>color.karman</c> (via <see cref="ColorWindows"/>).
+    /// <see cref="Karman"/> remains the timeline narration id that sets <see cref="CallSchedule.HasKarman"/>.
     /// A due call never steps on another call: it is held while a call is waiting, never cuts one that is playing
     /// (calls queue, as every call does), and before liftoff it starts only into silence and only with a take that
     /// ends before T-0. A call that cannot go out while it is still about now is dropped. Pure, so it is tested
@@ -29,6 +31,8 @@ namespace Kestrel.Core.Flight.Narration
     public sealed class CallTriggers
     {
         public const string Pad = "pad", TankPress = "tankpress", Seco = "seco", Karman = "karman", Entry = "entry";
+        /// <summary>The count entered a hold (narration trigger contract, gen6 triggers.md). Silent until takes for it ship.</summary>
+        public const string HoldStart = "hold_start";
         /// <summary>A call later than this after its event is no longer about now and is dropped.</summary>
         public const double FreshSec = 4;
         /// <summary>A take before liftoff must end this long before T-0 (flight.begin stops the voice).</summary>
@@ -40,6 +44,8 @@ namespace Kestrel.Core.Flight.Narration
             public int Lit;
             public double At;
             public bool PreLaunch;
+            /// <summary>Dropped, not held, when a line is playing (landing altitude callouts).</summary>
+            public bool DropIfBusy;
         }
 
         readonly CallSchedule calls;
@@ -48,7 +54,8 @@ namespace Kestrel.Core.Flight.Narration
         readonly bool recovery;
         readonly List<Due> due = new List<Due>();
         readonly HashSet<string> seen = new HashSet<string>();
-        bool counting, launched, topCutoff;
+        // held: B01 hold_start. prevAlt tracks altitude; bare karman Call stays silent (color.karman only).
+        bool counting, launched, topCutoff, held;
         double countT = double.NaN, prevAlt = double.NaN;
         int beatsSeen;
 
@@ -69,7 +76,7 @@ namespace Kestrel.Core.Flight.Narration
         {
             due.Clear();
             seen.Clear();
-            counting = launched = topCutoff = false;
+            counting = launched = topCutoff = held = false;
             countT = prevAlt = double.NaN;
             beatsSeen = 0;
         }
@@ -82,8 +89,10 @@ namespace Kestrel.Core.Flight.Narration
         /// <summary>
         /// The terminal count is on screen at <paramref name="countSeconds"/> (negative). The first call makes "pad"
         /// due (the count is armed and running), and every beat that has fired so far is read for its tank press.
+        /// <paramref name="countHeld"/>: the count clock is held (LaunchSequence.Held). The step that enters a hold makes
+        /// <see cref="HoldStart"/> due (once per hold); a hold_start that has not started when the hold ends is dropped.
         /// </summary>
-        public void CountTick(double countSeconds, IReadOnlyList<string> firedBeatIds, double now)
+        public void CountTick(double countSeconds, IReadOnlyList<string> firedBeatIds, double now, bool countHeld = false)
         {
             if (launched || double.IsNaN(countSeconds) || countSeconds >= 0) return;
             countT = countSeconds;
@@ -91,6 +100,16 @@ namespace Kestrel.Core.Flight.Narration
             {
                 counting = true;
                 Add(Pad, 0, now, true);
+            }
+            if (countHeld && !held)
+            {
+                held = true;
+                Raise(HoldStart, 0, now, false, true);
+            }
+            else if (!countHeld && held)
+            {
+                held = false;
+                due.RemoveAll(d => d.Id == HoldStart);
             }
             if (firedBeatIds == null) return;
             for (; beatsSeen < firedBeatIds.Count; beatsSeen++)
@@ -108,6 +127,7 @@ namespace Kestrel.Core.Flight.Narration
         {
             launched = true;
             counting = false;
+            held = false;
             due.RemoveAll(d => d.PreLaunch);
         }
 
@@ -133,12 +153,11 @@ namespace Kestrel.Core.Flight.Narration
             else if (type == "failure" || type == "impact") topCutoff = false;
         }
 
-        /// <summary>The flight's altitude. The Karman call is due on the step that crosses 100 km, on a design whose timeline crosses it.</summary>
-        public void OnAltitude(double altM, double now)
-        {
-            if (!double.IsNaN(prevAlt) && calls.HasKarman && ColorWindows.KarmanCrossed(prevAlt, altM)) Add(Karman, 0, now, false);
-            prevAlt = altM;
-        }
+        /// <summary>
+        /// Altitude tick kept for callers. Does not offer a Call: there is no bare <c>karman</c> take in the
+        /// catalog. The crossing is spoken as <see cref="ColorWindows.Karman"/> (<c>color.karman</c>).
+        /// </summary>
+        public void OnAltitude(double altM, double now) { prevAlt = altM; _ = now; }
 
         /// <summary>
         /// The booster's live phase marks on the flight clock (<see cref="RecoveryLog.FlightMarks"/>) and the rail's
@@ -172,6 +191,7 @@ namespace Kestrel.Core.Flight.Narration
             due.RemoveAll(d => !d.PreLaunch && now - d.At > FreshSec);
             if (counting && !double.IsNaN(countT))
                 due.RemoveAll(d => d.PreLaunch && -countT - LiftoffMarginSec <= 0);
+            if (busy || callPending) due.RemoveAll(d => d.DropIfBusy);
             if (due.Count == 0 || callPending) return false;
             var first = due[0];
             if (first.PreLaunch)
@@ -193,6 +213,17 @@ namespace Kestrel.Core.Flight.Narration
                 due.RemoveAt(i);
                 return;
             }
+        }
+
+        /// <summary>
+        /// A call whose caller owns the once-only rule (<see cref="StatusCalls"/>, hold_start): due now, with the same
+        /// freshness, queueing and pre-launch rules as every trigger. In flight it is ignored before liftoff.
+        /// </summary>
+        public void Raise(string id, int lit, double now, bool dropIfBusy, bool preLaunch = false)
+        {
+            if (string.IsNullOrEmpty(id)) return;
+            if (preLaunch ? launched : !launched) return;
+            due.Add(new Due { Id = id, Lit = lit, At = now, PreLaunch = preLaunch, DropIfBusy = dropIfBusy });
         }
 
         void Add(string id, int lit, double now, bool preLaunch)

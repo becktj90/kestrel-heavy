@@ -249,6 +249,33 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
+        public void SetRecoveryMode_Haven_ArmsLegsGridFinsAndDefaultReserve()
+        {
+            var d = HangarFixtures.Template("workhorse");
+            HangarEditor.SetLegs(d, false);
+            HangarEditor.SetGridFins(d, false);
+            HangarEditor.SetLandingReserve(d, 0, 0);
+            Assert.IsFalse(d.Obj("landing")?.Bool("legs") ?? false);
+            Assert.AreEqual(0, Stage(d, 0).Num("landingPropMass"), 1e-9);
+
+            var e = HangarEditor.SetRecoveryMode(d, "barge");
+            Assert.IsTrue(e.changed);
+            Assert.AreEqual("barge", d.Str("recoveryMode"));
+            Assert.AreEqual("barge", d.Obj("recovery").Str("mode"));
+            Assert.IsTrue(d.Obj("landing").Bool("legs"), "Haven picks landing legs");
+            Assert.IsTrue(d.Obj("landing").Bool("gridFins"), "Haven picks grid fins");
+            double prop = Stage(d, 0).Num("propMass");
+            Assert.AreEqual(Math.Floor(prop * HangarEditor.DefaultLandingReserve), Stage(d, 0).Num("landingPropMass"), 1e-9);
+
+            Assert.IsFalse(HangarEditor.SetRecoveryMode(d, "barge").changed, "already armed");
+
+            Assert.IsTrue(HangarEditor.SetRecoveryMode(d, "expendable").changed);
+            Assert.AreEqual("expendable", d.Str("recoveryMode"));
+            Assert.AreEqual(0, Stage(d, 0).Num("landingPropMass"), 1e-9);
+            Assert.IsTrue(d.Obj("landing").Bool("legs"), "expendable leaves legs; the player can strip them");
+        }
+
+        [Test]
         public void Look_PaintLiveryFinishesDecals()
         {
             var d = HangarFixtures.Template("workhorse");

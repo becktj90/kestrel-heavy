@@ -2317,6 +2317,7 @@ namespace Kestrel.Slice
         {
             TrajectoryPlan plan = new TrajectoryPlan();
             float upp = 1f;
+            float ghostAlong = float.NaN;
             readonly VisualElement labels;
 
             public TrajectoryRailView()
@@ -2337,6 +2338,11 @@ namespace Kestrel.Slice
             {
                 plan = next ?? new TrajectoryPlan();
                 upp = unitsPerPoint > 0.5f ? unitsPerPoint : 1f;
+                string missionId = GameSession.Current != null ? GameSession.Current.MissionId : null;
+                FlightGhost.RememberLive(missionId, plan);
+                ghostAlong = float.NaN;
+                if (FlightGhost.TryFor(missionId, out float fail, out float peak))
+                    ghostAlong = !float.IsNaN(fail) ? fail : peak;
                 RefreshLabels();
                 MarkDirtyRepaint();
             }
@@ -2461,6 +2467,28 @@ namespace Kestrel.Slice
                         paint.LineTo(new Vector2(x + tick, y));
                         paint.Stroke();
                     }
+                }
+
+                if (!float.IsNaN(ghostAlong))
+                {
+                    float g = ghostAlong;
+                    if (g < 0f) g = 0f;
+                    else if (g > 1f) g = 1f;
+                    float yGhost = bottom - g * span;
+                    paint.strokeColor = new Color(0.55f, 0.72f, 0.95f, 0.45f);
+                    paint.lineWidth = 2f;
+                    paint.BeginPath();
+                    paint.MoveTo(new Vector2(x + 10f, bottom));
+                    paint.LineTo(new Vector2(x + 10f, yGhost));
+                    paint.Stroke();
+                    paint.fillColor = new Color(0.55f, 0.72f, 0.95f, 0.55f);
+                    paint.BeginPath();
+                    paint.MoveTo(new Vector2(x + 10f, yGhost - 5f));
+                    paint.LineTo(new Vector2(x + 15f, yGhost));
+                    paint.LineTo(new Vector2(x + 10f, yGhost + 5f));
+                    paint.LineTo(new Vector2(x + 5f, yGhost));
+                    paint.ClosePath();
+                    paint.Fill();
                 }
 
                 paint.fillColor = Color.white;

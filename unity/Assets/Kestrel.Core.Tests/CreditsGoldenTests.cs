@@ -98,6 +98,19 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
+        public void ResetToStart_ClearsFirstClears_SoKh1PaysFullAgain()
+        {
+            var wallet = CreditsWallet.Load(null, Table());
+            Assert.AreEqual(28, wallet.Award("m1", 1, true, new List<string> { "gold" }));
+            Assert.AreEqual(12, wallet.Award("m1", 1, true, new List<string> { "gold" }));
+            wallet.ResetToStart();
+            Assert.AreEqual(Table().Starting, wallet.Balance);
+            Assert.AreEqual(0, wallet.PaidQuote);
+            Assert.IsNull(wallet.LastMissionId);
+            Assert.AreEqual(28, wallet.Award("m1", 1, true, new List<string> { "gold" }), "first-clear pays again after a career restart");
+        }
+
+        [Test]
         public void Commit_PaysFirstClearOnce_AndAMissPaysZero()
         {
             string dir = Path.Combine(Path.GetTempPath(), "kh-credits-" + Guid.NewGuid().ToString("N"));

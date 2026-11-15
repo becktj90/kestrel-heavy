@@ -86,10 +86,12 @@ namespace Kestrel.Core.Designer
         {
             switch (row)
             {
+                case "build": return StarterKnob.Build;
                 case "engine": return StarterKnob.Engine;
                 case "stages": return StarterKnob.Stages;
                 case "fuel": return StarterKnob.FuelNotch;
                 case "boosters": return StarterKnob.Boosters;
+                case "landing": return StarterKnob.Landing;
                 default: return StarterKnob.None;
             }
         }
@@ -98,10 +100,12 @@ namespace Kestrel.Core.Designer
         {
             switch (k)
             {
+                case StarterKnob.Build: return "build";
                 case StarterKnob.Engine: return "engine";
                 case StarterKnob.Stages: return "stages";
                 case StarterKnob.FuelNotch: return "fuel";
                 case StarterKnob.Boosters: return "boosters";
+                case StarterKnob.Landing: return "landing";
                 default: return null;
             }
         }

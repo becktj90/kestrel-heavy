@@ -79,7 +79,8 @@
     font-size: 15px;
     -unity-font-style: bold;
     letter-spacing: 0.5px;
-    white-space: nowrap;
+    white-space: normal;
+    width: 100%;
 }
 
 .guide-body {
