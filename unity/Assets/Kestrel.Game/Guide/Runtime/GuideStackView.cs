@@ -3,11 +3,12 @@ using UnityEngine.UIElements;
 
 namespace Kestrel.Game.Guide
 {
-    /// <summary>Legacy subtitle stack, still built by view tests. The player shows GuidePopView instead.
+    /// <summary>Legacy subtitle stack, still built by view tests. The opening introduction uses it too.
     /// Ink panel, cream border, hard shadow.
     /// Ascent docks under the header and stays out of the thumb zone. Menu screens dock one box
     /// above the Home key and leave the mission list the space under it. Empty space does not pick,
-    /// so buttons underneath still receive touches.</summary>
+    /// so buttons underneath still receive touches.
+    /// A drag scrolls a tall page and turns a short one. SKIP on the introduction closes it.</summary>
     public sealed class GuideStackView
     {
         public static readonly Color Ink = new Color(0x1B / 255f, 0x1F / 255f, 0x2A / 255f, 1f);
@@ -24,12 +25,12 @@ namespace Kestrel.Game.Guide
         public Texture2D Portrait;
         /// <summary>Panel pixels the menu scroll should give up so the box does not cover the cards. 0 off-menu.</summary>
         public float ClearancePx { get; private set; }
+        /// <summary>The host parks this stack. Sync places it when the boxes change, then leaves the edges alone
+        /// so a press is not cancelled by rewriting the same position every frame.</summary>
+        public bool HostParksPosition;
 
         readonly VisualElement stack;
         string signature = "";
-        float downAt = -1f;
-        int downIndex = -1;
-        int suppressTap = -1;
 
         public GuideStackView(VisualElement parent, GuideStage stage)
         {
@@ -45,26 +46,8 @@ namespace Kestrel.Game.Guide
         public void Tick(float dt)
         {
             if (Stage == null) return;
-            FinishSkipIfReleased();
             Stage.Tick(dt);
             Sync();
-            if (Input.touchCount == 0 && !Input.GetMouseButton(0)) suppressTap = -1;
-        }
-
-        /// <summary>A press that ends outside the SKIP control still counts. Long-press fires at 0.5s
-        /// even if the finger is still down. The following click on the box is swallowed.</summary>
-        void FinishSkipIfReleased()
-        {
-            if (downIndex < 0 || Stage == null) return;
-            bool held = Input.touchCount > 0 || Input.GetMouseButton(0);
-            float elapsed = Time.unscaledTime - downAt;
-            if (held && elapsed < GuidePacing.LongPressSeconds) return;
-            int index = downIndex;
-            downIndex = -1;
-            downAt = -1f;
-            suppressTap = index;
-            if (elapsed >= GuidePacing.LongPressSeconds) Stage.SkipStepTips(index);
-            else Stage.Skip(index);
         }
 
         public void Sync()
@@ -91,6 +74,7 @@ namespace Kestrel.Game.Guide
             var frames = GuideLayout.Place(Screen, portrait, measure, font, Stage.Place);
             int shown = models.Length < frames.Length ? models.Length : frames.Length;
             string next = "";
+            bool place = !HostParksPosition;
             int built = 0;
             for (int i = 0; i < shown; i++)
             {
@@ -102,6 +86,7 @@ namespace Kestrel.Game.Guide
             next += Stage.Place == GuidePlace.Menu ? "m" : "d";
             if (next != signature || stack.childCount != built)
             {
+                place = true;
                 signature = next;
                 stack.Clear();
                 for (int i = 0; i < shown; i++)
@@ -130,16 +115,22 @@ namespace Kestrel.Game.Guide
                 width = Mathf.Max(80f, hostW - left);
                 if (left + width > hostW) { left = 0f; width = hostW; }
             }
-            stack.style.left = left;
-            stack.style.top = top;
-            stack.style.width = width;
-            float band = 0f;
-            for (int i = 0; i < shown && i < stack.childCount; i++)
+            if (place)
             {
-                Fill(stack[i], models[i], frames[i], scale);
-                band += frames[i].H;
+                stack.style.left = left;
+                stack.style.top = top;
+                stack.style.width = width;
             }
-            if (shown > 1) band += GuidePacing.StackGapPt * (shown - 1);
+            float band = 0f;
+            int at = 0;
+            for (int i = 0; i < shown && at < stack.childCount; i++)
+            {
+                if (models[i] == null) continue;
+                Fill(stack[at], models[i], frames[i], scale);
+                band += frames[i].H;
+                at++;
+            }
+            if (built > 1) band += GuidePacing.StackGapPt * (built - 1);
             ClearancePx = Stage.Place == GuidePlace.Menu
                 ? (band + GuidePacing.ShadowPt + GuidePacing.StackGapPt) * scale
                 : 0f;
@@ -150,24 +141,13 @@ namespace Kestrel.Game.Guide
             var box = new VisualElement { name = "guide-box", pickingMode = PickingMode.Position };
             box.AddToClassList("guide-box");
             int captured = index;
+            var gesture = new BoxGesture();
+            box.userData = gesture;
             box.RegisterCallback<ClickEvent>(_ =>
             {
-                if (suppressTap == captured || downIndex >= 0)
-                {
-                    suppressTap = -1;
-                    return;
-                }
-                try
-                {
-                    Stage?.Tap(captured);
-                    Sync();
-                }
-                catch (System.Exception)
-                {
-                    // A bad tap must never take down the app; skip the beat if we can.
-                    try { Stage?.Skip(captured); }
-                    catch (System.Exception) { }
-                }
+                // A drag already chose scroll, next, or previous. A following click must not turn the page.
+                if (gesture.Dragged || gesture.Handled) return;
+                Apply(gesture, captured, GuideScrollAction.Tap);
             });
 
             var shadow = new VisualElement { name = "guide-shadow", pickingMode = PickingMode.Ignore };
@@ -197,12 +177,18 @@ namespace Kestrel.Game.Guide
             var body = new BitmapTextElement { name = "guide-body" };
             body.AddToClassList("guide-body");
             body.style.flexShrink = 0;
-            var clip = new ScrollView(ScrollViewMode.Vertical) { name = "guide-body-clip", pickingMode = PickingMode.Ignore };
+            body.style.flexGrow = 0;
+            body.style.position = Position.Relative;
+            // A plain clip, not a ScrollView. The ScrollView's viewport sat on top of the text and the
+            // SKIP button and ate the pointer, so a drag did not move and a tap did not turn the page.
+            var clip = new VisualElement { name = "guide-body-clip", pickingMode = PickingMode.Ignore };
             clip.AddToClassList("guide-body-clip");
-            clip.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
-            clip.verticalScrollerVisibility = ScrollerVisibility.Hidden;
+            clip.style.overflow = Overflow.Hidden;
             clip.Add(body);
             column.Add(clip);
+            gesture.Clip = clip;
+            gesture.Body = body;
+            BindGesture(box, gesture, captured);
 
             var foot = new VisualElement { name = "guide-foot", pickingMode = PickingMode.Ignore };
             foot.AddToClassList("guide-foot");
@@ -216,33 +202,9 @@ namespace Kestrel.Game.Guide
 
             var skip = new Button { name = "guide-skip", text = "SKIP" };
             skip.tooltip = "Skip. Skips this beat. Press and hold to skip tips for this step.";
+            skip.pickingMode = PickingMode.Position;
             skip.AddToClassList("guide-skip");
-            skip.RegisterCallback<ClickEvent>(e => e.StopPropagation());
-            skip.RegisterCallback<PointerDownEvent>(e =>
-            {
-                downAt = Time.unscaledTime;
-                downIndex = captured;
-                e.StopPropagation();
-            });
-            skip.RegisterCallback<PointerUpEvent>(e =>
-            {
-                e.StopPropagation();
-                if (downIndex != captured) return;
-                float held = Time.unscaledTime - downAt;
-                downIndex = -1;
-                downAt = -1f;
-                suppressTap = captured;
-                if (held >= GuidePacing.LongPressSeconds) Stage?.SkipStepTips(captured);
-                else Stage?.Skip(captured);
-                Sync();
-            });
-            skip.RegisterCallback<PointerCancelEvent>(e =>
-            {
-                if (downIndex != captured) return;
-                downIndex = -1;
-                downAt = -1f;
-                e.StopPropagation();
-            });
+            BindSkip(skip, captured);
             box.Add(skip);
             return box;
         }
@@ -329,18 +291,34 @@ namespace Kestrel.Game.Guide
                     Atlas.anisoLevel = 0;
                 }
             }
-            var clip = box.Q<ScrollView>("guide-body-clip");
+            var clip = box.Q("guide-body-clip");
+            var gesture = box.userData as BoxGesture;
             if (clip != null)
             {
                 float bodyPx = frame.Body * scale;
                 float linePx = texel * 8f;
                 if (bodyPx < linePx) bodyPx = linePx;
+                float textH = body != null ? body.TextHeight : linePx;
                 clip.style.height = bodyPx;
                 clip.style.maxHeight = bodyPx;
+                clip.style.minHeight = linePx;
                 clip.style.flexGrow = 0;
                 clip.style.flexShrink = 0;
-                clip.verticalScrollerVisibility = frame.Scroll ? ScrollerVisibility.Auto : ScrollerVisibility.Hidden;
-                clip.pickingMode = frame.Scroll ? PickingMode.Position : PickingMode.Ignore;
+                clip.style.overflow = Overflow.Hidden;
+                clip.pickingMode = PickingMode.Ignore;
+                if (gesture != null)
+                {
+                    string key = model.Id + ":" + model.Page;
+                    if (gesture.Key != key)
+                    {
+                        gesture.Key = key;
+                        gesture.Offset = 0f;
+                    }
+                    float range = textH - bodyPx;
+                    if (range < 0f) range = 0f;
+                    if (gesture.Offset > range) gesture.Offset = range;
+                    if (body != null) body.style.top = -gesture.Offset;
+                }
             }
 
             var index = box.Q<Label>("guide-index");
@@ -351,6 +329,10 @@ namespace Kestrel.Game.Guide
             var skip = box.Q<Button>("guide-skip");
             if (skip != null)
             {
+                skip.tooltip = OpeningIntroSequence.IsWelcome(model.Id)
+                    ? "Skip. Closes the introduction."
+                    : "Skip. Skips this beat. Press and hold to skip tips for this step.";
+                skip.BringToFront();
                 float skipPx = frame.Skip * scale;
                 float boxH = frame.H * scale;
                 if (boxH > 4f && skipPx > boxH - 4f) skipPx = boxH - 4f;
@@ -460,6 +442,7 @@ namespace Kestrel.Game.Guide
             var skip = box.Q("guide-skip");
             if (skip != null)
             {
+                skip.pickingMode = PickingMode.Position;
                 skip.style.position = Position.Absolute;
                 skip.style.right = pad;
                 skip.style.bottom = pad;
@@ -476,6 +459,195 @@ namespace Kestrel.Game.Guide
                 skip.style.borderBottomLeftRadius = 0;
                 skip.style.borderBottomRightRadius = 0;
             }
+        }
+
+        void BindGesture(VisualElement box, BoxGesture gesture, int index)
+        {
+            box.RegisterCallback<PointerDownEvent>(e =>
+            {
+                if (IsSkip(e.target as VisualElement)) return;
+                gesture.Pointer = e.pointerId;
+                gesture.Start = e.position;
+                gesture.StartScroll = gesture.Offset;
+                gesture.Dragged = false;
+                gesture.Handled = false;
+                box.CapturePointer(e.pointerId);
+            });
+            box.RegisterCallback<PointerMoveEvent>(e =>
+            {
+                if (e.pointerId != gesture.Pointer) return;
+                float dy = e.position.y - gesture.Start.y;
+                float dx = e.position.x - gesture.Start.x;
+                if (!gesture.Dragged && Mathf.Abs(dy) < GuideScroll.TapSlop && Mathf.Abs(dx) < GuideScroll.TapSlop) return;
+                gesture.Dragged = true;
+                gesture.Offset = GuideScroll.Offset(gesture.StartScroll, dy, Range(gesture));
+                PlaceBody(gesture);
+            });
+            box.RegisterCallback<PointerUpEvent>(e =>
+            {
+                if (e.pointerId != gesture.Pointer) return;
+                box.ReleasePointer(e.pointerId);
+                float dy = e.position.y - gesture.Start.y;
+                var action = GuideScroll.Release(dy, gesture.StartScroll, Range(gesture));
+                gesture.Pointer = -1;
+                Apply(gesture, index, action);
+            });
+            box.RegisterCallback<PointerCancelEvent>(e =>
+            {
+                if (e.pointerId != gesture.Pointer) return;
+                gesture.Pointer = -1;
+                box.ReleasePointer(e.pointerId);
+            });
+            box.RegisterCallback<WheelEvent>(e =>
+            {
+                float range = Range(gesture);
+                var action = GuideScroll.Wheel(e.delta.y, gesture.Offset, range);
+                if (action == GuideScrollAction.Scroll)
+                {
+                    gesture.Offset = GuideScroll.Offset(gesture.Offset, -e.delta.y, range);
+                    PlaceBody(gesture);
+                }
+                else Apply(gesture, index, action);
+                e.StopPropagation();
+            });
+        }
+
+        void Apply(BoxGesture gesture, int index, GuideScrollAction action)
+        {
+            if (gesture.Handled || Stage == null) return;
+            gesture.Handled = true;
+            if (action == GuideScrollAction.Scroll) return;
+            try
+            {
+                if (action == GuideScrollAction.Next) Stage.Next(index);
+                else if (action == GuideScrollAction.Previous) Stage.Back(index);
+                else if (action == GuideScrollAction.Tap) Stage.Tap(index);
+                else return;
+                Sync();
+                // The page turn rebuilds the box. A click still in this gesture must not turn the new one.
+                if (index >= 0 && index < stack.childCount && stack[index].userData is BoxGesture fresh)
+                    fresh.Handled = true;
+            }
+            catch (System.Exception)
+            {
+                // A bad tap must never take down the app; skip the beat if we can.
+                try { Stage?.Skip(index); Sync(); }
+                catch (System.Exception) { }
+            }
+        }
+
+        void BindSkip(Button skip, int index)
+        {
+            var press = new SkipPress();
+            skip.userData = press;
+            void Commit(bool tips)
+            {
+                if (press.Done || Stage == null) return;
+                press.Done = true;
+                press.Down = false;
+                var models = Stage.Models();
+                bool welcome = index >= 0 && index < models.Length && models[index] != null
+                    && OpeningIntroSequence.IsWelcome(models[index].Id);
+                if (welcome || !tips) Stage.Skip(index);
+                else Stage.SkipStepTips(index);
+                Sync();
+                // Skip rebuilds the box under the finger. The new button must ignore the rest of this press.
+                SwallowFreshSkip();
+            }
+            skip.RegisterCallback<PointerDownEvent>(e =>
+            {
+                press.Down = true;
+                press.Done = false;
+                press.DownAt = Time.unscaledTime;
+                int token = ++press.Token;
+                if (skip.panel != null)
+                {
+                    skip.schedule.Execute(() =>
+                    {
+                        if (!press.Down || press.Done || token != press.Token) return;
+                        Commit(true);
+                    }).StartingIn((long)(GuidePacing.LongPressSeconds * 1000f));
+                }
+                e.StopPropagation();
+            });
+            skip.RegisterCallback<PointerUpEvent>(e =>
+            {
+                e.StopPropagation();
+                if (!press.Down) return;
+                Commit(Time.unscaledTime - press.DownAt >= GuidePacing.LongPressSeconds);
+            });
+            // The press used to be thrown away when the pointer was cancelled, so SKIP did nothing.
+            skip.RegisterCallback<PointerCancelEvent>(e =>
+            {
+                e.StopPropagation();
+                if (!press.Down) return;
+                Commit(false);
+            });
+            skip.RegisterCallback<ClickEvent>(e =>
+            {
+                e.StopPropagation();
+                if (!press.Down) return;
+                Commit(false);
+            });
+        }
+
+        void SwallowFreshSkip()
+        {
+            SwallowFreshSkip(stack);
+        }
+
+        static void SwallowFreshSkip(VisualElement ve)
+        {
+            if (ve == null) return;
+            if (ve.name == "guide-skip" && ve.userData is SkipPress press) press.Done = true;
+            for (int i = 0; i < ve.childCount; i++) SwallowFreshSkip(ve[i]);
+        }
+
+        static float Range(BoxGesture gesture)
+        {
+            if (gesture == null || gesture.Body == null || gesture.Clip == null) return 0f;
+            float view = gesture.Clip.resolvedStyle.height;
+            if (float.IsNaN(view) || view < 1f)
+            {
+                var styled = gesture.Clip.style.height;
+                view = styled.keyword == StyleKeyword.Undefined ? styled.value.value : 0f;
+            }
+            float range = gesture.Body.TextHeight - view;
+            return range > 0f ? range : 0f;
+        }
+
+        static void PlaceBody(BoxGesture gesture)
+        {
+            if (gesture == null || gesture.Body == null) return;
+            gesture.Body.style.top = -gesture.Offset;
+        }
+
+        static bool IsSkip(VisualElement ve)
+        {
+            for (var p = ve; p != null; p = p.parent)
+                if (p.name == "guide-skip") return true;
+            return false;
+        }
+
+        sealed class BoxGesture
+        {
+            public VisualElement Clip;
+            public BitmapTextElement Body;
+            public string Key = "";
+            public float Offset;
+            public float StartScroll;
+            public Vector2 Start;
+            public int Pointer = -1;
+            public bool Dragged;
+            public bool Handled;
+        }
+
+        sealed class SkipPress
+        {
+            public bool Down;
+            public bool Done;
+            public float DownAt;
+            public int Token;
         }
     }
 }

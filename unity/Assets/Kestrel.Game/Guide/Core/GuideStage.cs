@@ -121,15 +121,71 @@ namespace Kestrel.Game.Guide
             if (index < 0 || index >= active.Count) return;
             var slot = active[index];
             if (!slot.Typer.Done) { slot.Typer.Finish(); return; }
-            if (slot.Page + 1 < slot.Pages.Length) StartPage(slot, slot.Page + 1);
-            else Dismiss(slot, false);
+            Turn(slot, 1);
+        }
+
+        /// <summary>The next page, finishing a line that is still typing. The last page dismisses the beat.</summary>
+        public void Next(int index)
+        {
+            SortActive();
+            if (index < 0 || index >= active.Count) return;
+            var slot = active[index];
+            if (!slot.Typer.Done) slot.Typer.Finish();
+            Turn(slot, 1);
+        }
+
+        /// <summary>The previous page. The first page stays, and a line that is still typing finishes.</summary>
+        public void Back(int index)
+        {
+            SortActive();
+            if (index < 0 || index >= active.Count) return;
+            var slot = active[index];
+            if (slot.Page > 0)
+            {
+                StartPage(slot, slot.Page - 1);
+                return;
+            }
+            if (!slot.Typer.Done) slot.Typer.Finish();
         }
 
         public void Skip(int index)
         {
             SortActive();
             if (index < 0 || index >= active.Count) return;
+            // "Tap SKIP and I hush." One press closes the whole introduction, not just this page.
+            if (OpeningIntroSequence.IsWelcome(active[index].Beat.Id))
+            {
+                CloseWelcome();
+                return;
+            }
             Dismiss(active[index], true);
+        }
+
+        void Turn(Slot slot, int dir)
+        {
+            if (dir > 0 && slot.Page + 1 < slot.Pages.Length) StartPage(slot, slot.Page + 1);
+            else if (dir < 0 && slot.Page > 0) StartPage(slot, slot.Page - 1);
+            else if (dir > 0) Dismiss(slot, false);
+        }
+
+        void CloseWelcome()
+        {
+            if (Engine is LiveGuideEngine live) live.SkipWelcome();
+            else
+            {
+                for (int i = 0; i < OpeningIntroSequence.BeatIds.Length; i++)
+                    Engine.Skip(OpeningIntroSequence.BeatIds[i]);
+            }
+            for (int i = active.Count - 1; i >= 0; i--)
+                if (OpeningIntroSequence.IsWelcome(active[i].Beat.Id))
+                    active.RemoveAt(i);
+            for (int i = parked.Count - 1; i >= 0; i--)
+                if (parked[i] != null && OpeningIntroSequence.IsWelcome(parked[i].Id))
+                    parked.RemoveAt(i);
+            for (int i = incoming.Count - 1; i >= 0; i--)
+                if (incoming[i] != null && OpeningIntroSequence.IsWelcome(incoming[i].Id))
+                    incoming.RemoveAt(i);
+            Pull();
         }
 
         public void SkipStepTips(int index)

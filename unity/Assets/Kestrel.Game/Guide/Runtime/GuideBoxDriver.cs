@@ -62,6 +62,9 @@ namespace Kestrel.Game.Guide
         float blipUntil;
         float shownAt;
         string shownKey = "";
+        float parkedLeft = float.NaN;
+        float parkedTop = float.NaN;
+        float parkedWidth = float.NaN;
         GuideScreen screen = new GuideScreen(375f, 667f, 20f, 0f, 0f, 0f, 0f, false);
         float panelPerPoint = 1f;
         readonly GuideSeenWatch seenWatch = new GuideSeenWatch();
@@ -193,7 +196,11 @@ namespace Kestrel.Game.Guide
                 Portrait = art.Portrait,
                 PanelPerPoint = panelPerPoint,
                 Screen = screen,
+                HostParksPosition = true,
             };
+            parkedLeft = float.NaN;
+            parkedTop = float.NaN;
+            parkedWidth = float.NaN;
         }
 
         void TearDownWelcomeStack()
@@ -411,13 +418,23 @@ namespace Kestrel.Game.Guide
             float width = stack.worldBound.width;
             float maxW = rootR - rootL;
             if (maxW > 40f && width > maxW) width = maxW;
-            stack.style.width = width;
-            var box = stack.Q("guide-box");
-            if (box != null) box.style.width = width;
             float left = stack.worldBound.xMin;
             if (left < rootL) left = rootL;
             if (left + width > rootR) left = rootR - width;
-            stack.style.left = left - originX;
+            // Writing the same edge every frame moves the box under the finger and cancels the press.
+            float nextLeft = left - originX;
+            if (float.IsNaN(parkedLeft) || Mathf.Abs(parkedLeft - nextLeft) > 0.5f)
+            {
+                parkedLeft = nextLeft;
+                stack.style.left = nextLeft;
+            }
+            if (float.IsNaN(parkedWidth) || Mathf.Abs(parkedWidth - width) > 0.5f)
+            {
+                parkedWidth = width;
+                stack.style.width = width;
+                var box = stack.Q("guide-box");
+                if (box != null) box.style.width = width;
+            }
 
             float bottom = root.worldBound.yMax - margin;
             var primary = root.Q(UiIds.HomePrimary);
@@ -425,7 +442,12 @@ namespace Kestrel.Game.Guide
                 bottom = primary.worldBound.yMin - margin;
             float top = bottom - stack.worldBound.height;
             if (top < rootT) top = rootT;
-            stack.style.top = top - originY;
+            float nextTop = top - originY;
+            if (float.IsNaN(parkedTop) || Mathf.Abs(parkedTop - nextTop) > 0.5f)
+            {
+                parkedTop = nextTop;
+                stack.style.top = nextTop;
+            }
         }
 
         /// <summary>The opening sheet uses the shell's safe rect, which is the area Home captures check. Screen.safeArea

@@ -432,6 +432,81 @@ namespace Kestrel.Game.Guide.Tests
         }
 
         [Test]
+        public void WelcomeSkipLeavesAnUnrelatedTip()
+        {
+            var engine = new MockGuideEngine();
+            engine.Settings.Speed = SubtitleSpeed.Instant;
+            engine.Offer(new GuideBeat { Id = "first.host", Speaker = GuideSpeaker.Host, Cards = new[] { new GuideCard { Kid = "Host." } } });
+            engine.Offer(new GuideBeat { Id = "tip.later", Speaker = GuideSpeaker.Thrum, Cards = new[] { new GuideCard { Kid = "Later." } } });
+            var stage = new GuideStage(engine) { Place = GuidePlace.Menu };
+            stage.Tick(0.05f);
+            Assert.AreEqual("first.host", stage.Models()[0].Id);
+            stage.Skip(0);
+            stage.Tick(0.05f);
+            Assert.AreEqual(1, stage.Count);
+            Assert.AreEqual("tip.later", stage.Models()[0].Id);
+            Assert.That(engine.Skipped, Does.Not.Contain("tip.later"));
+        }
+
+        [Test]
+        public void NextTurnsAPageAndBackStepsToThePrevious()
+        {
+            var engine = new MockGuideEngine();
+            engine.Settings.Speed = SubtitleSpeed.Slow;
+            engine.Offer(new GuideBeat
+            {
+                Id = "pages",
+                Cards = new[]
+                {
+                    new GuideCard { Kid = "Alpha." },
+                    new GuideCard { Kid = "Beta." },
+                    new GuideCard { Kid = "Gamma." },
+                },
+            });
+            var stage = new GuideStage(engine) { Place = GuidePlace.Menu };
+            stage.Tick(0.01f);
+            Assert.AreEqual("1/3", stage.Models()[0].Index);
+            Assert.AreNotEqual("Alpha.", stage.Models()[0].Shown);
+            stage.Tap(0);
+            Assert.AreEqual("1/3", stage.Models()[0].Index);
+            Assert.AreEqual("Alpha.", stage.Models()[0].Shown);
+            stage.Next(0);
+            Assert.AreEqual("2/3", stage.Models()[0].Index);
+            Assert.AreEqual("Beta.", stage.Models()[0].Full);
+            stage.Back(0);
+            Assert.AreEqual("Alpha.", stage.Models()[0].Full);
+            stage.Back(0);
+            Assert.AreEqual("1/3", stage.Models()[0].Index);
+            stage.Next(0);
+            stage.Next(0);
+            stage.Next(0);
+            Assert.AreEqual(0, stage.Count);
+            Assert.Contains("pages", engine.Seen);
+        }
+
+        [Test]
+        public void GuideScrollTurnsAShortPageAndScrollsATallOne()
+        {
+            Assert.AreEqual(GuideScrollAction.Tap, GuideScroll.Release(0f, 0f, 0f));
+            Assert.AreEqual(GuideScrollAction.Tap, GuideScroll.Release(10f, 0f, 0f));
+            Assert.AreEqual(GuideScrollAction.Next, GuideScroll.Release(-GuideScroll.TapSlop, 0f, 0f));
+            Assert.AreEqual(GuideScrollAction.Previous, GuideScroll.Release(GuideScroll.TapSlop, 0f, 1f));
+            Assert.AreEqual(GuideScrollAction.Scroll, GuideScroll.Release(-40f, 10f, 100f));
+            Assert.AreEqual(GuideScrollAction.Next, GuideScroll.Release(-GuideScroll.PageSlop, 100f, 100f));
+            Assert.AreEqual(GuideScrollAction.Previous, GuideScroll.Release(GuideScroll.PageSlop, 0f, 100f));
+            Assert.AreEqual(GuideScrollAction.Scroll, GuideScroll.Release(-GuideScroll.PageSlop, 50f, 100f));
+            Assert.AreEqual(GuideScrollAction.Tap, GuideScroll.Wheel(0f, 0f, 0f));
+            Assert.AreEqual(GuideScrollAction.Next, GuideScroll.Wheel(1f, 0f, 0f));
+            Assert.AreEqual(GuideScrollAction.Previous, GuideScroll.Wheel(-1f, 0f, 0f));
+            Assert.AreEqual(GuideScrollAction.Scroll, GuideScroll.Wheel(4f, 10f, 80f));
+            Assert.AreEqual(GuideScrollAction.Next, GuideScroll.Wheel(4f, 80f, 80f));
+            Assert.AreEqual(GuideScrollAction.Previous, GuideScroll.Wheel(-4f, 0f, 80f));
+            Assert.AreEqual(0f, GuideScroll.Offset(0f, 10f, 40f));
+            Assert.AreEqual(20f, GuideScroll.Offset(10f, -10f, 40f));
+            Assert.AreEqual(40f, GuideScroll.Offset(30f, -20f, 40f));
+        }
+
+        [Test]
         public void MenuShowsOneBoxAndTheNextWaitsForATap()
         {
             var engine = new MockGuideEngine();
